@@ -3975,6 +3975,9 @@
       // 4. Communauté, Angers et Accèslibre démarrent AUSSITÔT, sans attendre OSM
       const commPromise = loadCommunityData(lat, lon).then(() => { if (!signal.aborted) scheduleRebuild(); });
       const angersPromise = isNearAngers(lat, lon) ? loadAngersExtrasOnce() : Promise.resolve();
+      if (!isNearAngers(lat, lon)) {                          // ailleurs en France : lignes de tram/métro (et bus si la couche est active) depuis OpenStreetMap
+        setTimeout(() => { if (!signal.aborted) { loadOsmLines("tram", lat, lon); if (visibleLayers.bus) loadOsmLines("bus", lat, lon); } }, 600);
+      }
       const alPromise = communePromise.then(async city => {
         if (!city || signal.aborted) return;
         const items = await fetchAcceslibreForCommune(city);
@@ -4373,7 +4376,8 @@
     }
 
     function getFilteredBusLinesGeo() {
-      const feats = busLineFilter === "all" ? irigoBusFeatures : irigoBusFeatures.filter(f => f.properties.shortName === busLineFilter);
+      const all = isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon) ? irigoBusFeatures : osmBusFeatures;
+      const feats = busLineFilter === "all" ? all : all.filter(f => f.properties.shortName === busLineFilter);
       return { type: "FeatureCollection", features: feats };
     }
 
@@ -4389,6 +4393,7 @@
     }
 
     function updateBusMapLayer() {
+      _srcSig["bus-lines"] = _srcSig["bus-stops"] = null;
       if (map.getSource("bus-lines")) map.getSource("bus-lines").setData(getFilteredBusLinesGeo());
       if (map.getSource("bus-stops")) map.getSource("bus-stops").setData(getFilteredBusStopsGeo());
       if (map.getLayer("bus-lines-layer")) {
@@ -4402,8 +4407,20 @@
       if (_rmslTimer) return;
       _rmslTimer = setTimeout(() => { _rmslTimer = null; renderMapSourcesAndLayersNow(); }, 30);
     }
+    let _rmslRetry = 0;
+    // Évite de recopier dans MapLibre des données inchangées (réseaux de bus/tram, parkings) à chaque rafraîchissement
+    const _srcSig = {}, _refIds = new WeakMap(); let _refN = 0;
+    const refId = o => { if (!o) return 0; let v = _refIds.get(o); if (!v) { v = ++_refN; _refIds.set(o, v); } return v; };
+    function setSrcIfChanged(id, sig, build) {
+      const s = map.getSource(id); if (!s) return;
+      if (_srcSig[id] === sig) return;
+      s.setData(build()); _srcSig[id] = sig;
+    }
     function renderMapSourcesAndLayersNow() {
-      if (!map.isStyleLoaded()) return;
+      if (!map.isStyleLoaded()) {                       // style/tuiles en cours de chargement : on réessaie au lieu d'abandonner la mise à jour
+        if (!_rmslRetry) _rmslRetry = setTimeout(() => { _rmslRetry = 0; renderMapSourcesAndLayersNow(); }, 250);
+        return;
+      }
 
       if (!map.getSource("bus-lines")) {
         map.addSource("bus-lines", { type: "geojson", data: getFilteredBusLinesGeo() });
@@ -4413,7 +4430,7 @@
           paint: { "line-color": ["get", "color"], "line-width": busLineFilter === "all" ? 2.4 : 4.5, "line-opacity": busLineFilter === "all" ? 0.55 : 0.92 }
         });
       } else {
-        map.getSource("bus-lines").setData(getFilteredBusLinesGeo());
+        setSrcIfChanged("bus-lines", busLineFilter + "|" + refId(isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon) ? irigoBusFeatures : osmBusFeatures), getFilteredBusLinesGeo);
       }
 
       if (!map.getSource("bus-stops")) {
@@ -4424,11 +4441,11 @@
           paint: { "circle-color": "#ff9500", "circle-radius": 5.5, "circle-stroke-width": 1.8, "circle-stroke-color": "#ffffff" }
         });
       } else {
-        map.getSource("bus-stops").setData(getFilteredBusStopsGeo());
+        setSrcIfChanged("bus-stops", busLineFilter + "|" + refId(busStops), getFilteredBusStopsGeo);
       }
 
-      const tramData = { type: "FeatureCollection", features: isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon) ? irigoTramFeatures : [] };
-      if (map.getSource("tram")) map.getSource("tram").setData(tramData);
+      const tramData = { type: "FeatureCollection", features: isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon) ? irigoTramFeatures : osmTramFeatures };
+      if (map.getSource("tram")) setSrcIfChanged("tram", refId(tramData.features), () => tramData);
       else {
         map.addSource("tram", { type: "geojson", data: tramData });
         map.addLayer({
@@ -4438,14 +4455,14 @@
         });
       }
 
-      const stopsGeo = {
+      const stopsGeo = (map.getSource("tram-stops") && _srcSig["tram-stops"] === refId(tramStops)) ? null : {
         type: "FeatureCollection",
         features: tramStops.map(s => ({
           type: "Feature", geometry: { type: "Point", coordinates: [s.lon, s.lat] },
           properties: { name: s.name, lat: s.lat, lon: s.lon, linesJSON: JSON.stringify(s.lines || []), accessible: s.accessible, precision: s.precision || "" }
         }))
       };
-      if (map.getSource("tram-stops")) map.getSource("tram-stops").setData(stopsGeo);
+      if (map.getSource("tram-stops")) setSrcIfChanged("tram-stops", refId(tramStops), () => stopsGeo);
       else {
         map.addSource("tram-stops", { type: "geojson", data: stopsGeo });
         map.addLayer({
@@ -4455,14 +4472,14 @@
         });
       }
 
-      const parkingGeoJSON = {
+      const parkingGeoJSON = (map.getSource("parkings") && _srcSig["parkings"] === refId(allPlaces) + "|" + allPlaces.length) ? null : {
         type: "FeatureCollection",
         features: allPlaces.filter(p => p.cat === "parking").map(p => ({
           type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] },
           properties: slimPlaceProps(p, "#007aff", "#ffffff")
         }))
       };
-      if (map.getSource("parkings")) map.getSource("parkings").setData(parkingGeoJSON);
+      if (map.getSource("parkings")) setSrcIfChanged("parkings", refId(allPlaces) + "|" + allPlaces.length, () => parkingGeoJSON);
       else {
         map.addSource("parkings", { type: "geojson", data: parkingGeoJSON, cluster: true, clusterMaxZoom: 15, clusterRadius: 42 });
         map.addLayer({
@@ -4684,6 +4701,7 @@
         if (map.getLayer("tram-stops-layer")) map.setLayoutProperty("tram-stops-layer", "visibility", vis);
       }
       if (layerKey === "bus") {
+        if (visibleLayers.bus) loadOsmLines("bus", currentZoneCenter.lat, currentZoneCenter.lon);
         if (map.getLayer("bus-lines-layer")) map.setLayoutProperty("bus-lines-layer", "visibility", vis);
         if (map.getLayer("bus-stops-layer")) map.setLayoutProperty("bus-stops-layer", "visibility", vis);
       }
@@ -6762,6 +6780,56 @@
       const btn = box.querySelector("[data-rain-pick]");
       if (btn) btn.addEventListener("click", () => selectRouteVariant(btn.getAttribute("data-rain-pick")));
     }
+
+
+    // =====================================================================================
+    // RÉSEAUX DE TRANSPORT PARTOUT EN FRANCE (OpenStreetMap) : tram / métro automatiquement, bus à la demande
+    // =====================================================================================
+    let osmTramFeatures = [], osmBusFeatures = [];
+    const osmLinesCache = new Map();               // "tram|tuile" ou "bus|tuile" → features
+    let osmLinesAbort = { tram: null, bus: null }, osmLinesCover = { tram: null, bus: null };
+    function relToFeature(rel, def) {
+      const lines = [];
+      for (const m of rel.members || []) {
+        if (m.type !== "way" || !Array.isArray(m.geometry) || m.geometry.length < 2) continue;
+        let pts = m.geometry.map(g => [Math.round(g.lon * 1e5) / 1e5, Math.round(g.lat * 1e5) / 1e5]);
+        if (pts.length > 40) pts = pts.filter((_, i) => i % 2 === 0 || i === pts.length - 1);   // allège sans changer le tracé
+        lines.push(pts);
+      }
+      if (!lines.length) return null;
+      const t = rel.tags || {};
+      const col = /^#[0-9a-f]{3,8}$/i.test(t.colour || "") ? t.colour : def;
+      return { type: "Feature", properties: { color: col, shortName: t.ref || "", name: t.name || "" }, geometry: { type: "MultiLineString", coordinates: lines } };
+    }
+    async function loadOsmLines(kind, lat, lon) {
+      if (isNearAngers(lat, lon)) return;                           // Angers : données Irigo, plus précises
+      const cov = osmLinesCover[kind], reach = kind === "tram" ? 4000 : 900;
+      if (cov && distanceMeters(cov.lat, cov.lon, lat, lon) < reach) return;          // déjà couvert
+      const key = kind + "|" + lat.toFixed(2) + "_" + lon.toFixed(2);
+      const apply = f => { if (kind === "tram") osmTramFeatures = f; else osmBusFeatures = f; renderMapSourcesAndLayers(); updateBusMapLayerSafe(); };
+      if (osmLinesCache.has(key)) { osmLinesCover[kind] = { lat, lon }; apply(osmLinesCache.get(key)); return; }
+      if (osmLinesAbort[kind]) osmLinesAbort[kind].abort();
+      const ctrl = osmLinesAbort[kind] = new AbortController();
+      const bb = (dl, dn) => `${(lat - dl).toFixed(4)},${(lon - dn).toFixed(4)},${(lat + dl).toFixed(4)},${(lon + dn).toFixed(4)}`;
+      const ql = kind === "tram"
+        ? `[out:json][timeout:20];rel["route"~"^(tram|subway|light_rail)$"](${bb(0.06, 0.09)});out geom qt 80;`
+        : `[out:json][timeout:25];rel["route"="bus"](${bb(0.025, 0.036)});out geom qt 140;`;
+      const json = await queryOverpass(ql, ctrl.signal, kind === "tram" ? 16000 : 20000);
+      if (!json || ctrl.signal.aborted) return;
+      const seen = new Map();
+      for (const el of json.elements) {
+        const f = relToFeature(el, kind === "tram" ? "#5856d6" : "#ff9500"); if (!f) continue;
+        const k = (el.tags && (el.tags.ref || el.tags.name) || el.id) + "|" + f.properties.color;
+        const old = seen.get(k);
+        if (!old || f.geometry.coordinates.length > old.geometry.coordinates.length) seen.set(k, f);   // une seule direction par ligne
+      }
+      const feats = [...seen.values()];
+      if (osmLinesCache.size > 12) osmLinesCache.clear();
+      osmLinesCache.set(key, feats); osmLinesCover[kind] = { lat, lon };
+      if (kind === "tram") { if (!isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon)) apply(feats); }
+      else apply(feats);
+    }
+    function updateBusMapLayerSafe() { try { if (map.getSource("bus-lines")) updateBusMapLayer(); } catch {} }
 
     map.on("load", () => {
       if (VIEWER_ID) { initViewer(); return; }
