@@ -362,6 +362,113 @@
     body.large-mode .hud-next { font-size: 16px; }
     body.large-mode .nav-side button { width: 66px; height: 66px; font-size: 28px; }
     body.large-mode .nav-eta { font-size: 18px; }
+
+    /* ===== Ergonomie PC + mobile ===== */
+    :root { --sheet-h: 52dvh; --safe-b: env(safe-area-inset-bottom, 0px); }
+    .sheet-handle { display: none; }
+    .sb-collapse { width: 34px; height: 34px; min-height: 34px; padding: 0; border-radius: 10px; font-size: 15px; flex-shrink: 0; }
+    .sb-open {
+      display: none; position: absolute; top: 14px; left: 14px; z-index: 11; width: 46px; height: 46px; border-radius: 14px;
+      font-size: 20px; padding: 0; background: var(--bg); box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+    }
+    .sidebar { transition: transform .25s ease, height .22s ease; }
+    @media (min-width: 769px) {
+      body.sb-collapsed .sidebar { transform: translateX(calc(-100% - 24px)); pointer-events: none; }
+      body.sb-collapsed .sb-open { display: block; }
+      body.nav-mode .sb-open { display: none !important; }
+    }
+    .toolbar { display: flex; gap: 6px; flex-wrap: nowrap; justify-content: flex-end; }
+    .toolbar button.pill-bar { flex-wrap: nowrap; justify-content: center; align-items: center; padding: 8px 13px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; }
+    #layersBtn[aria-expanded="true"] { border-color: #007aff; color: #007aff; }
+    #layerToggles { display: none; max-width: 480px; }
+    #layerToggles.open { display: flex; }
+    .legend { cursor: pointer; }
+    .legend.collapsed { padding: 7px 12px; }
+    .legend.collapsed span { display: none; }
+    .legend .leg-title { font-weight: 700; display: none; }
+    .legend.collapsed .leg-title { display: inline; }
+    #routeBox { position: sticky; top: 0; z-index: 5; order: -1; box-shadow: 0 6px 16px rgba(0,0,0,0.14); }
+    #routeBox > .row.between { flex-wrap: wrap; gap: 8px; }
+    #routeBox button { white-space: nowrap; }
+    #statusBox { transition: opacity .3s ease; }
+    .kbd { display: inline-block; min-width: 24px; padding: 2px 7px; border-radius: 7px; border: 1px solid var(--border); background: var(--card); font: 600 12px ui-monospace, monospace; text-align: center; }
+    dialog#helpDlg { border: 1px solid var(--border); border-radius: 18px; background: var(--card2); color: var(--text); max-width: min(460px, 92vw); padding: 18px 20px; }
+    dialog#helpDlg::backdrop { background: rgba(0,0,0,0.45); }
+    dialog#helpDlg table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; }
+    dialog#helpDlg td { padding: 6px 4px; font-size: 14px; border-bottom: 1px solid var(--border); }
+    dialog#helpDlg td:first-child { width: 90px; }
+    .help-fab { position: absolute; left: 14px; bottom: 14px; z-index: 9; width: 36px; height: 36px; min-height: 36px; padding: 0; border-radius: 50%; background: var(--bg); box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+    body.nav-mode .help-fab, body:not(.sb-collapsed) .help-fab { display: none; }
+
+    @media (max-width: 768px) {
+      .sidebar, body.large-mode .sidebar {
+        height: var(--sheet-h); bottom: calc(8px + var(--safe-b)); padding-top: 6px;
+      }
+      body.sheet-drag .sidebar { transition: none; }
+      .sheet-handle { display: flex; justify-content: center; align-items: center; height: 26px; margin: -2px 0 -4px; cursor: grab; touch-action: none; flex-shrink: 0; }
+      .sheet-handle i { width: 44px; height: 5px; border-radius: 3px; background: var(--sub); opacity: .55; }
+      .sb-collapse, .help-fab { display: none !important; }
+      .floating-right { align-items: flex-end; }
+      .toolbar button.pill-bar .lbl { display: none; }
+      .toolbar button.pill-bar { width: 46px; height: 46px; min-height: 46px; padding: 0; justify-content: center; font-size: 19px; }
+      #layerToggles.open { flex-wrap: wrap; overflow: visible; max-height: 40vh; overflow-y: auto; align-self: stretch; }
+      #routeBox #routeSteps { max-height: 30vh; }
+    }
+    @media (pointer: coarse) {
+      button, .sug-item { min-height: 44px; }
+      .chip { min-height: 40px; padding: 8px 12px; }
+      .clear-btn { width: 34px; height: 34px; min-height: 34px !important; font-size: 13px; }
+      .swap-btn { width: 44px; }
+      input { min-height: 44px; }
+    }
+    @media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+      .sidebar, body.large-mode .sidebar { top: 8px; left: 8px; bottom: 8px; right: auto; width: min(360px, 46vw); height: auto; }
+      .sheet-handle { display: none; }
+      .floating-right { left: auto; width: auto; }
+      .nav-hud { left: 10px; transform: none; width: min(380px, 52vw); padding: 8px 12px; }
+      .hud-dist { font-size: 24px; } .hud-icon { font-size: 34px; min-width: 44px; }
+      .nav-side { top: 56px; transform: none; flex-direction: row; right: 10px; }
+      .nav-side button { width: 46px; height: 46px; font-size: 18px; }
+      .nav-eta { padding: 8px 16px; font-size: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+
+    /* ===== Favoris + historique ===== */
+    .star-fld.on { color: #f59e0b; background: rgba(245,158,11,0.22); }
+    .sug-star { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 18px; color: var(--sub); }
+    .sug-star.on { color: #f59e0b; }
+    .sug-star:hover { background: rgba(245,158,11,0.18); }
+    .sug-group { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; color: var(--sub); padding: 7px 11px 3px; text-transform: uppercase; background: var(--card); }
+    #placesCard { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .places-head { gap: 6px; }
+    .seg { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--card2); padding: 3px; border-radius: 12px; border: 1px solid var(--border); }
+    .seg button { border: none; background: transparent; padding: 7px 6px; border-radius: 9px; font-size: 13px; white-space: nowrap; }
+    .seg button.active { background: var(--card); box-shadow: 0 1px 5px rgba(0,0,0,0.15); color: #007aff; }
+    .seg .cnt { font-size: 11px; opacity: .7; margin-left: 3px; }
+    #placesToggle { width: 38px; padding: 0; flex-shrink: 0; }
+    #placesCard.collapsed #placesBody, #placesCard.collapsed .places-foot, #placesCard.collapsed #placesFilter { display: none !important; }
+    #placesBody { display: flex; flex-direction: column; gap: 4px; max-height: 36vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .place-row { display: flex; align-items: center; gap: 2px; border-radius: 12px; background: var(--card2); border: 1px solid var(--border); }
+    .place-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left; background: transparent; border: none; padding: 6px 8px; min-height: 48px; }
+    .place-main .pm-txt { display: flex; flex-direction: column; min-width: 0; }
+    .place-main b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .place-main small { font-size: 11.5px; color: var(--sub); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .place-acts { display: flex; flex-shrink: 0; }
+    .place-acts button { border: none; background: transparent; width: 38px; height: 38px; min-height: 38px; padding: 0; font-size: 15px; border-radius: 50%; }
+    .place-acts button.on { color: #f59e0b; }
+    .place-edit { flex: 1; margin: 4px 6px; padding: 8px 10px; }
+    .places-empty { font-size: 12.5px; color: var(--sub); padding: 8px 6px; line-height: 1.4; }
+    .places-foot { display: flex; flex-wrap: wrap; gap: 6px; }
+    .places-foot button { flex: 1; font-size: 12.5px; padding: 7px 8px; white-space: nowrap; }
+    #placesFilter { display: none; }
+    .fav-pin { width: 26px; height: 26px; border-radius: 50%; background: #f59e0b; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.35); cursor: pointer; }
+    .map-menu button { width: 100%; margin-top: 6px; }
+    #routeBox { position: static; z-index: auto; box-shadow: none; order: -2; }
+    #plannerCard { order: -4; } #lastRouteBox { order: -3; } #placesCard { order: -1; }
+    #routeBox > .row.between:first-child { position: sticky; top: 0; z-index: 5; background: var(--card); padding: 6px 0; border-bottom: 1px solid var(--border); }
+    @media (pointer: coarse) { .place-acts button { width: 44px; height: 44px; } .sug-star { width: 44px; height: 44px; } }
   </style>
 </head>
 <body>
@@ -387,11 +494,13 @@
   <div id="offlineBadge" class="offline-badge" role="status">📴 Hors ligne — le guidage continue sur le tracé enregistré</div>
 
   <div class="floating-right">
-    <div class="row" style="flex-wrap:wrap; justify-content:flex-end;">
-      <button id="largeModeBtn" class="pill-bar" style="padding:8px 13px; border-radius:999px;" onclick="toggleLargeMode()" aria-pressed="false" aria-label="Activer le mode gros boutons et grand texte">👁️ Grand format</button>
-      <button id="darkModeBtn" class="pill-bar" style="padding:8px 13px; border-radius:999px;" onclick="toggleDarkMode()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit">🌓 Mode Jour / Nuit</button>
-      <button class="pill-bar" style="padding:8px 13px; border-radius:999px;" onclick="recenterOnStart()" aria-label="Recentrer la carte sur ma position actuelle">🎯 Ma position</button>
-      <button class="pill-bar" style="padding:8px 13px; border-radius:999px;" onclick="refreshCurrentZone(true)" aria-label="Actualiser les lieux de cette zone">🔄 Cette zone</button>
+    <div class="toolbar" role="toolbar" aria-label="Outils de la carte">
+      <button id="layersBtn" class="pill-bar" onclick="toggleLayersPanel()" aria-expanded="false" aria-controls="layerToggles" aria-label="Afficher ou masquer les couches de la carte" title="Couches (C)"><span class="ico">🗂️</span><span class="lbl">Couches</span></button>
+      <button id="largeModeBtn" class="pill-bar" onclick="toggleLargeMode()" aria-pressed="false" aria-label="Activer le mode gros boutons et grand texte" title="Grand format (L)"><span class="ico">👁️</span><span class="lbl">Grand format</span></button>
+      <button id="darkModeBtn" class="pill-bar" onclick="toggleDarkMode()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit" title="Jour / Nuit (N)"><span class="ico">🌓</span><span class="lbl">Jour / Nuit</span></button>
+      <button class="pill-bar" onclick="recenterOnStart()" aria-label="Recentrer la carte sur ma position actuelle" title="Ma position (G)"><span class="ico">🎯</span><span class="lbl">Ma position</span></button>
+      <button class="pill-bar" onclick="refreshCurrentZone(true)" aria-label="Actualiser les lieux de cette zone" title="Actualiser la zone (R)"><span class="ico">🔄</span><span class="lbl">Cette zone</span></button>
+      <button class="pill-bar" onclick="openHelp()" aria-label="Aide et raccourcis clavier" title="Raccourcis (?)"><span class="ico">⌨️</span><span class="lbl">Aide</span></button>
     </div>
 
     <div class="pill-bar" id="layerToggles" role="group" aria-label="Filtres de couches sur la carte">
@@ -410,7 +519,8 @@
     </div>
   </div>
 
-  <div class="legend" aria-hidden="true">
+  <div class="legend" id="legend" role="button" tabindex="0" aria-label="Légende de la carte, activer pour replier ou déplier" onclick="toggleLegend()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLegend();}">
+    <b class="leg-title">🎨 Légende ▸</b>
     <span><i class="dot" style="background:#007aff;"></i>Parking PMR</span>
     <span><i class="dot" style="background:#06b6d4;"></i>Toilettes PMR</span>
     <span><i class="dot" style="background:#10b981;"></i>Pharmacie</span>
@@ -424,13 +534,34 @@
     <span><i class="dot" style="background:#ec4899;"></i>Spectacle</span>
   </div>
 
+  <button id="sbOpen" class="sb-open" onclick="toggleSidebar()" aria-label="Afficher le panneau" title="Afficher le panneau (S)">☰</button>
+  <button class="help-fab" onclick="openHelp()" aria-label="Aide et raccourcis clavier" title="Raccourcis (?)">?</button>
+  <dialog id="helpDlg" aria-labelledby="helpTitle">
+    <h2 id="helpTitle" style="margin:0 0 4px;font-size:18px;">Raccourcis clavier</h2>
+    <table>
+      <tr><td><span class="kbd">/</span></td><td>Aller au champ « Destination »</td></tr>
+      <tr><td><span class="kbd">S</span></td><td>Afficher / masquer le panneau</td></tr>
+      <tr><td><span class="kbd">C</span></td><td>Couches de la carte</td></tr>
+      <tr><td><span class="kbd">G</span></td><td>Centrer sur ma position</td></tr>
+      <tr><td><span class="kbd">R</span></td><td>Actualiser les lieux de la zone</td></tr>
+      <tr><td><span class="kbd">F</span></td><td>Destination en favori ⭐</td></tr>
+      <tr><td><span class="kbd">H</span></td><td>Ouvrir mes favoris / récents</td></tr>
+      <tr><td><span class="kbd">N</span></td><td>Mode jour / nuit</td></tr>
+      <tr><td><span class="kbd">L</span></td><td>Grand format</td></tr>
+      <tr><td><span class="kbd">Échap</span></td><td>Fermer / quitter un champ</td></tr>
+      <tr><td><span class="kbd">?</span></td><td>Cette aide</td></tr>
+    </table>
+    <div class="sub" style="margin-bottom:12px;">Sur mobile : faites glisser la poignée du panneau pour l'agrandir ou le réduire.</div>
+    <button class="primary" onclick="document.getElementById('helpDlg').close()" style="width:100%;">Fermer</button>
+  </dialog>
   <aside class="sidebar" role="region" aria-label="Panneau de navigation et pratiques PMR">
+    <div class="sheet-handle" id="sheetHandle" role="separator" aria-label="Poignée : faire glisser pour agrandir ou réduire le panneau" tabindex="0"><i></i></div>
     <div class="row between">
       <div>
         <h1>GPS PMR</h1>
         <div id="globalStats" class="sub">France • Détection de la zone…</div>
       </div>
-      <span id="zoneCityBadge" class="badge b-gov">🇫🇷 France</span>
+      <div class="row" style="gap:6px;"><span id="zoneCityBadge" class="badge b-gov">🇫🇷 France</span><button class="sb-collapse" onclick="toggleSidebar()" aria-label="Replier le panneau" title="Replier le panneau (S)">◀</button></div>
     </div>
 
     <div class="tabs" role="tablist">
@@ -476,6 +607,7 @@
                 onfocus="onAddressFocus('dest')"
                 oninput="onAddressInput('dest')"
               />
+              <button id="destFavBtn" class="clear-btn star-fld" aria-pressed="false" aria-label="Ajouter la destination aux favoris" title="Favori (F)" onclick="toggleDestFavorite()">☆</button>
               <button class="clear-btn" aria-label="Effacer la destination" onclick="clearAddressField('dest')">✕</button>
             </div>
           </div>
@@ -484,6 +616,21 @@
         </div>
 
         <div id="suggestionsBox" class="suggestions-list" style="display:none;" role="listbox" aria-label="Suggestions d'adresses"></div>
+      </div>
+
+      <!-- FAVORIS + HISTORIQUE -->
+      <div class="card" id="placesCard">
+        <div class="row places-head">
+          <div class="seg" role="tablist" aria-label="Mes lieux">
+            <button id="plTabFav" role="tab" class="active" onclick="showPlacesTab('fav')">⭐ Favoris<span class="cnt" id="favCount"></span></button>
+            <button id="plTabHist" role="tab" onclick="showPlacesTab('hist')">🕘 Récents<span class="cnt" id="histCount"></span></button>
+          </div>
+          <button id="placesToggle" onclick="togglePlacesCard()" aria-expanded="true" aria-label="Replier ou déplier mes lieux">▾</button>
+        </div>
+        <input id="placesFilter" type="search" placeholder="🔎 Filtrer mes lieux…" aria-label="Filtrer mes lieux" oninput="renderPlaces()" />
+        <div id="placesBody" role="list"></div>
+        <div class="places-foot" id="placesFoot"></div>
+        <input type="file" id="placesImport" accept="application/json,.json" style="display:none" onchange="importPlaces(this)" />
       </div>
 
       <!-- 4 ONGLETS : FAUTEUIL | VOITURE | BUS | TRAMWAY -->
@@ -594,6 +741,10 @@
           <button onclick="precacheRouteTiles()" style="font-size:12.5px;" aria-label="Télécharger la carte du trajet pour l'utiliser hors ligne">📥 Carte hors-ligne du trajet</button>
           <span id="offlineStatus" class="sub"></span>
         </div>
+        <label class="sub" style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer;">
+          <input id="bgAudioChk" type="checkbox" checked style="width:auto;" onchange="setBgAudioPref(this.checked)" />
+          🔒 Voix écran verrouillé / appareils auditifs (expérimental)
+        </label>
         <div id="routeSteps" style="max-height:200px; overflow-y:auto;"></div>
       </div>
 
@@ -864,6 +1015,14 @@
       box.className = "status-box status-" + type;
       box.textContent = message;
       box.style.display = "block";
+      box.style.opacity = "1";
+      clearTimeout(setStatus._t);
+      if (type === "ok" || (type === "info" && !/^⏳/.test(message))) {
+        setStatus._t = setTimeout(() => {
+          box.style.opacity = "0";
+          setTimeout(() => { if (box.style.opacity === "0") box.style.display = "none"; }, 320);
+        }, type === "ok" ? 5000 : 9000);
+      }
     }
 
     async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
@@ -1061,6 +1220,73 @@
     }
 
     // =====================================================================================
+    // APPLI MOBILE (Capacitor) : GPS en arrière-plan, voix native, écran allumé
+    // Dans un navigateur ordinaire, NATIVE vaut false et tout continue de fonctionner comme avant.
+    // =====================================================================================
+    const NATIVE = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === "function" && window.Capacitor.isNativePlatform());
+    const native = {};
+    if (NATIVE) {
+      for (const name of ["BackgroundGeolocation", "TextToSpeech", "KeepAwake", "LocalNotifications"]) {
+        try { native[name] = window.Capacitor.registerPlugin(name); } catch {}
+      }
+    }
+    let nativeWatcherId = null;
+    let nativeBgActive = false;
+
+    function cancelSpeech() {
+      try { if (NATIVE && native.TextToSpeech) native.TextToSpeech.stop(); } catch {}
+      try { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); } catch {}
+    }
+
+    // Position reçue du service natif (continue écran verrouillé) : même traitement que le GPS du navigateur
+    function handleNativeFix(loc) {
+      const accuracy = loc.accuracy == null ? 0 : loc.accuracy;
+      if (userPos && isNavigating && accuracy > 100) return;
+      userPos = { lat: loc.latitude, lon: loc.longitude, accuracy };
+      const lbl = document.getElementById("gpsStatusLabel");
+      if (lbl) lbl.textContent = "📍 GPS actif";
+      if (!simActive) onPositionUpdate(loc.latitude, loc.longitude, loc.bearing, loc.speed, accuracy);
+    }
+
+    async function startNativeBackgroundLocation() {
+      if (!NATIVE || !native.BackgroundGeolocation || nativeWatcherId != null) return;
+      try {
+        // Android 13+ : la notification « guidage en cours » doit être autorisée
+        if (native.LocalNotifications) {
+          try {
+            const perm = await native.LocalNotifications.checkPermissions();
+            if (perm.display !== "granted") await native.LocalNotifications.requestPermissions();
+          } catch {}
+        }
+        nativeWatcherId = await native.BackgroundGeolocation.addWatcher({
+          backgroundTitle: "GPS PMR — guidage en cours",
+          backgroundMessage: "La voix continue de vous guider, écran verrouillé.",
+          requestPermissions: true,
+          stale: false,
+          distanceFilter: 0
+        }, (loc, err) => {
+          if (err) {
+            nativeBgActive = false;                      // on retombe sur le GPS du navigateur
+            if (err.code === "NOT_AUTHORIZED") {
+              speakFR("La localisation est refusée. Autorisez-la dans les réglages pour être guidé.");
+              try { native.BackgroundGeolocation.openSettings(); } catch {}
+            }
+            return;
+          }
+          if (loc) { nativeBgActive = true; handleNativeFix(loc); }
+        });
+      } catch { nativeWatcherId = null; nativeBgActive = false; }
+    }
+
+    function stopNativeBackgroundLocation() {
+      if (nativeWatcherId != null && native.BackgroundGeolocation) {
+        try { native.BackgroundGeolocation.removeWatcher({ id: nativeWatcherId }); } catch {}
+      }
+      nativeWatcherId = null;
+      nativeBgActive = false;
+    }
+
+    // =====================================================================================
     // POSITION EN TEMPS RÉEL : flèche, cap (GPS + boussole), caméra qui suit
     // =====================================================================================
 
@@ -1240,19 +1466,28 @@
     // queue = true : on ajoute à la file sans couper la parole.
     function speakFR(text, queue = false) {
       lastSpokenText = text;
-      if (isMuted || !("speechSynthesis" in window)) return;
+      if (isMuted) return;
+      if (NATIVE && native.TextToSpeech) {
+        // Voix du système : continue écran verrouillé et passe dans les appareils auditifs / écouteurs Bluetooth
+        native.TextToSpeech.speak({
+          text, lang: "fr-FR", rate: 1.0, pitch: 1.0, volume: 1.0,
+          category: "playback", queueStrategy: queue ? 1 : 0
+        }).catch(() => {});
+        return;
+      }
+      if (!("speechSynthesis" in window)) return;
       const synth = window.speechSynthesis;
       if (!queue) synth.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "fr-FR";
       u.rate = 1.0;
       if (frVoice) u.voice = frVoice;
-      setTimeout(() => synth.speak(u), 0);
+      setTimeout(() => { synth.speak(u); if (synth.paused) synth.resume(); }, 0);
     }
 
     function toggleMuteGuidance() {
       isMuted = !isMuted;
-      if (isMuted && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (isMuted) cancelSpeech();
       const btn = document.getElementById("hudMute");
       if (btn) {
         btn.textContent = isMuted ? "🔇" : "🔊";
@@ -1274,6 +1509,7 @@
     }
 
     async function requestWakeLock() {
+      if (NATIVE && native.KeepAwake) { try { await native.KeepAwake.keepAwake(); } catch {} return; }
       try {
         if ("wakeLock" in navigator) {
           wakeLock = await navigator.wakeLock.request("screen");
@@ -1282,6 +1518,7 @@
       } catch {}
     }
     function releaseWakeLock() {
+      if (NATIVE && native.KeepAwake) { try { native.KeepAwake.allowSleep(); } catch {} return; }
       try { if (wakeLock) wakeLock.release(); } catch {}
       wakeLock = null;
     }
@@ -1501,11 +1738,16 @@
       const arrival = new Date(Date.now() + mins * 60000).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
       const remLabel = remaining >= 1000 ? (remaining / 1000).toFixed(1) + " km" : Math.round(remaining) + " m";
       document.getElementById("navEta").textContent = `⏱ ${mins} min • ${remLabel} • arrivée ${arrival}`;
+      updateMediaSession(
+        `${document.getElementById("hudDist").textContent} — ${document.getElementById("hudInstr").textContent}`,
+        `⏱ ${mins} min • ${remLabel} • arrivée ${arrival}`
+      );
     }
 
     function arriveGuidance() {
       if (!nav || nav.arrived) return;
       nav.arrived = true;
+      if (!simActive && currentRoute) addHistory(currentRoute.destLat, currentRoute.destLon, currentRoute.destName, true);
       stopSimulation();
       speakFR("Vous êtes arrivé à destination.");
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -2649,7 +2891,7 @@
       const bounds = d.coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(d.coords[0], d.coords[0]));
       const isMobile = window.innerWidth <= 768;
       map.fitBounds(bounds, {
-        padding: isMobile ? { top: 110, bottom: Math.round(window.innerHeight * 0.54), left: 36, right: 36 }
+        padding: isMobile ? { top: 110, bottom: sheetPad(), left: 36, right: 36 }
                           : { top: 80, bottom: 70, left: 435, right: 80 }
       });
       setStatus("✅ Dernier itinéraire rechargé (sans réseau).", "ok");
@@ -3013,6 +3255,7 @@
         selectedDest = null;
         if (destPinMarker) { destPinMarker.remove(); destPinMarker = null; }
         clearParkingProposal();
+        updateDestFavBtn();
       }
       showQuickSuggestions(field);
     }
@@ -3030,6 +3273,7 @@
         parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭",
         pharmacy: "💊", medical: "🩺", market: "🛒", admin: "🏛️"
       };
+      personalQuickItems().forEach(i => items.push(i));
       allPlaces.filter(p => p.cat !== "parking").slice(0, 3).forEach(p => {
         items.push({
           icon: icons[p.cat] || "📍",
@@ -3043,7 +3287,7 @@
 
     function searchLocalPlaces(query) {
       const q = query.toLowerCase();
-      const hits = [];
+      const hits = personalMatches(q);
       for (const s of tramStops) {
         if ((s._search || s.name.toLowerCase()).includes(q)) {
           hits.push({ icon: "🚊", title: s.name, subtitle: "Station / Gare à proximité", lat: s.lat, lon: s.lon });
@@ -3142,8 +3386,18 @@
             <div class="sug-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(item.title)}</div>
             <div class="sug-sub" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(item.subtitle || "")}</div>
           </div>
+          ${item.lat != null && !item.isGPS ? `<span class="sug-star ${findFav(item.lat, item.lon) ? "on" : ""}" role="button" aria-label="Ajouter ou retirer des favoris">${findFav(item.lat, item.lon) ? "⭐" : "☆"}</span>` : ""}
         `;
-        btn.addEventListener("mousedown", e => { e.preventDefault(); applyPickedSuggestion(field, item); });
+        btn.addEventListener("mousedown", e => {
+          e.preventDefault();
+          if (e.target.closest(".sug-star")) {
+            toggleFavoriteAt(item.title.replace(/^Bus /, ""), item.lat, item.lon);
+            const s = btn.querySelector(".sug-star"), on = !!findFav(item.lat, item.lon);
+            s.classList.toggle("on", on); s.textContent = on ? "⭐" : "☆";
+            return;
+          }
+          applyPickedSuggestion(field, item);
+        });
         frag.appendChild(btn);
       });
       box.appendChild(frag);
@@ -3232,6 +3486,7 @@
           const c = pos.coords;
           const lat = c.latitude, lon = c.longitude;
           const isFirstFix = userPos === null;
+          if (nativeBgActive && !isFirstFix) return;           // le service GPS natif fournit déjà les positions
 
           // Pendant le guidage, on ignore les positions très imprécises (sauf la toute première)
           if (!isFirstFix && isNavigating && c.accuracy > 100) return;
@@ -3309,6 +3564,7 @@
     function toggleDarkMode() {
       isDark = !isDark;
       document.getElementById("darkModeBtn").setAttribute("aria-pressed", String(isDark));
+      try { localStorage.setItem("gps_pmr_dark", isDark ? "1" : "0"); } catch {}
       refreshTheme();
     }
 
@@ -4430,6 +4686,7 @@
         selectedDest = { name, lat, lon };
         document.getElementById("destInput").value = name;
         placePin("dest", lat, lon, name);
+        updateDestFavBtn();
       }
 
       if (options.isReroute) {
@@ -4474,7 +4731,7 @@
           const isMobile = window.innerWidth <= 768;
           map.fitBounds(bounds, {
             padding: isMobile
-              ? { top: 110, bottom: Math.round(window.innerHeight * 0.54), left: 36, right: 36 }
+              ? { top: 110, bottom: sheetPad(), left: 36, right: 36 }
               : { top: 80, bottom: 70, left: 435, right: 80 }
           });
         }
@@ -4508,6 +4765,7 @@
 
         setStatus(usedFallback ? `⚠️ Côte importante sur ce trajet (pente > ${getWc().maxSlope}%).` : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
         persistLastRoute();
+        if (!options.isReroute && !options.isParkingRoute) addHistory(lat, lon, name, false);
         return true;
       } catch (err) {
         setStatus(navigator.onLine ? "❌ " + err.message : "📴 Hors ligne : calcul impossible. Utilisez « Dernier itinéraire » s'il est disponible.", "error");
@@ -4570,6 +4828,90 @@
       refreshTheme();
     }
 
+    // =====================================================================================
+    // ÉCRAN VERROUILLÉ : maintien de la page en vie + commandes/affichage sur l'écran de verrouillage
+    // =====================================================================================
+    // Un navigateur suspend normalement la page à l'extinction de l'écran. On joue donc en boucle un son inaudible
+    // (la page est alors considérée comme « lecteur audio ») et on déclare la session audio en « lecture »,
+    // ce qui garde en général le GPS et la voix actifs et dirige le son vers les appareils auditifs / écouteurs Bluetooth.
+    // Selon la version d'iOS ce n'est PAS garanti : la solution fiable est l'appli native (Capacitor).
+    let bgAudioEnabled = (() => { try { return localStorage.getItem("gps_pmr_bg_audio") !== "0"; } catch { return true; } })();
+    let keepAliveAudio = null, keepAliveUrl = null, lastMediaTitle = "", lastMediaAt = 0;
+
+    function setBgAudioPref(on) {
+      bgAudioEnabled = !!on;
+      try { localStorage.setItem("gps_pmr_bg_audio", on ? "1" : "0"); } catch {}
+      if (isNavigating) { if (on) startBackgroundKeepAlive(); else stopBackgroundKeepAlive(); }
+    }
+
+    function makeSilentWavUrl() {
+      const sr = 8000, n = sr;                                   // 1 seconde, mono, 16 bits
+      const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+      const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+      w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt ");
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+      w(36, "data"); v.setUint32(40, n * 2, true);
+      for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, i % 2 ? 1 : -1, true);   // quasi-silence (évite un flux « vide »)
+      return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+    }
+
+    function startBackgroundKeepAlive() {
+      if (NATIVE || !bgAudioEnabled) return;
+      try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
+      try {
+        if (!keepAliveAudio) {
+          keepAliveUrl = makeSilentWavUrl();
+          keepAliveAudio = new Audio(keepAliveUrl);
+          keepAliveAudio.loop = true;
+          keepAliveAudio.setAttribute("playsinline", "");
+        }
+        const pr = keepAliveAudio.play();
+        if (pr && pr.catch) pr.catch(() => {});
+      } catch {}
+      setupMediaSession();
+    }
+
+    function stopBackgroundKeepAlive() {
+      try { if (keepAliveAudio) keepAliveAudio.pause(); } catch {}
+      try {
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.playbackState = "none";
+          navigator.mediaSession.metadata = null;
+        }
+      } catch {}
+      lastMediaTitle = "";
+    }
+
+    // Commandes de l'écran de verrouillage : pause / suivant / précédent = répéter la consigne
+    function setupMediaSession() {
+      if (!("mediaSession" in navigator)) return;
+      try {
+        navigator.mediaSession.playbackState = "playing";
+        const resume = () => { try { if (keepAliveAudio) keepAliveAudio.play().catch(() => {}); } catch {} };
+        const repeat = () => { repeatCurrentInstruction(); resume(); };
+        const handlers = { play: resume, pause: repeat, previoustrack: repeat, nexttrack: repeat, seekbackward: repeat, seekforward: repeat };
+        for (const [action, fn] of Object.entries(handlers)) {
+          try { navigator.mediaSession.setActionHandler(action, fn); } catch {}
+        }
+      } catch {}
+    }
+
+    // Affiche la consigne en cours sur l'écran de verrouillage
+    function updateMediaSession(title, subtitle) {
+      if (NATIVE || !bgAudioEnabled || !isNavigating || !("mediaSession" in navigator) || typeof MediaMetadata === "undefined") return;
+      const now = Date.now();
+      if (title === lastMediaTitle && now - lastMediaAt < 5000) return;
+      lastMediaTitle = title; lastMediaAt = now;
+      try { navigator.mediaSession.metadata = new MediaMetadata({ title, artist: subtitle || "", album: "GPS PMR" }); } catch {}
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible" || !isNavigating) return;
+      try { if ("speechSynthesis" in window) window.speechSynthesis.resume(); } catch {}
+      if (bgAudioEnabled && keepAliveAudio && keepAliveAudio.paused) keepAliveAudio.play().catch(() => {});
+    });
+
     // « Y aller » : plein écran carte + guidage vocal en temps réel. simulated = true → parcours simulé (test).
     function startGuidance(simulated = false) {
       if (!currentRoute) return;
@@ -4587,7 +4929,9 @@
       // Doivent être lancés depuis ce clic (autorisations iOS : boussole, synthèse vocale)
       startCompass();
       requestWakeLock();
+      if (!simulated) startNativeBackgroundLocation();
       startAutoNight();
+      startBackgroundKeepAlive();
 
       beginGuidanceState();
       const steps = currentRoute.steps;
@@ -4626,7 +4970,9 @@
       isNavigating = false;
       nav = null;
       stopAutoNight();
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      stopBackgroundKeepAlive();
+      stopNativeBackgroundLocation();
+      cancelSpeech();
       releaseWakeLock();
       document.body.classList.remove("nav-mode");   // réaffiche les menus
       refreshLastRouteBox();
@@ -4692,8 +5038,395 @@
       if (currentRoute) routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName);
     }
 
+
+
+    // ===== Favoris + historique des destinations =====
+    const FAV_KEY = "gps_pmr_favs_v1", HIST_KEY = "gps_pmr_hist_v1";
+    const readLS = k => { try { const a = JSON.parse(localStorage.getItem(k) || "[]"); return Array.isArray(a) ? a.filter(x => x && isFinite(x.lat) && isFinite(x.lon)) : []; } catch { return []; } };
+    const writeLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+    let favs = readLS(FAV_KEY), hist = readLS(HIST_KEY);
+    let placesTab = "fav", favMarkers = [], renamingId = null;
+    try { placesTab = localStorage.getItem("gps_pmr_places_tab") === "hist" ? "hist" : "fav"; } catch {}
+
+    function geoDist(la1, lo1, la2, lo2) {
+      const r = Math.PI / 180, dl = (la2 - la1) * r, dn = (lo2 - lo1) * r * Math.cos((la1 + la2) / 2 * r);
+      return Math.hypot(dl, dn) * 6371000;
+    }
+    const findFav = (lat, lon) => favs.find(f => geoDist(f.lat, f.lon, lat, lon) < 25);
+    function favIcon(name) {
+      const n = (name || "").toLowerCase();
+      if (/domicile|maison|chez moi|home/.test(n)) return "🏠";
+      if (/travail|boulot|bureau|work|entreprise/.test(n)) return "💼";
+      if (/m[ée]decin|docteur|dr |h[ôo]pital|clinique|pharmac/.test(n)) return "🩺";
+      if (/gare|station|tram|arr[êe]t/.test(n)) return "🚉";
+      if (/courses|super|march[ée]|leclerc|carrefour|lidl|intermarch/.test(n)) return "🛒";
+      if (/resto|restaurant|caf[ée]|bar /.test(n)) return "🍽️";
+      return "⭐";
+    }
+    function whenLabel(ts) {
+      const d = new Date(ts), n = new Date(), day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+      const diff = Math.round((day(n) - day(d)) / 864e5);
+      const hh = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      if (diff === 0) return "Aujourd'hui " + hh;
+      if (diff === 1) return "Hier " + hh;
+      return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    }
+    function distLabel(lat, lon) {
+      if (!userPos) return "";
+      const m = geoDist(userPos.lat, userPos.lon, lat, lon);
+      return m < 950 ? Math.round(m / 10) * 10 + " m" : (m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",") + " km";
+    }
+    function saveFavs() { writeLS(FAV_KEY, favs); afterFavChange(); }
+    function afterFavChange() { renderPlaces(); renderFavMarkers(); updateDestFavBtn(); }
+
+    function addFavorite(name, lat, lon) {
+      const f = { id: "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: (name || "Lieu").trim() || "Lieu", lat, lon, ts: Date.now() };
+      favs.push(f); saveFavs(); return f;
+    }
+    function removeFavorite(id) { favs = favs.filter(f => f.id !== id); saveFavs(); }
+    function toggleFavoriteAt(name, lat, lon) {
+      const f = findFav(lat, lon);
+      if (f) { removeFavorite(f.id); setStatus("☆ Retiré des favoris : " + f.name, "info"); }
+      else { addFavorite(name, lat, lon); setStatus("⭐ Ajouté aux favoris : " + name, "ok"); }
+    }
+    function toggleDestFavorite() {
+      if (!selectedDest) { setStatus("Choisissez d'abord une destination pour la mettre en favori.", "info"); return; }
+      toggleFavoriteAt(selectedDest.name, selectedDest.lat, selectedDest.lon);
+    }
+    function updateDestFavBtn() {
+      const b = document.getElementById("destFavBtn"); if (!b) return;
+      const on = !!(selectedDest && findFav(selectedDest.lat, selectedDest.lon));
+      b.classList.toggle("on", on); b.textContent = on ? "⭐" : "☆";
+      b.setAttribute("aria-pressed", String(on));
+      b.setAttribute("aria-label", on ? "Retirer la destination des favoris" : "Ajouter la destination aux favoris");
+    }
+
+    function addHistory(lat, lon, name, visited) {
+      if (!isFinite(lat) || !isFinite(lon) || !name) return;
+      let h = hist.find(x => geoDist(x.lat, x.lon, lat, lon) < 25);
+      if (!h) { h = { name, lat, lon, ts: Date.now(), n: 0, v: 0 }; hist.unshift(h); }
+      h.name = name; h.ts = Date.now();
+      if (visited) h.v = (h.v || 0) + 1; else h.n = (h.n || 0) + 1;
+      hist.sort((a, b) => b.ts - a.ts);
+      if (hist.length > 40) hist.length = 40;
+      writeLS(HIST_KEY, hist);
+      renderPlaces();
+    }
+    function clearHistory() {
+      if (!hist.length) return;
+      if (!confirm("Effacer tout l'historique des destinations ?")) return;
+      hist = []; writeLS(HIST_KEY, hist); renderPlaces();
+    }
+    function removeHistory(ts) { hist = hist.filter(h => h.ts !== ts); writeLS(HIST_KEY, hist); renderPlaces(); }
+
+    function personalQuickItems() {
+      const out = [];
+      const favItems = [...favs].sort(favRank).slice(0, 4);
+      favItems.forEach(f => out.push({ icon: favIcon(f.name), title: f.name, subtitle: "Favori" + (userPos ? " • " + distLabel(f.lat, f.lon) : ""), lat: f.lat, lon: f.lon }));
+      hist.filter(h => !findFav(h.lat, h.lon)).slice(0, 4).forEach(h => out.push({ icon: "🕘", title: h.name, subtitle: "Récent • " + whenLabel(h.ts) + (h.v ? " • ✔ déjà allé" : ""), lat: h.lat, lon: h.lon }));
+      return out;
+    }
+    function personalMatches(q) {
+      if (!q) return [];
+      const out = [];
+      favs.filter(f => f.name.toLowerCase().includes(q)).slice(0, 3).forEach(f => out.push({ icon: favIcon(f.name), title: f.name, subtitle: "Favori", lat: f.lat, lon: f.lon }));
+      hist.filter(h => h.name.toLowerCase().includes(q) && !findFav(h.lat, h.lon)).slice(0, 3).forEach(h => out.push({ icon: "🕘", title: h.name, subtitle: "Récent • " + whenLabel(h.ts), lat: h.lat, lon: h.lon }));
+      return out;
+    }
+    const favRank = (a, b) => { const r = f => favIcon(f.name) === "🏠" ? 0 : favIcon(f.name) === "💼" ? 1 : 2; return r(a) - r(b); };
+
+    function showPlacesTab(tab) {
+      placesTab = tab; renamingId = null;
+      try { localStorage.setItem("gps_pmr_places_tab", tab); } catch {}
+      renderPlaces();
+    }
+    function togglePlacesCard(force) {
+      const c = document.getElementById("placesCard");
+      const collapsed = force !== undefined ? !force : !c.classList.contains("collapsed");
+      c.classList.toggle("collapsed", collapsed);
+      document.getElementById("placesToggle").setAttribute("aria-expanded", String(!collapsed));
+      document.getElementById("placesToggle").textContent = collapsed ? "▸" : "▾";
+      try { localStorage.setItem("gps_pmr_places_collapsed", collapsed ? "1" : "0"); } catch {}
+    }
+
+    function renderPlaces() {
+      const body = document.getElementById("placesBody"); if (!body) return;
+      document.getElementById("plTabFav").classList.toggle("active", placesTab === "fav");
+      document.getElementById("plTabHist").classList.toggle("active", placesTab === "hist");
+      document.getElementById("plTabFav").setAttribute("aria-selected", String(placesTab === "fav"));
+      document.getElementById("plTabHist").setAttribute("aria-selected", String(placesTab === "hist"));
+      document.getElementById("favCount").textContent = favs.length ? "(" + favs.length + ")" : "";
+      document.getElementById("histCount").textContent = hist.length ? "(" + hist.length + ")" : "";
+      const flt = document.getElementById("placesFilter");
+      const list = placesTab === "fav" ? [...favs].sort(favRank) : hist;
+      flt.style.display = list.length > 6 ? "block" : "none";
+      const q = list.length > 6 ? flt.value.trim().toLowerCase() : "";
+      const rows = list.filter(x => !q || x.name.toLowerCase().includes(q));
+      body.innerHTML = "";
+      if (!rows.length) {
+        body.innerHTML = placesTab === "fav"
+          ? '<div class="places-empty">Aucun favori pour l\'instant.<br>Touchez ☆ à côté de la destination, ou ☆ dans une suggestion, ou faites un appui long sur la carte.</div>'
+          : (q ? '<div class="places-empty">Aucun résultat.</div>' : '<div class="places-empty">Votre historique est vide. Les destinations calculées et celles où vous êtes arrivé apparaîtront ici.</div>');
+      }
+      rows.forEach(x => {
+        const isFavTab = placesTab === "fav", key = isFavTab ? x.id : String(x.ts);
+        const row = document.createElement("div");
+        row.className = "place-row"; row.setAttribute("role", "listitem"); row.dataset.key = key;
+        if (isFavTab && renamingId === x.id) {
+          row.innerHTML = '<span class="sug-icon" style="margin-left:8px">' + favIcon(x.name) + '</span><input class="place-edit" maxlength="60" aria-label="Nom du favori" />' +
+            '<div class="place-acts"><button data-act="save" aria-label="Valider">✔️</button></div>';
+          const inp = row.querySelector("input"); inp.value = x.name;
+          inp.addEventListener("keydown", e => { if (e.key === "Enter") commitRename(x.id, inp.value); if (e.key === "Escape") { renamingId = null; renderPlaces(); } });
+          row.querySelector("[data-act=save]").addEventListener("click", () => commitRename(x.id, inp.value));
+          setTimeout(() => { inp.focus(); inp.select(); }, 30);
+        } else {
+          const sub = isFavTab
+            ? ["Favori", distLabel(x.lat, x.lon)].filter(Boolean).join(" • ")
+            : [whenLabel(x.ts), x.v ? "✔ arrivé" + (x.v > 1 ? " ×" + x.v : "") : "", distLabel(x.lat, x.lon)].filter(Boolean).join(" • ");
+          const fv = !!findFav(x.lat, x.lon);
+          row.innerHTML = '<button class="place-main" data-act="go" aria-label="Aller à ' + escapeHTML(x.name) + '"><span class="sug-icon">' + (isFavTab ? favIcon(x.name) : (x.v ? "✅" : "🕘")) + '</span><span class="pm-txt"><b>' + escapeHTML(x.name) + '</b><small>' + escapeHTML(sub) + '</small></span></button>' +
+            '<div class="place-acts">' +
+            (isFavTab ? '<button data-act="rename" aria-label="Renommer" title="Renommer">✏️</button>'
+                      : '<button data-act="star" class="' + (fv ? "on" : "") + '" aria-label="' + (fv ? "Retirer des favoris" : "Ajouter aux favoris") + '" title="Favori">' + (fv ? "⭐" : "☆") + '</button>') +
+            '<button data-act="del" aria-label="Supprimer" title="Supprimer">✕</button></div>';
+        }
+        body.appendChild(row);
+      });
+      const foot = document.getElementById("placesFoot");
+      foot.innerHTML = placesTab === "fav"
+        ? '<button data-act="addme">📍➕ Ma position</button><button data-act="export">⬇️ Exporter</button><button data-act="import">⬆️ Importer</button>'
+        : '<button data-act="clearhist">🗑️ Vider l\'historique</button>';
+    }
+    function commitRename(id, val) {
+      const f = favs.find(x => x.id === id); renamingId = null;
+      if (f && val.trim()) f.name = val.trim();
+      saveFavs();
+    }
+    function findPlace(key) { return placesTab === "fav" ? favs.find(f => f.id === key) : hist.find(h => String(h.ts) === key); }
+    document.getElementById("placesBody").addEventListener("click", e => {
+      const b = e.target.closest("[data-act]"); if (!b) return;
+      const key = b.closest(".place-row").dataset.key, x = findPlace(key); if (!x) return;
+      const act = b.dataset.act;
+      if (act === "go") goToPlace(x);
+      else if (act === "rename") { renamingId = x.id; renderPlaces(); }
+      else if (act === "del") { placesTab === "fav" ? removeFavorite(x.id) : removeHistory(x.ts); }
+      else if (act === "star") toggleFavoriteAt(x.name, x.lat, x.lon);
+    });
+    document.getElementById("placesFoot").addEventListener("click", e => {
+      const b = e.target.closest("[data-act]"); if (!b) return;
+      if (b.dataset.act === "addme") {
+        if (!userPos) { setStatus("Position GPS indisponible pour l'instant.", "info"); return; }
+        const f = addFavorite("Ma position", userPos.lat, userPos.lon); renamingId = f.id; renderPlaces();
+      } else if (b.dataset.act === "export") exportPlaces();
+      else if (b.dataset.act === "import") document.getElementById("placesImport").click();
+      else if (b.dataset.act === "clearhist") clearHistory();
+    });
+
+    function goToPlace(x) {
+      switchTab("map");
+      applyPickedSuggestion("dest", { title: x.name, lat: x.lat, lon: x.lon });
+    }
+    function goToFavId(id) { const f = favs.find(x => x.id === id); if (f) { goToPlace(f); } }
+    function exportPlaces() {
+      const blob = new Blob([JSON.stringify({ app: "gps-pmr", v: 1, favs, hist }, null, 1)], { type: "application/json" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "gps-pmr-lieux.json";
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+      setStatus("⬇️ Favoris et historique exportés.", "ok");
+    }
+    function importPlaces(input) {
+      const file = input.files && input.files[0]; if (!file) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          const d = JSON.parse(rd.result); let nf = 0;
+          (d.favs || []).forEach(f => { if (isFinite(f.lat) && isFinite(f.lon) && !findFav(f.lat, f.lon)) { favs.push({ id: "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: String(f.name || "Lieu").slice(0, 60), lat: +f.lat, lon: +f.lon, ts: f.ts || Date.now() }); nf++; } });
+          (d.hist || []).forEach(h => { if (isFinite(h.lat) && isFinite(h.lon) && !hist.some(x => geoDist(x.lat, x.lon, h.lat, h.lon) < 25)) hist.push({ name: String(h.name || "Lieu").slice(0, 80), lat: +h.lat, lon: +h.lon, ts: h.ts || Date.now(), n: h.n || 0, v: h.v || 0 }); });
+          hist.sort((a, b) => b.ts - a.ts); hist.length = Math.min(hist.length, 40);
+          writeLS(HIST_KEY, hist); saveFavs();
+          setStatus("⬆️ Import terminé : " + nf + " favori(s) ajouté(s).", "ok");
+        } catch { setStatus("❌ Fichier d'import invalide.", "error"); }
+        input.value = "";
+      };
+      rd.readAsText(file);
+    }
+
+    function renderFavMarkers() {
+      favMarkers.forEach(m => m.remove()); favMarkers = [];
+      favs.forEach(f => {
+        const el = document.createElement("div");
+        el.className = "fav-pin"; el.textContent = favIcon(f.name); el.title = f.name;
+        const pop = new maplibregl.Popup({ offset: 16 }).setHTML(
+          '<b>' + favIcon(f.name) + ' ' + escapeHTML(f.name) + '</b><div class="map-menu"><button class="primary" onclick="goToFavId(\'' + f.id + '\')">♿ Y aller</button></div>');
+        favMarkers.push(new maplibregl.Marker({ element: el }).setLngLat([f.lon, f.lat]).setPopup(pop).addTo(map));
+      });
+    }
+
+    // Appui long (mobile) / clic droit (PC) sur la carte : y aller ou ajouter en favori
+    let lpTimer = null, lastMenuTs = 0, mapMenuPopup = null;
+    function openMapMenu(ll) {
+      if (isNavigating || Date.now() - lastMenuTs < 900) return;
+      lastMenuTs = Date.now();
+      if (mapMenuPopup) mapMenuPopup.remove();
+      const la = ll.lat, lo = ll.lng, fv = findFav(la, lo);
+      mapMenuPopup = new maplibregl.Popup({ offset: 8 }).setLngLat([lo, la]).setHTML(
+        '<b>📍 Point sur la carte</b><div class="map-menu"><button class="primary" onclick="mapMenuGo(' + la + ',' + lo + ')">♿ Y aller ici</button>' +
+        (fv ? '' : '<button onclick="mapMenuFav(' + la + ',' + lo + ')">⭐ Ajouter aux favoris</button>') + '</div>').addTo(map);
+    }
+    function mapMenuGo(la, lo) { if (mapMenuPopup) mapMenuPopup.remove(); switchTab("map"); applyPickedSuggestion("dest", { title: "Point sur la carte", lat: la, lon: lo }); }
+    function mapMenuFav(la, lo) {
+      if (mapMenuPopup) mapMenuPopup.remove();
+      showPlacesTab("fav"); const f = addFavorite("Point sur la carte", la, lo); renamingId = f.id; renderPlaces();
+      switchTab("map"); togglePlacesCard(true); toggleSidebar(false);
+      if (isMobileLayout()) setSheet(sheetSnaps()[1], false);
+    }
+    map.on("contextmenu", e => openMapMenu(e.lngLat));
+    map.on("touchstart", e => { if (e.points && e.points.length > 1) return; clearTimeout(lpTimer); lpTimer = setTimeout(() => openMapMenu(e.lngLat), 650); });
+    ["touchend", "touchmove", "touchcancel", "dragstart", "zoomstart"].forEach(ev => map.on(ev, () => clearTimeout(lpTimer)));
+
+    (function initPlaces() {
+      try { if (localStorage.getItem("gps_pmr_places_collapsed") === "1") togglePlacesCard(false); } catch {}
+      renderPlaces(); renderFavMarkers(); updateDestFavBtn();
+    })();
+
+    // ===== Ergonomie PC + mobile =====
+    const isMobileLayout = () => window.innerWidth <= 768;
+    const isLandscapeSmall = () => window.innerWidth <= 900 && window.innerHeight <= 500;
+    function sheetPad() {
+      if (isLandscapeSmall()) return 40;
+      const sb = document.querySelector(".sidebar");
+      return Math.round(sb ? sb.getBoundingClientRect().height + 16 : window.innerHeight * 0.52);
+    }
+    function sheetSnaps() {
+      const h = window.innerHeight;
+      return [Math.min(150, h * 0.22), Math.round(h * 0.52), Math.round(h * 0.88)];
+    }
+    function setSheet(px, remember = true) {
+      const s = sheetSnaps();
+      px = Math.max(s[0], Math.min(s[2], px));
+      document.documentElement.style.setProperty("--sheet-h", px + "px");
+      if (remember) { try { localStorage.setItem("gps_pmr_sheet", String(s.findIndex(v => Math.abs(v - px) < 2))); } catch {} }
+    }
+    function snapSheet(idx) { setSheet(sheetSnaps()[Math.max(0, Math.min(2, idx))]); }
+    function nearestSnap(px, dir) {
+      const s = sheetSnaps();
+      let best = 0;
+      s.forEach((v, i) => { if (Math.abs(v - px) < Math.abs(s[best] - px)) best = i; });
+      if (Math.abs(dir) > 40) { // geste rapide : on passe au cran suivant dans le sens du geste
+        const cur = s.findIndex((v, i) => i === best);
+        best = Math.max(0, Math.min(2, cur + (dir < 0 ? 1 : -1)));
+      }
+      return best;
+    }
+    (function initSheet() {
+      const h = document.getElementById("sheetHandle");
+      const sb = document.querySelector(".sidebar");
+      let startY = 0, startH = 0, lastY = 0, dragging = false;
+      h.addEventListener("pointerdown", e => {
+        dragging = true; startY = lastY = e.clientY; startH = sb.getBoundingClientRect().height;
+        document.body.classList.add("sheet-drag"); h.setPointerCapture(e.pointerId);
+      });
+      h.addEventListener("pointermove", e => {
+        if (!dragging) return;
+        lastY = e.clientY; setSheet(startH + (startY - e.clientY), false);
+      });
+      const end = e => {
+        if (!dragging) return; dragging = false;
+        document.body.classList.remove("sheet-drag");
+        const cur = sb.getBoundingClientRect().height;
+        if (Math.abs(startY - lastY) < 6) { snapSheet(Math.abs(cur - sheetSnaps()[1]) < 20 ? 2 : 1); return; }
+        snapSheet(nearestSnap(cur, 0));
+        setTimeout(() => map.resize(), 260);
+      };
+      h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+      h.addEventListener("keydown", e => {
+        const cur = sb.getBoundingClientRect().height, s = sheetSnaps();
+        const idx = s.reduce((b, v, i) => Math.abs(v - cur) < Math.abs(s[b] - cur) ? i : b, 0);
+        if (e.key === "ArrowUp") { e.preventDefault(); snapSheet(idx + 1); }
+        if (e.key === "ArrowDown") { e.preventDefault(); snapSheet(idx - 1); }
+      });
+      let saved = null; try { saved = localStorage.getItem("gps_pmr_sheet"); } catch {}
+      snapSheet(saved !== null && saved !== "" && !isNaN(+saved) ? +saved : 1);
+      window.addEventListener("resize", () => { if (isMobileLayout()) snapSheet(+(localStorage.getItem("gps_pmr_sheet") ?? 1)); });
+      // Clavier virtuel / saisie d'adresse : on déploie le panneau pour voir les suggestions
+      sb.addEventListener("focusin", e => {
+        if (isMobileLayout() && e.target.matches("input") && sb.getBoundingClientRect().height < sheetSnaps()[1]) setSheet(sheetSnaps()[1], false);
+      });
+      // Quand un itinéraire apparaît : cran moyen, route en haut du panneau
+      const rb = document.getElementById("routeBox");
+      let wasShown = false;
+      new MutationObserver(() => {
+        const shown = rb.style.display !== "none";
+        if (shown && !wasShown && isMobileLayout() && !isNavigating) {
+          const cur = sb.getBoundingClientRect().height;
+          if (cur < sheetSnaps()[1] - 20) setSheet(sheetSnaps()[1], false);
+          document.getElementById("tabMap").scrollTo({ top: 0, behavior: "smooth" });
+        }
+        wasShown = shown;
+      }).observe(rb, { attributes: true, attributeFilter: ["style"] });
+    })();
+
+    function toggleSidebar(force) {
+      const c = force !== undefined ? force : !document.body.classList.contains("sb-collapsed");
+      document.body.classList.toggle("sb-collapsed", c);
+      try { localStorage.setItem("gps_pmr_sb_collapsed", c ? "1" : "0"); } catch {}
+    }
+    function toggleLayersPanel(force) {
+      const p = document.getElementById("layerToggles");
+      const open = force !== undefined ? force : !p.classList.contains("open");
+      p.classList.toggle("open", open);
+      document.getElementById("layersBtn").setAttribute("aria-expanded", String(open));
+    }
+    function toggleLegend() {
+      const l = document.getElementById("legend");
+      const c = l.classList.toggle("collapsed");
+      try { localStorage.setItem("gps_pmr_legend", c ? "1" : "0"); } catch {}
+    }
+    function openHelp() { const d = document.getElementById("helpDlg"); if (d.showModal) d.showModal(); }
+
+    document.addEventListener("keydown", e => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const tag = (e.target.tagName || "").toLowerCase();
+      const typing = tag === "input" || tag === "textarea" || e.target.isContentEditable;
+      if (e.key === "Escape") {
+        if (typing) { e.target.blur(); return; }
+        if (document.getElementById("layerToggles").classList.contains("open")) { toggleLayersPanel(false); return; }
+        return;
+      }
+      if (typing || isNavigating) return;
+      const k = e.key.toLowerCase();
+      if (e.key === "/") { e.preventDefault(); toggleSidebar(false); if (isMobileLayout()) setSheet(sheetSnaps()[1], false); document.getElementById("destInput").focus(); }
+      else if (e.key === "?") openHelp();
+      else if (k === "s") toggleSidebar();
+      else if (k === "f") toggleDestFavorite();
+      else if (k === "h") { toggleSidebar(false); if (isMobileLayout()) setSheet(sheetSnaps()[1], false); switchTab("map"); togglePlacesCard(false); showPlacesTab("hist"); }
+      else if (k === "c") toggleLayersPanel();
+      else if (k === "g") recenterOnStart();
+      else if (k === "r") refreshCurrentZone(true);
+      else if (k === "n") toggleDarkMode();
+      else if (k === "l") toggleLargeMode();
+    });
+
+    // Fermer le panneau des couches en touchant la carte
+    map.on("click", () => { if (isMobileLayout()) toggleLayersPanel(false); });
+
+    // Préférences mémorisées
+    (function restoreUiPrefs() {
+      const g = k => { try { return localStorage.getItem(k); } catch { return null; } };
+      if (g("gps_pmr_dark") === "1") {
+        isDark = true;
+        document.getElementById("darkModeBtn").setAttribute("aria-pressed", "true");
+        refreshTheme();
+      }
+      if (g("gps_pmr_sb_collapsed") === "1" && !isMobileLayout()) toggleSidebar(true);
+      const lg = g("gps_pmr_legend");
+      if (lg === "1" || (lg === null)) document.getElementById("legend").classList.add("collapsed");
+      const lb = document.getElementById("largeModeBtn");
+      if (lb && isLargeMode) { lb.setAttribute("aria-pressed", "true"); lb.style.borderColor = "#007aff"; }
+    })();
+
     map.on("load", () => {
       initSettingsInputsOnce();
+      { const c = document.getElementById("bgAudioChk"); if (c) { c.checked = bgAudioEnabled; if (NATIVE && c.closest("label")) c.closest("label").style.display = "none"; } }
       updateProfileUI();
       updateNetworkBadge();
       refreshLastRouteBox();
