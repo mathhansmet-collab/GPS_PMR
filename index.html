@@ -205,6 +205,18 @@
       flex-shrink: 0;
     }
     .chip.active { background: #007aff; color: #fff; border-color: #007aff; }
+    #dirFineChips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; scrollbar-width: thin; }
+    #dirFineChips .chip { white-space: nowrap; }
+    #dirFineChips { overscroll-behavior-x: contain; }
+    @media (min-width: 769px) { #dirFineChips { flex-wrap: wrap; overflow: visible; } }
+    .rain-card { border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; }
+    .rain-card.wet { background: rgba(0,122,255,0.10); border: 1px solid rgba(0,122,255,0.4); }
+    .rain-card.dry { padding: 0; margin-bottom: 6px; }
+    #tramInfo { background: rgba(88,86,214,0.10); border: 1px solid rgba(88,86,214,0.4); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; }
+    #tramInfo a { color: #007aff; font-weight: 600; }
+    .alt-row { white-space: normal; }
+    .alt-main small { white-space: normal; line-height: 1.3; overflow-wrap: anywhere; }
+    .alt-score { flex: none; }
 
     .dir-item {
       background: var(--card2); border: 1px solid var(--border); border-radius: 14px;
@@ -509,6 +521,48 @@
     @media (max-height: 500px) { .legend { display: none; } }
     .ios-tip { display: none; }
     body.is-ios .ios-tip { display: block; }
+
+    /* ===== Itinéraires alternatifs ===== */
+    .alts { display: flex; flex-direction: column; gap: 5px; margin: 4px 0 8px; }
+    .alt-row { display: flex; align-items: center; gap: 10px; text-align: left; padding: 7px 10px; border-radius: 12px; background: var(--card2); border: 2px solid var(--border); min-height: 52px; }
+    .alt-row.active { border-color: #007aff; background: rgba(0,122,255,0.10); }
+    .alt-ico { font-size: 20px; width: 26px; text-align: center; flex-shrink: 0; }
+    .alt-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .alt-main b { font-size: 13.5px; }
+    .alt-main small { font-size: 11.5px; color: var(--sub); font-weight: 500; }
+    .alt-tag { font-size: 10.5px; font-weight: 800; color: #248a3d; }
+    .alt-score { min-width: 54px; text-align: center; border-radius: 10px; padding: 5px 6px; font-weight: 800; font-size: 13px; line-height: 1.15; }
+    .alt-score small { display: block; font-size: 9.5px; font-weight: 700; opacity: .85; }
+    .s-good { background: rgba(52,199,89,0.2); color: #1f7a37; } .s-mid { background: rgba(245,158,11,0.22); color: #a35a00; }
+    .s-bad { background: rgba(255,59,48,0.18); color: #c0261c; } .s-pend { background: rgba(120,120,128,0.18); color: var(--sub); }
+    body.dark .s-good { color: #5be07f; } body.dark .s-mid { color: #ffb84d; } body.dark .s-bad { color: #ff7a70; }
+
+    /* ===== SOS / suivi / synchro ===== */
+    dialog.big-dlg { border: 1px solid var(--border); border-radius: 20px; background: var(--card2); color: var(--text); width: min(480px, 94vw); max-height: 90dvh; padding: 16px 18px; overflow-y: auto; }
+    dialog.big-dlg::backdrop { background: rgba(0,0,0,0.5); }
+    dialog.big-dlg h2 { margin: 0; font-size: 19px; }
+    .sos-addr { font-weight: 700; font-size: 13.5px; margin: 8px 0; }
+    .sos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+    .sos-big { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 60px; padding: 8px; border-radius: 14px; font-weight: 800; font-size: 14.5px; text-decoration: none; background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .sos-big small { font-weight: 600; font-size: 11px; opacity: .85; }
+    .sos-big.red { background: #dc2626; color: #fff; border: none; } .sos-big.blue { background: #007aff; color: #fff; border: none; }
+    .sos-big[hidden] { display: none; }
+    .live-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 10px; margin: 10px 0; display: flex; flex-direction: column; gap: 6px; }
+    .live-on { color: #dc2626; font-weight: 800; }
+    #hudShare.on { background: #dc2626; color: #fff; animation: navPulse 1.6s infinite ease-out; }
+    #hudSos { background: #dc2626 !important; color: #fff !important; font-size: 17px !important; font-weight: 800; }
+    .dlg-input { margin: 3px 0; background: var(--card); }
+    textarea.dlg-input { width: 100%; min-height: 64px; border-radius: 12px; border: 1px solid var(--border); padding: 8px; font: 12px ui-monospace, monospace; color: var(--text); }
+    .code-box { font: 800 20px ui-monospace, monospace; letter-spacing: .08em; text-align: center; padding: 10px; border-radius: 12px; background: var(--card); border: 1px dashed var(--border); user-select: all; }
+    #arrivedCard { order: -5; display: none; background: rgba(52,199,89,0.16); border-color: rgba(52,199,89,0.5); }
+
+    /* ===== Mode « suivi d'un proche » (lien reçu) ===== */
+    .viewer-card { display: none; position: absolute; z-index: 40; top: calc(10px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(540px, calc(100% - 20px)); background: var(--bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 18px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .viewer-card .vc-title { font-weight: 800; font-size: 17px; }
+    .viewer-card .vc-line { font-size: 13.5px; margin-top: 3px; }
+    .viewer-card.help { background: #dc2626; color: #fff; } .viewer-card.arrived { background: #16a34a; color: #fff; } .viewer-card.stale { background: #b45309; color: #fff; }
+    .viewer-card a { text-decoration: none; }
+    body.viewer .sidebar, body.viewer .floating-right, body.viewer .legend, body.viewer .sb-open, body.viewer .help-fab, body.viewer .nav-hud, body.viewer .nav-side, body.viewer .nav-eta { display: none !important; }
   </style>
 </head>
 <body>
@@ -528,6 +582,8 @@
     <button id="hudRepeat" onclick="repeatCurrentInstruction()" aria-label="Répéter la consigne vocale">🔁</button>
     <button id="hudNight" onclick="toggleNightDuringGuidance()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit">🌙</button>
     <button id="hudMute" onclick="toggleMuteGuidance()" aria-pressed="false" aria-label="Couper ou réactiver la voix">🔊</button>
+    <button id="hudShare" onclick="toggleLiveShare()" aria-pressed="false" aria-label="Partager mon trajet en direct avec un proche">📡</button>
+    <button id="hudSos" onclick="openSos()" aria-label="Besoin d'aide">SOS</button>
     <button id="hudEnd" class="end" onclick="stopGuidance()" aria-label="Terminer le guidage">Fin</button>
   </div>
   <div id="navEta" class="nav-eta" aria-live="off"></div>
@@ -577,6 +633,85 @@
 
   <button id="sbOpen" class="sb-open" onclick="toggleSidebar()" aria-label="Afficher le panneau" title="Afficher le panneau (S)">☰</button>
   <button class="help-fab" onclick="openHelp()" aria-label="Aide et raccourcis clavier" title="Raccourcis (?)">?</button>
+  <!-- SOS COMPLET -->
+  <dialog id="sosDlg" class="big-dlg" aria-labelledby="sosTitle">
+    <div class="row between"><h2 id="sosTitle">🆘 Besoin d'aide</h2><button onclick="closeSos()" aria-label="Fermer">✕</button></div>
+    <div id="sosAddressText" class="sos-addr">Localisation en cours…</div>
+    <div class="sos-grid">
+      <a class="sos-big red" href="tel:112">📞 Appeler le 112<small>urgences</small></a>
+      <a id="sos114" class="sos-big" href="#">📩 SMS au 114<small>sourds / malentendants</small></a>
+      <a id="sosContactSms" class="sos-big blue" href="#" hidden>💬 SMS à <span class="sosCName"></span><small>avec ma position</small></a>
+      <a id="sosContactCall" class="sos-big" href="#" hidden>📞 Appeler <span class="sosCName"></span></a>
+    </div>
+    <div id="sosMessagePreview" class="sub" style="background:var(--card);padding:8px;border-radius:10px;border:1px solid var(--border);word-break:break-word;"></div>
+    <div class="row" style="flex-wrap:wrap;margin-top:8px;">
+      <a id="sosSmsLink" href="#" style="flex:1;text-decoration:none;"><button class="primary" style="width:100%;">💬 SMS</button></a>
+      <a id="sosWaLink" href="#" target="_blank" rel="noopener" style="flex:1;text-decoration:none;"><button class="go" style="width:100%;">📱 WhatsApp</button></a>
+      <button onclick="copySosMessage()" style="flex:1;">📋 Copier</button>
+      <button onclick="shareSosMessage()" style="flex:1;">↗ Partager</button>
+    </div>
+    <div class="live-box">
+      <b>📡 Suivi en direct</b>
+      <div id="liveState" class="sub">Un proche voit votre position sur une carte, mise à jour toutes les quelques secondes.</div>
+      <div class="row" style="flex-wrap:wrap;">
+        <button id="liveToggleBtn" class="primary" onclick="toggleLiveShare()" style="flex:1;">Démarrer le suivi</button>
+        <button onclick="copyLiveLink()" style="flex:1;">🔗 Copier le lien</button>
+      </div>
+    </div>
+    <details>
+      <summary class="sub" style="cursor:pointer;font-weight:700;">⚙️ Mes proches et réglages du suivi</summary>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px;">
+        <input id="safeName" class="dlg-input" placeholder="Mon prénom (affiché au proche)" autocomplete="off" />
+        <input id="safeCName" class="dlg-input" placeholder="Contact d'urgence : nom" autocomplete="off" />
+        <input id="safeCPhone" class="dlg-input" placeholder="Contact d'urgence : téléphone" inputmode="tel" autocomplete="off" />
+        <label class="sub" style="display:flex;gap:8px;align-items:center;"><input id="safeAuto" type="checkbox" style="width:auto;" /> Partager automatiquement mon trajet à chaque « Y aller »</label>
+        <input id="safeBase" class="dlg-input" placeholder="Adresse publique de l'appli (https://…/gps-pmr.html)" inputmode="url" autocomplete="off" />
+        <div class="sub">Le suivi en direct utilise Supabase (réglages dans l'onglet « Pratiques PMR ») et le script SQL fourni. L'adresse publique est celle où le fichier est hébergé : le lien envoyé au proche l'ouvre.</div>
+        <div class="row"><button class="primary" onclick="saveSafetyForm()" style="flex:1;">Enregistrer</button><button onclick="renewLiveLink()" style="flex:1;">🔄 Nouveau lien</button></div>
+      </div>
+    </details>
+  </dialog>
+
+  <!-- SYNCHRONISATION -->
+  <dialog id="syncDlg" class="big-dlg" aria-labelledby="syncTitle">
+    <div class="row between"><h2 id="syncTitle">🔄 Synchroniser mes favoris</h2><button onclick="document.getElementById('syncDlg').close()" aria-label="Fermer">✕</button></div>
+    <div id="syncState" class="sub" style="margin:8px 0;"></div>
+    <div id="syncHasCode" style="display:none;">
+      <div class="sub">Votre code de synchronisation (à saisir sur l'autre appareil) :</div>
+      <div id="syncCodeBox" class="code-box"></div>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap;">
+        <button class="primary" onclick="syncNow(true)" style="flex:1;">🔄 Synchroniser</button>
+        <button onclick="copySyncCode()" style="flex:1;">📋 Copier le code</button>
+        <button onclick="leaveSync()" style="flex:1;">⛔ Arrêter</button>
+      </div>
+    </div>
+    <div id="syncNoCode">
+      <button class="primary" onclick="createSyncCode()" style="width:100%;">✨ Créer mon code de synchronisation</button>
+      <div class="sub" style="margin:10px 0 4px;">…ou saisir le code d'un autre appareil :</div>
+      <div class="row"><input id="syncCodeInput" class="dlg-input" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" autocapitalize="characters" autocomplete="off" /><button onclick="useSyncCode()">OK</button></div>
+    </div>
+    <details style="margin-top:12px;">
+      <summary class="sub" style="cursor:pointer;font-weight:700;">📨 Sans serveur : transfert par code texte</summary>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+        <button onclick="exportTransferCode()">📋 Copier un code de transfert</button>
+        <textarea id="transferBox" class="dlg-input" placeholder="Collez ici un code reçu (PMR1.…) puis touchez Importer"></textarea>
+        <button onclick="importTransferCode()">⬇️ Importer ce code</button>
+        <div class="sub">Envoyez le code par message ou AirDrop vers votre autre appareil.</div>
+      </div>
+    </details>
+  </dialog>
+
+  <!-- SUIVI D'UN PROCHE (page ouverte depuis un lien) -->
+  <div id="viewerCard" class="viewer-card" role="status" aria-live="polite">
+    <div id="viewerTitle" class="vc-title">📍 Suivi en direct</div>
+    <div id="viewerLine" class="vc-line">Connexion…</div>
+    <div id="viewerEta" class="vc-line"></div>
+    <div class="row" style="gap:6px;margin-top:8px;">
+      <button onclick="viewerRecenter()" style="flex:1;">🎯 Recentrer</button>
+      <a id="viewerNav" href="#" target="_blank" rel="noopener" style="flex:1;"><button class="primary" style="width:100%;">🧭 Y aller</button></a>
+    </div>
+  </div>
+
   <dialog id="helpDlg" aria-labelledby="helpTitle">
     <h2 id="helpTitle" style="margin:0 0 4px;font-size:18px;">Raccourcis clavier</h2>
     <table>
@@ -658,6 +793,11 @@
         </div>
 
         <div id="suggestionsBox" class="suggestions-list" style="display:none;" role="listbox" aria-label="Suggestions d'adresses"></div>
+      </div>
+
+      <div class="card" id="arrivedCard" role="status">
+        <div class="row between"><b>🏁 Vous êtes arrivé</b><button onclick="document.getElementById('arrivedCard').style.display='none'" aria-label="Fermer">✕</button></div>
+        <a id="arrivedSms" href="#" style="text-decoration:none;"><button class="go" style="width:100%;margin-top:8px;">✅ Prévenir <span id="arrivedName"></span> : bien arrivé</button></a>
       </div>
 
       <!-- FAVORIS + HISTORIQUE -->
@@ -775,8 +915,11 @@
           <div class="row" style="gap:6px;"><button onclick="startGuidance(true)" aria-label="Tester le guidage avec un parcours simulé">▶️ Tester</button><button class="go" onclick="startGuidance(false)" aria-label="Démarrer le guidage en temps réel">Y aller</button></div>
         </div>
         <div id="routeMeta" class="sub" style="margin:6px 0;"></div>
+        <div id="rainAdvice" style="display:none;" aria-live="polite"></div>
+        <div id="routeAlts" class="alts" role="radiogroup" aria-label="Choix de l'itinéraire" style="display:none;"></div>
         <div id="routeElevationBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
         <div id="routeWeatherBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
+        <div id="tramInfo" style="display:none;"></div>
         <div id="routeToiletsBar" style="margin-bottom:8px;"></div>
         <div id="routeHazardsBar" style="margin-bottom:8px;"></div>
         <div class="row" style="margin-bottom:8px; flex-wrap:wrap; gap:6px;">
@@ -799,21 +942,6 @@
         <div id="irigoflexReason" style="font-size:12.5px; font-weight:600;"></div>
         <div id="pmrTransportDesc" class="sub"></div>
         <div id="pmrTransportActions" class="row"></div>
-      </div>
-
-      <!-- ENCART SOS / PARTAGE POSITION D'AIDE -->
-      <div id="sosBox" class="sos-box" role="region" aria-label="Partage de position d'urgence">
-        <div class="row between">
-          <span class="badge b-no">🆘 PARTAGER MA POSITION</span>
-          <button onclick="document.getElementById('sosBox').style.display='none'" style="padding:2px 8px;font-size:11px;" aria-label="Fermer l'encart d'aide">✕</button>
-        </div>
-        <div id="sosAddressText" style="font-size:13px; font-weight:700;">Localisation en cours…</div>
-        <div id="sosMessagePreview" class="sub" style="background:var(--card2);padding:8px;border-radius:10px;border:1px solid var(--border);word-break:break-word;"></div>
-        <div class="row" style="flex-wrap:wrap;">
-          <a id="sosSmsLink" href="#" style="flex:1; text-decoration:none;"><button class="primary" style="width:100%;">💬 SMS</button></a>
-          <a id="sosWaLink" href="#" target="_blank" rel="noopener" style="flex:1; text-decoration:none;"><button class="go" style="width:100%;">📱 WhatsApp</button></a>
-          <button onclick="copySosMessage()" style="flex:1;">📋 Copier</button>
-        </div>
       </div>
 
       <div class="row">
@@ -855,6 +983,17 @@
         <button class="chip" onclick="setDirAccess('limited', this)">🟠 Partiels</button>
         <button class="chip" onclick="setDirAccess('no', this)">🔴 Non accessibles</button>
       </div>
+
+      <div class="chip-wrap" id="dirFineChips" role="group" aria-label="Filtres détaillés : porte, toilettes, rampe, horaires">
+        <button class="chip" data-f="door80" aria-pressed="false" onclick="toggleFine('door', 80, this)">🚪 Porte ≥ 80 cm</button>
+        <button class="chip" data-f="door90" aria-pressed="false" onclick="toggleFine('door', 90, this)">🚪 ≥ 90 cm</button>
+        <button class="chip" data-f="doorme" aria-pressed="false" onclick="toggleFine('door', -1, this)">🚪 Mon fauteuil</button>
+        <button class="chip" data-f="wc" aria-pressed="false" onclick="toggleFine('wc', true, this)">🚻 WC adaptés</button>
+        <button class="chip" data-f="ramp" aria-pressed="false" onclick="toggleFine('ramp', true, this)">♿ Rampe / plain-pied</button>
+        <button class="chip" data-f="open" aria-pressed="false" onclick="toggleFine('open', true, this)">🟢 Ouvert maintenant</button>
+        <button class="chip" id="fineReset" style="display:none;" onclick="resetFine()">✖ Réinitialiser</button>
+      </div>
+      <div id="dirFineNote" class="sub" style="display:none;"></div>
 
       <details class="card" style="padding:8px 10px;">
         <summary class="sub" style="cursor:pointer; font-weight:700;">☁️ Partage communautaire (Supabase) & Accèslibre</summary>
@@ -924,6 +1063,15 @@
     window.addEventListener("error", e => { if (e && e.message && !/ResizeObserver|Script error|AbortError/.test(e.message)) reportSoftError(e.message); });
     window.addEventListener("unhandledrejection", e => { const m = String((e.reason && (e.reason.message || e.reason)) || ""); if (!/AbortError|aborted|Failed to fetch|NetworkError|Load failed/i.test(m)) reportSoftError(m); e.preventDefault && e.preventDefault(); });
 
+    const VIEWER_ID = (new URLSearchParams(location.search).get("suivi") || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64);
+    let VIEWER_CFG = null;
+    if (VIEWER_ID) {
+      document.body.classList.add("viewer");
+      try {
+        const m = /[#&]s=([^&]+)/.exec(location.hash);
+        if (m) { const o = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, "+").replace(/_/g, "/"))))); if (o.u && o.k && /^https:\/\//.test(o.u)) VIEWER_CFG = { url: String(o.u).replace(/\/+$/, ""), key: String(o.k), enabled: true }; }
+      } catch {}
+    }
     let isDark = false;
     let isLargeMode = false;
     let isMuted = false;
@@ -1032,7 +1180,7 @@
     });
 
     map.on("moveend", () => {
-      if (isNavigating) return;
+      if (isNavigating || VIEWER_ID) return;
       if (map.getZoom() < 11.5) return;
       const c = map.getCenter();
       if (lastFetchedZoneCenter && distanceMeters(lastFetchedZoneCenter.lat, lastFetchedZoneCenter.lon, c.lat, c.lng) < 950) {
@@ -1138,50 +1286,7 @@
       } catch { return ""; }
     }
 
-    async function triggerHelpShare() {
-      const box = document.getElementById("sosBox");
-      const addrEl = document.getElementById("sosAddressText");
-      const msgEl = document.getElementById("sosMessagePreview");
-      box.style.display = "flex";
-
-      let lat, lon;
-      if (userPos) {
-        lat = userPos.lat; lon = userPos.lon;
-      } else {
-        const c = map.getCenter();
-        lat = c.lat; lon = c.lng;
-      }
-
-      addrEl.textContent = "Recherche de l'adresse exacte…";
-      const label = await reverseGeocodeFullAddress(lat, lon);
-      const latS = lat.toFixed(5), lonS = lon.toFixed(5);
-      const mapLink = `https://www.openstreetmap.org/?mlat=${latS}&mlon=${lonS}#map=18/${latS}/${lonS}`;
-      const addrText = label || `${latS}, ${lonS}`;
-
-      addrEl.textContent = `📍 Position actuelle : ${addrText}`;
-      lastSosMessage = `🆘 Besoin d'aide (GPS PMR) : je me trouve à « ${addrText} ». Ma position exacte : ${mapLink}`;
-      msgEl.textContent = lastSosMessage;
-
-      document.getElementById("sosSmsLink").href = `sms:?&body=${encodeURIComponent(lastSosMessage)}`;
-      document.getElementById("sosWaLink").href = `https://wa.me/?text=${encodeURIComponent(lastSosMessage)}`;
-
-      // Sur smartphone, proposer directement le menu de partage natif iOS / Android
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: "Ma position GPS PMR", text: lastSosMessage });
-        } catch {}
-      }
-      box.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-
-    function copySosMessage() {
-      if (!lastSosMessage) return;
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(lastSosMessage).then(() => {
-          setStatus("📋 Message et lien GPS copiés dans le presse-papiers !", "ok");
-        }).catch(() => {});
-      }
-    }
+    function triggerHelpShare() { return openSos(); }
 
     // Toilettes PMR situées à ≤ 120 m le long du tracé calculé (0 ms, sans requête réseau)
     function findToiletsAlongRoute(coords) {
@@ -1463,6 +1568,7 @@
         processGuidance(lat, lon);
         if (autoFollowCamera) followCamera(lat, lon, heading, duration);
       }
+      liveTick();
     }
 
     // Caméra « style GPS » : centrée sur la flèche (décalée vers le bas), carte orientée dans le sens de la marche
@@ -1760,6 +1866,7 @@
     // Icône de manœuvre (types Valhalla)
     function maneuverIcon(step) {
       const t = step && step.type;
+      if (step && step.transit) return "🚊";
       if (t === 4 || t === 5 || t === 6) return "🏁";
       switch (t) {
         case 9:  return "↗️";
@@ -1829,6 +1936,7 @@
       if (!nav || nav.arrived) return;
       nav.arrived = true;
       if (!simActive && currentRoute) addHistory(currentRoute.destLat, currentRoute.destLon, currentRoute.destName, true);
+      if (!simActive) onArrivedSafety();
       stopSimulation();
       speakFR("Vous êtes arrivé à destination.");
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -1904,6 +2012,7 @@
     // MARK: - Supabase (Obstacles partagés + Votes France entière)
 
     function getSupabaseConfig() {
+      if (VIEWER_CFG) return VIEWER_CFG;
       const url = (localStorage.getItem("sb_url") || DEFAULT_SUPABASE_URL).trim().replace(/\/+$/, "");
       const key = (localStorage.getItem("sb_key") || DEFAULT_SUPABASE_KEY).replace(/\s+/g, "");
       return { url, key, enabled: url.startsWith("https://") && key.length > 10 };
@@ -2284,7 +2393,13 @@
         access = "no"; accessLabel = "Non accessible";
       }
 
-      return { access, accessLabel, features, toiletsPMR: hasWC ? "yes" : null };
+      const al = {};
+      if (!isNaN(largeur) && largeur > 0) al.door = Math.round(largeur);
+      if (hasRampe) al.ramp = true;
+      if (hasWC) al.wc = true;
+      if (plainPied === true) al.flat = true;
+      if (hasAscenseur) al.lift = true;
+      return { access, accessLabel, features, toiletsPMR: hasWC ? "yes" : null, al };
     }
 
     async function reverseGeocodeCommune(lat, lon) {
@@ -2820,6 +2935,7 @@
       route.alerts = [...(slopes || []), ...(haz ? haz.alerts : [])].sort((a, b) => a.along - b.along);
       renderAlerts(route);
       drawAlertsOnMap(route);
+      variantAnalysisDone(route);
       persistLastRoute();
     }
 
@@ -2834,7 +2950,8 @@
         bar.innerHTML = `<span class="badge b-unk">🔎 Analyse des pentes et passages difficiles…</span>`;
         return;
       }
-      let html = "";
+      const sc = comfortScore(route.alerts, an, route.steps);
+      let html = sc != null ? `<div class="sub" style="font-weight:700;margin-bottom:4px;">🏅 Confort : ${sc}/100 — ${scoreLabel(sc)}</div>` : "";
       if (route.alerts.length) {
         html += `<div class="sub" style="font-weight:700; margin-bottom:4px;">⚠️ ${route.alerts.length} point${route.alerts.length > 1 ? "s" : ""} d'attention sur le trajet</div>`;
         html += route.alerts.map(a =>
@@ -2945,6 +3062,7 @@
       const d = readLastRoute();
       if (!d) return;
       stopGuidance();
+      resetVariants();
       const savedDest = { name: d.destName, lat: d.destLat, lon: d.destLon };
       selectedDest = null;                                           // évite un recalcul lors du changement de mode
       if (d.mode !== activeTransportTab) switchModeTab(d.mode);
@@ -3710,6 +3828,7 @@
           existing.webUrl = item.web_url;
           if (prof.toiletsPMR) existing.toiletsPMR = prof.toiletsPMR;
           existing.features = Array.from(new Set([...(existing.features || []), ...prof.features]));
+          existing.al = mergeAl(existing.al, prof.al);
           if (!existing.address) existing.address = item.address;
           if (item.activite && !existing.details.includes(item.activite)) {
             existing.details = [item.activite, existing.details].filter(Boolean).join(" • ");
@@ -3720,7 +3839,7 @@
             cat, name: item.name, address: item.address, lat: item.lat, lon: item.lon,
             access: prof.access, accessLabel: prof.accessLabel,
             details: item.activite || "Établissement Accèslibre",
-            toiletsPMR: prof.toiletsPMR, features: prof.features,
+            toiletsPMR: prof.toiletsPMR, features: prof.features, al: prof.al, hours: "",
             isAcceslibre: true, isCommunityVerified: false, webUrl: item.web_url
           };
           merged.push(np);
@@ -4147,8 +4266,15 @@
           }
           if (!cat) continue;
 
+          const osmAl = {};
+          const doorCm = parseWidthCm(t["door:width"] || t["entrance:width"] || t["width:door"]);
+          if (doorCm) osmAl.door = doorCm;
+          if (t["ramp:wheelchair"] === "yes" || t.ramp === "yes" || t["wheelchair:ramp"] === "yes") osmAl.ramp = true;
+          if (toiletsPMR === "yes") osmAl.wc = true;
+          if (wc === "yes" || wc === "designated") osmAl.flat = true;
           places.push({
             id: "osm_" + el.type[0] + el.id, cat, name: t.name || fallbackName, address: addr,
+            al: osmAl, hours: (t.opening_hours || "").slice(0, 300),
             lat: elat, lon: elon, access, accessLabel,
             details: [typeLabel, toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • "),
             toiletsPMR: cat === "toilet" ? "yes" : toiletsPMR,
@@ -4220,7 +4346,7 @@
         id: p.id, cat: p.cat, name: p.name, address: p.address || "", lat: p.lat, lon: p.lon,
         access: p.access, accessLabel: p.accessLabel, details: p.details || "",
         isAcceslibre: !!p.isAcceslibre, isCommunityVerified: !!p.isCommunityVerified, webUrl: p.webUrl || "",
-        featuresJSON: JSON.stringify(p.features || []), color, strokeColor
+        featuresJSON: JSON.stringify(p.features || []), hours: p.hours || "", alJSON: JSON.stringify(p.al || {}), color, strokeColor
       };
     }
 
@@ -4358,7 +4484,7 @@
 
       const poisGeoJSON = {
         type: "FeatureCollection",
-        features: allPlaces.filter(p => p.cat !== "parking" && visibleLayers[p.cat]).map(p => ({
+        features: allPlaces.filter(p => p.cat !== "parking" && visibleLayers[p.cat] && placePassesFine(p)).map(p => ({
           type: "Feature",
           geometry: { type: "Point", coordinates: [p.lon, p.lat] },
           properties: slimPlaceProps(
@@ -4436,6 +4562,7 @@
           if (typeof p.featuresJSON === "string") {
             try { p.features = JSON.parse(p.featuresJSON); } catch { p.features = []; }
           }
+          if (typeof p.alJSON === "string") { try { p.al = JSON.parse(p.alJSON); } catch { p.al = {}; } }
           p.isAcceslibre = p.isAcceslibre === true || p.isAcceslibre === "true";
           p.isCommunityVerified = p.isCommunityVerified === true || p.isCommunityVerified === "true";
           openPlacePopup(p);
@@ -4516,8 +4643,10 @@
             <span class="badge ${badgeClass}">${escapeHTML(p.accessLabel)}</span>
             ${p.isAcceslibre ? `<span class="badge b-gov">🇫🇷 Accèslibre</span>` : ""}
             ${p.isCommunityVerified ? `<span class="badge b-gov">👥 Vérifié usagers</span>` : ""}
+            ${openBadgeHTML(p)}
           </div>
           <div class="sub">${escapeHTML(p.address)}</div>
+          ${p.hours ? `<div class="sub">🕒 ${escapeHTML(String(p.hours).slice(0, 140))}</div>` : ""}
           ${p.details ? `<div style="font-size:12px;">${escapeHTML(p.details)}</div>` : ""}
           ${featsHTML ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">${featsHTML}</div>` : ""}
           ${p.webUrl ? `<a href="${escapeHTML(p.webUrl)}" target="_blank" rel="noopener" style="font-size:12px;color:#007aff;font-weight:600;text-decoration:none;">Voir la fiche Accèslibre ↗</a>` : ""}
@@ -4646,10 +4775,12 @@
       const filtered = items.filter(p => {
         if (dirCategory !== "all" && p.cat !== dirCategory) return false;
         if (dirAccess !== "all" && p.access !== dirAccess) return false;
+        if (!placePassesFine(p)) return false;
         if (q && !(p._search || p.name.toLowerCase()).includes(q)) return false;
         return true;
       });
 
+      refreshFineChips();
       const shown = filtered.slice(0, 75);
       document.getElementById("dirSummary").textContent =
         filtered.length > 75
@@ -4682,6 +4813,7 @@
             <span class="badge ${badgeClass}">${escapeHTML(p.accessLabel)}</span>
             ${p.isAcceslibre ? `<span class="badge b-gov">🇫🇷 Accèslibre</span>` : ""}
             ${p.isCommunityVerified ? `<span class="badge b-gov">👥 Vérifié usagers</span>` : ""}
+            ${openBadgeHTML(p)}
           </div>
           <div class="sub">${escapeHTML(p.address)}${p.details ? " • " + escapeHTML(p.details) : ""}</div>
           ${featsHTML ? `<div style="display:flex;flex-wrap:wrap;gap:4px;">${featsHTML}</div>` : ""}
@@ -4731,7 +4863,7 @@
       return coordinates;
     }
 
-    async function callValhalla(origin, lat, lon, maxGrade) {
+    async function callValhalla(origin, lat, lon, maxGrade, tweak) {
       const isCar = activeTransportTab === "car";
       const curb = getWc().maxCurb;
       // Valhalla n'a pas de réglage de hauteur de bordure : on la traduit en pénalité de marche/bordure
@@ -4751,7 +4883,8 @@
                 type: "wheelchair", step_penalty: stepPenalty, max_grade: maxGrade,
                 use_hills: maxGrade <= 5 ? 0.1 : (maxGrade <= 8 ? 0.3 : 0.5),
                 avoid_bad_surfaces: profile === "manual" ? 1.0 : 0.4,
-                walking_speed: profile === "manual" ? 4.0 : 5.5
+                walking_speed: profile === "manual" ? 4.0 : 5.5,
+                ...(tweak || {})
               }
             },
             exclude_locations: blockedPoints.slice(0, 8),
@@ -4766,6 +4899,7 @@
 
     async function routeTo(lat, lon, name, options = {}) {
       if (!options.isReroute) stopGuidance();
+      resetVariants();
       const isCar = activeTransportTab === "car";
 
       if (!options.isParkingRoute && !options.isReroute) {
@@ -4848,6 +4982,7 @@
           findToiletsAlongRoute(coords);
         }
         analyzeRouteAhead(currentRoute);       // pentes + passages difficiles (largeur, bordures, escaliers)
+        if (!isCar && !options.isReroute && !options.isParkingRoute) loadRouteAlternatives(origin, lat, lon, currentRoute, dist);
 
         setStatus(usedFallback ? `⚠️ Côte importante sur ce trajet (pente > ${getWc().maxSlope}%).` : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
         persistLastRoute();
@@ -5007,6 +5142,7 @@
       isNavigating = true;
       autoFollowCamera = true;
       document.body.classList.add("nav-mode");       // masque les menus du haut et du bas
+      drawAltLines();
       document.getElementById("hudRecenter").classList.remove("attention");
       const mute = document.getElementById("hudMute");
       mute.textContent = isMuted ? "🔇" : "🔊";
@@ -5020,6 +5156,7 @@
       startBackgroundKeepAlive();
 
       beginGuidanceState();
+      if (!simulated && safety.autoShare && getSupabaseConfig().enabled && !live.active) { live.auto = true; startLiveShare("moving"); }
       const steps = currentRoute.steps;
       const first = steps[0] ? steps[0].instruction : "Suivez l'itinéraire";
 
@@ -5061,8 +5198,10 @@
       cancelSpeech();
       releaseWakeLock();
       document.body.classList.remove("nav-mode");   // réaffiche les menus
+      setTimeout(drawAltLines, 80);
       refreshLastRouteBox();
       if (!wasNavigating) return;
+      if (live.active && live.auto && live.status !== "arrived") stopLiveShare();
 
       // La flèche retourne sur la vraie position (ou disparaît s'il n'y a pas de GPS)
       if (wasSimulated) {
@@ -5162,14 +5301,14 @@
       const m = geoDist(userPos.lat, userPos.lon, lat, lon);
       return m < 950 ? Math.round(m / 10) * 10 + " m" : (m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",") + " km";
     }
-    function saveFavs() { writeLS(FAV_KEY, favs); afterFavChange(); }
+    function saveFavs() { writeLS(FAV_KEY, favs); afterFavChange(); scheduleSync(); }
     function afterFavChange() { renderPlaces(); renderFavMarkers(); updateDestFavBtn(); }
 
     function addFavorite(name, lat, lon) {
       const f = { id: "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: (name || "Lieu").trim() || "Lieu", lat, lon, ts: Date.now() };
       favs.push(f); saveFavs(); return f;
     }
-    function removeFavorite(id) { favs = favs.filter(f => f.id !== id); saveFavs(); }
+    function removeFavorite(id) { const f = favs.find(x => x.id === id); if (f) addTomb(f, 0); favs = favs.filter(f => f.id !== id); saveFavs(); }
     function toggleFavoriteAt(name, lat, lon) {
       const f = findFav(lat, lon);
       if (f) { removeFavorite(f.id); setStatus("☆ Retiré des favoris : " + f.name, "info"); }
@@ -5197,13 +5336,14 @@
       if (hist.length > 40) hist.length = 40;
       writeLS(HIST_KEY, hist);
       renderPlaces();
+      scheduleSync();
     }
     function clearHistory() {
       if (!hist.length) return;
       if (!confirm("Effacer tout l'historique des destinations ?")) return;
-      hist = []; writeLS(HIST_KEY, hist); renderPlaces();
+      hist.forEach(h => addTomb(h, 1)); hist = []; writeLS(HIST_KEY, hist); renderPlaces(); scheduleSync();
     }
-    function removeHistory(ts) { hist = hist.filter(h => h.ts !== ts); writeLS(HIST_KEY, hist); renderPlaces(); }
+    function removeHistory(ts) { const h = hist.find(x => x.ts === ts); if (h) addTomb(h, 1); hist = hist.filter(h => h.ts !== ts); writeLS(HIST_KEY, hist); renderPlaces(); scheduleSync(); }
 
     function personalQuickItems() {
       const out = [];
@@ -5280,12 +5420,12 @@
       });
       const foot = document.getElementById("placesFoot");
       foot.innerHTML = placesTab === "fav"
-        ? '<button data-act="addme">📍 Ma position</button><button data-act="export">⬇️ Export</button><button data-act="import">⬆️ Import</button>'
+        ? '<button data-act="addme">📍 Ma position</button><button data-act="sync">🔄 Synchro</button><button data-act="export">⬇️ Export</button><button data-act="import">⬆️ Import</button>'
         : '<button data-act="clearhist">🗑️ Vider l\'historique</button>';
     }
     function commitRename(id, val) {
       const f = favs.find(x => x.id === id); renamingId = null;
-      if (f && val.trim()) f.name = val.trim();
+      if (f && val.trim()) { f.name = val.trim(); f.ts = Date.now(); }
       saveFavs();
     }
     function findPlace(key) { return placesTab === "fav" ? favs.find(f => f.id === key) : hist.find(h => String(h.ts) === key); }
@@ -5303,7 +5443,8 @@
       if (b.dataset.act === "addme") {
         if (!userPos) { setStatus("Position GPS indisponible pour l'instant.", "info"); return; }
         const f = addFavorite("Ma position", userPos.lat, userPos.lon); renamingId = f.id; renderPlaces();
-      } else if (b.dataset.act === "export") exportPlaces();
+      } else if (b.dataset.act === "sync") openSync();
+      else if (b.dataset.act === "export") exportPlaces();
       else if (b.dataset.act === "import") document.getElementById("placesImport").click();
       else if (b.dataset.act === "clearhist") clearHistory();
     });
@@ -5584,7 +5725,1046 @@
     window.addEventListener("resize", () => { clearTimeout(_rz); _rz = setTimeout(() => map.resize(), 120); });
     window.addEventListener("orientationchange", () => setTimeout(() => map.resize(), 300));
 
+
+    // =====================================================================================
+    // ITINÉRAIRES ALTERNATIFS + SCORE DE CONFORT
+    // =====================================================================================
+    const gid = id => document.getElementById(id);
+    const ALT_DEFS = [
+      { key: "balanced", ico: "⚖️", label: "Équilibré", tweak: null },
+      { key: "flat", ico: "🏞️", label: "Plus plat", tweak: () => ({ use_hills: 0, max_grade: Math.max(3, getWc().maxSlope - 2) }) },
+      { key: "short", ico: "📏", label: "Plus court", tweak: () => ({ shortest: true, use_hills: 1 }) },
+      { key: "safe", ico: "🛡️", label: "Plus sûr", tweak: () => ({ step_penalty: 10000, avoid_bad_surfaces: 1, use_hills: 0, walkway_factor: 0.6, sidewalk_factor: 0.5, alley_factor: 3, driveway_factor: 8, use_lit: 1 }) }
+    ];
+    const ALT_COLORS = { balanced: "#007aff", flat: "#34c759", short: "#af52de", safe: "#ff9f0a", tram: "#5856d6" };
+    let variants = { token: 0, list: [], sel: "balanced" };
+
+    const scoreClass = s => s == null ? "s-pend" : s >= 80 ? "s-good" : s >= 60 ? "s-mid" : "s-bad";
+    const scoreLabel = s => s >= 80 ? "très confortable" : s >= 60 ? "correct, quelques points d'attention" : "difficile";
+    const fmtDist = m => m >= 1000 ? (m / 1000).toFixed(1).replace(".", ",") + " km" : Math.round(m) + " m";
+
+    function comfortScore(alerts, an, steps) {
+      if (!an || (an.slopes !== "ok" && an.hazards !== "ok")) return null;
+      let s = 100;
+      (alerts || []).forEach(a => { s -= (a.severity >= 3 ? 18 : a.severity === 2 ? 7 : 3); });
+      s -= Math.min(12, (an.unknownKerbs || 0) * 2);
+      s -= Math.min(10, Math.max(0, (steps ? steps.length : 0) - 3) * 0.7);
+      return Math.max(5, Math.round(s));
+    }
+    function parseTrip(data) {
+      const leg = data.trip.legs[0];
+      const coords = decodePolyline6(leg.shape);
+      const steps = leg.maneuvers.map(m => ({
+        instruction: m.instruction, distance: Math.round(m.length * 1000), type: m.type,
+        verbalPost: m.verbal_post_transition_instruction || "",
+        beginIdx: m.begin_shape_index ?? 0, endIdx: m.end_shape_index ?? (coords.length - 1)
+      }));
+      return { coords, steps, timeSec: data.trip.summary.time, lengthM: Math.round(data.trip.summary.length * 1000) };
+    }
+    function sameRoute(a, b) {
+      if (Math.abs(a.lengthM - b.lengthM) > Math.max(25, 0.04 * b.lengthM)) return false;
+      const geo = makeRouteGeo(b.coords), n = 12;
+      for (let i = 0; i <= n; i++) {
+        const c = a.coords[Math.min(a.coords.length - 1, Math.round(i * (a.coords.length - 1) / n))];
+        if (projectOnRoute(geo, c[1], c[0], 0).off > 14) return false;
+      }
+      return true;
+    }
+    function resetVariants() { variants.token++; variants.list = []; variants.sel = "balanced"; variants.rain = null; variants.rainy = false; renderAlts(); drawAltLines(); }
+
+    async function loadRouteAlternatives(origin, lat, lon, main, mainDistM) {
+      const token = ++variants.token;
+      variants.sel = "balanced";
+      variants.list = [{ ...ALT_DEFS[0], coords: main.coords, steps: main.steps, timeSec: main.timeSec, lengthM: mainDistM, alerts: null, analysis: null, score: null }];
+      renderAlts();
+      const maxGrade = getWc().maxSlope;
+      const results = await Promise.all(ALT_DEFS.slice(1).map(d =>
+        callValhalla(origin, lat, lon, maxGrade, d.tweak()).then(parseTrip).catch(() => null)));
+      if (token !== variants.token) return;
+      ALT_DEFS.slice(1).forEach((d, i) => {
+        const r = results[i];
+        if (!r || !r.coords || r.coords.length < 2) return;
+        if (variants.list.some(v => sameRoute(r, v))) return;
+        variants.list.push({ ...d, ...r, alerts: null, analysis: null, score: null });
+      });
+      renderAlts(); drawAltLines();
+      startRainCheck(token, main);
+      if (isNearAngers(lat, lon)) getIrigoAlerts();
+      addTramVariant(token, origin, lat, lon, main);
+      for (const v of variants.list.slice()) {
+        if (token !== variants.token) return;
+        if (v.key === variants.sel || v.analysis || v.key === "tram") continue;
+        try { await analyzeVariant(v); } catch {}
+        if (token !== variants.token) return;
+        renderAlts();
+      }
+    }
+    async function analyzeVariant(v) {
+      const wc = getWc(), geo = makeRouteGeo(v.coords);
+      const [slopes, haz] = await Promise.all([computeSlopeAlerts(geo, wc).catch(() => null), fetchHazardAlerts(geo, wc).catch(() => null)]);
+      v.analysis = { slopes: slopes ? "ok" : "unavailable", hazards: haz ? "ok" : "unavailable", unknownKerbs: haz ? haz.unknownKerbs : 0 };
+      v.alerts = [...(slopes || []), ...(haz ? haz.alerts : [])].sort((a, b) => a.along - b.along);
+      v.score = comfortScore(v.alerts, v.analysis, v.steps);
+    }
+    function variantAnalysisDone(route) {
+      const key = route.variantKey || "balanced";
+      const v = variants.list.find(x => x.key === key);
+      if (v && route === currentRoute) { v.alerts = route.alerts; v.analysis = route.analysis; v.score = comfortScore(route.alerts, route.analysis, route.steps); }
+      renderAlts();
+    }
+    function renderAlts() {
+      try { renderRainAdvice(); renderTramInfo(); } catch {}
+      if (renderAlts._raf) return;
+      renderAlts._raf = requestAnimationFrame(() => { renderAlts._raf = 0; _renderAltsNow(); });
+    }
+    function _renderAltsNow() {
+      const box = gid("routeAlts"); if (!box) return;
+      const L = variants.list;
+      if (L.length < 2) { box.style.display = "none"; box.innerHTML = ""; return; }
+      const base = L[0];
+      const scored = L.filter(v => v.score != null);
+      let best = null;
+      if (scored.length >= 2) {
+        best = scored.reduce((a, b) => (b.score > a.score || (b.score === a.score && b.timeSec < a.timeSec)) ? b : a);
+        if (scored.every(v => v.score === best.score)) best = null;
+      }
+      box.innerHTML = L.map(v => {
+        const mins = Math.max(1, Math.round(v.timeSec / 60));
+        const d = Math.round((v.timeSec - base.timeSec) / 60);
+        const diff = v === base ? "selon votre profil" : (d === 0 ? "même durée" : (d > 0 ? "+" : "−") + Math.abs(d) + " min");
+        const nAl = v.alerts ? v.alerts.length : null;
+        const sc = v.score;
+        const pill = sc != null ? `${sc}<small>confort</small>` : (v.analysis ? `—<small>confort</small>` : `…<small>analyse</small>`);
+        return `<button type="button" class="alt-row ${v.key === variants.sel ? "active" : ""}" role="radio" aria-checked="${v.key === variants.sel}" data-k="${v.key}" aria-label="${v.label}, ${mins} minutes, ${fmtDist(v.lengthM)}${sc != null ? ", confort " + sc + " sur 100" : ""}">
+          <span class="alt-ico">${v.ico}</span>
+          <span class="alt-main"><b>${v.label}</b>${best === v ? ' <span class="alt-tag">👍 Meilleur confort</span>' : ""}<small>${mins} min • ${fmtDist(v.lengthM)} • ${diff}${nAl != null ? " • " + nAl + " alerte" + (nAl > 1 ? "s" : "") : ""}${altExtra(v)}</small></span>
+          <span class="alt-score ${scoreClass(sc)}">${pill}</span></button>`;
+      }).join("");
+      box.style.display = "flex";
+    }
+    function selectRouteVariant(key) {
+      const v = variants.list.find(x => x.key === key);
+      if (!v || variants.sel === key || isNavigating || !currentRoute) return;
+      variants.sel = key;
+      const old = currentRoute;
+      currentRoute = {
+        geojson: { type: "Feature", geometry: { type: "LineString", coordinates: v.coords } }, coords: v.coords, steps: v.steps,
+        destLat: old.destLat, destLon: old.destLon, destName: old.destName, options: old.options, timeSec: v.timeSec,
+        alerts: v.alerts || [], analysis: v.analysis || null, mode: old.mode, variantKey: key
+      };
+      if (map.getSource("route")) map.getSource("route").setData(currentRoute.geojson);
+      const mins = Math.max(1, Math.round(v.timeSec / 60));
+      gid("routeTitle").textContent = `${old.destName} (${mins} min • ${Math.round(v.lengthM)} m)`;
+      const metaBase = gid("routeMeta").textContent.replace(/ • variante : .*$/, "");
+      gid("routeMeta").textContent = key === "balanced" ? metaBase : `${metaBase} • variante : ${v.label.toLowerCase()}`;
+      gid("routeSteps").innerHTML = v.steps.map(s => `<div class="step-item">${escapeHTML(s.instruction)} (${s.distance} m)</div>`).join("");
+      findToiletsAlongRoute(v.coords);
+      updateRouteElevationAndIrigoFlex(v.coords, v.lengthM, false, old.destLat, old.destLon);
+      if (v.analysis) { renderAlerts(currentRoute); drawAlertsOnMap(currentRoute); }
+      else if (v.key === "tram") {
+        currentRoute.analysis = { slopes: "pending", hazards: "pending", unknownKerbs: 0 }; renderAlerts(currentRoute);
+        analyzeTramVariant(v).then(() => {
+          if (variants.sel !== "tram" || !currentRoute || currentRoute.variantKey !== "tram") return;
+          currentRoute.alerts = v.alerts || []; currentRoute.analysis = v.analysis;
+          renderAlerts(currentRoute); drawAlertsOnMap(currentRoute); renderAlts(); persistLastRoute();
+        }).catch(() => {});
+      } else analyzeRouteAhead(currentRoute);
+      persistLastRoute();
+      renderAlts(); drawAltLines();
+      setStatus(`${v.ico} Itinéraire « ${v.label} » sélectionné.`, "ok");
+    }
+    function drawAltLines() {
+      const feats = (variants.list.length > 1 && !isNavigating)
+        ? variants.list.filter(v => v.key !== variants.sel).map(v => ({ type: "Feature", properties: { key: v.key, color: ALT_COLORS[v.key] || "#888" }, geometry: { type: "LineString", coordinates: v.coords } }))
+        : [];
+      const fc = { type: "FeatureCollection", features: feats };
+      if (map.getSource("route-alts")) { map.getSource("route-alts").setData(fc); return; }
+      if (!map.isStyleLoaded()) { map.once("idle", drawAltLines); return; }
+      map.addSource("route-alts", { type: "geojson", data: fc });
+      map.addLayer({
+        id: "route-alts-layer", type: "line", source: "route-alts", layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": ["get", "color"], "line-width": 5, "line-opacity": 0.8, "line-dasharray": [2, 1.4] }
+      }, map.getLayer("route-line") ? "route-line" : undefined);
+      map.on("click", "route-alts-layer", e => { const k = e.features && e.features[0] && e.features[0].properties.key; if (k) selectRouteVariant(k); });
+      map.on("mouseenter", "route-alts-layer", () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", "route-alts-layer", () => map.getCanvas().style.cursor = "");
+    }
+
+    // =====================================================================================
+    // OUTILS COMMUNS : Supabase RPC, codes aléatoires, base64 URL
+    // =====================================================================================
+    async function rpc(name, body, timeout = 7000) {
+      const sb = getSupabaseConfig();
+      if (!sb.enabled) throw new Error("no-sb");
+      const r = await fetchWithTimeout(`${sb.url}/rest/v1/rpc/${name}`, { method: "POST", headers: supabaseHeaders(sb.key), body: JSON.stringify(body) }, timeout);
+      if (!r.ok) throw new Error("rpc " + r.status);
+      const txt = await r.text();
+      return txt ? JSON.parse(txt) : null;
+    }
+    function randCode(n) {
+      const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", b = new Uint8Array(n);
+      crypto.getRandomValues(b);
+      return [...b].map(x => A[x % 32]).join("");
+    }
+    const b64uEnc = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const b64uDec = s => decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/"))));
+    const cleanPhone = s => (s || "").replace(/[^\d+]/g, "");
+    const smsHref = (phone, body) => `sms:${cleanPhone(phone)}${document.body.classList.contains("is-ios") ? "&" : "?"}body=${encodeURIComponent(body)}`;
+    const hhmm = ts => new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+    // =====================================================================================
+    // SÉCURITÉ : SOS complet, proches, suivi en direct
+    // =====================================================================================
+    const SAFE_KEY = "gps_pmr_safety_v1";
+    let safety = Object.assign({ name: "", cName: "", cPhone: "", autoShare: false, baseUrl: "", liveId: "" },
+      (() => { try { const o = JSON.parse(localStorage.getItem(SAFE_KEY) || "{}"); return o && typeof o === "object" ? o : {}; } catch { return {}; } })());
+    const persistSafety = () => { try { localStorage.setItem(SAFE_KEY, JSON.stringify(safety)); } catch {} };
+    let live = { active: false, timer: null, lastPush: 0, status: "moving", err: 0, auto: false, startedAt: 0, stopT: null };
+    let sosCtx = { lat: 0, lon: 0, addr: "" };
+
+    function liveBaseUrl() {
+      if (safety.baseUrl) return safety.baseUrl.replace(/[?#].*$/, "");
+      if (/^https?:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\])/.test(location.hostname)) return location.origin + location.pathname;
+      return "";
+    }
+    function ensureLiveId() { if (!safety.liveId) { safety.liveId = randCode(24); persistSafety(); } return safety.liveId; }
+    function liveUrl() {
+      const sb = getSupabaseConfig(), base = liveBaseUrl();
+      if (!sb.enabled || !base) return "";
+      return `${base}?suivi=${ensureLiveId()}#s=${b64uEnc(JSON.stringify({ u: sb.url, k: sb.key }))}`;
+    }
+    function fillSafetyForm() {
+      gid("safeName").value = safety.name; gid("safeCName").value = safety.cName; gid("safeCPhone").value = safety.cPhone;
+      gid("safeAuto").checked = !!safety.autoShare; gid("safeBase").value = safety.baseUrl;
+    }
+    function saveSafetyForm() {
+      safety.name = gid("safeName").value.trim().slice(0, 40);
+      safety.cName = gid("safeCName").value.trim().slice(0, 40);
+      safety.cPhone = cleanPhone(gid("safeCPhone").value);
+      safety.autoShare = gid("safeAuto").checked;
+      const b = gid("safeBase").value.trim();
+      safety.baseUrl = /^https?:\/\//i.test(b) ? b : "";
+      persistSafety(); buildSosLinks(); updateLiveUI();
+      setStatus("✅ Réglages des proches enregistrés.", "ok");
+    }
+    function renewLiveLink() {
+      if (live.active) stopLiveShare();
+      safety.liveId = randCode(24); persistSafety(); updateLiveUI();
+      setStatus("🔄 Nouveau lien de suivi créé : l'ancien ne fonctionne plus.", "ok");
+    }
+    function sosPosition() {
+      const p = currentPosition() || userPos;
+      if (p) return { lat: p.lat, lon: p.lon };
+      const c = map.getCenter(); return { lat: c.lat, lon: c.lng };
+    }
+    async function openSos() {
+      const dlg = gid("sosDlg");
+      fillSafetyForm();
+      if (!dlg.open) dlg.showModal();
+      const { lat, lon } = sosPosition();
+      sosCtx = { lat, lon, addr: "" };
+      gid("sosAddressText").textContent = "Recherche de l'adresse exacte…";
+      buildSosLinks(); updateLiveUI();
+      const label = await reverseGeocodeFullAddress(lat, lon);
+      sosCtx.addr = label || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+      // En urgence, le suivi démarre tout seul (si Supabase et l'adresse publique sont réglés)
+      if (getSupabaseConfig().enabled && liveBaseUrl()) {
+        live.status = "help";
+        if (!live.active) { live.auto = false; await startLiveShare("help"); } else pushLive();
+      }
+      buildSosLinks(); updateLiveUI();
+    }
+    function closeSos() { const d = gid("sosDlg"); if (d.open) d.close(); }
+    function buildSosLinks() {
+      const { lat, lon } = sosCtx, latS = lat.toFixed(5), lonS = lon.toFixed(5);
+      const place = sosCtx.addr || `${latS}, ${lonS}`;
+      const osm = `https://www.openstreetmap.org/?mlat=${latS}&mlon=${lonS}#map=18/${latS}/${lonS}`;
+      const link = live.active ? liveUrl() : "";
+      gid("sosAddressText").textContent = `📍 ${place}`;
+      lastSosMessage = `🆘 Besoin d'aide (GPS PMR)${safety.name ? " — " + safety.name : ""} : je me trouve à « ${place} ». Position : ${osm}` + (link ? `\nSuivi en direct : ${link}` : "");
+      gid("sosMessagePreview").textContent = lastSosMessage;
+      gid("sosSmsLink").href = smsHref("", lastSosMessage);
+      gid("sosWaLink").href = `https://wa.me/?text=${encodeURIComponent(lastSosMessage)}`;
+      gid("sos114").href = smsHref("114", `URGENCE — personne en fauteuil roulant en difficulté, besoin d'aide. Adresse : ${place}. GPS : ${latS}, ${lonS}.${safety.name ? " Nom : " + safety.name + "." : ""}`);
+      const has = !!safety.cPhone;
+      ["sosContactSms", "sosContactCall"].forEach(id => { gid(id).hidden = !has; });
+      document.querySelectorAll(".sosCName").forEach(s => { s.textContent = safety.cName || "mon contact"; });
+      if (has) { gid("sosContactSms").href = smsHref(safety.cPhone, lastSosMessage); gid("sosContactCall").href = "tel:" + safety.cPhone; }
+    }
+    function copySosMessage() {
+      if (!lastSosMessage || !navigator.clipboard) return;
+      navigator.clipboard.writeText(lastSosMessage).then(() => setStatus("📋 Message copié.", "ok")).catch(() => {});
+    }
+    async function shareSosMessage() {
+      if (!lastSosMessage) return;
+      if (navigator.share) { try { await navigator.share({ title: "Besoin d'aide — GPS PMR", text: lastSosMessage }); } catch {} } else copySosMessage();
+    }
+
+    async function pushLive() {
+      if (!live.active || simActive) return;
+      const pos = userPos; if (!pos) return;
+      const remaining = nav ? Math.max(0, nav.geo.total - nav.progress) : null;
+      const etaTs = (nav && currentRoute && remaining != null) ? Date.now() + (currentRoute.timeSec || 0) * (remaining / Math.max(1, nav.geo.total)) * 1000 : null;
+      const data = {
+        v: 1, name: safety.name || "", lat: +pos.lat.toFixed(6), lon: +pos.lon.toFixed(6), acc: Math.round(pos.accuracy || 0),
+        spd: Math.round((lastSpeed || 0) * 10) / 10, hdg: Math.round(meState.heading || 0), ts: Date.now(), status: live.status,
+        dest: (currentRoute && isNavigating) ? { name: currentRoute.destName, lat: currentRoute.destLat, lon: currentRoute.destLon } : null,
+        eta: etaTs, remain: remaining != null ? Math.round(remaining) : null
+      };
+      live.lastPush = Date.now();
+      try { await rpc("pmr_live_put", { p_id: ensureLiveId(), p_data: data }); live.err = 0; } catch { live.err++; }
+      updateLiveUI();
+    }
+    function liveTick() { if (live.active && Date.now() - live.lastPush > 7000) pushLive(); }
+    async function startLiveShare(status = "moving") {
+      if (!getSupabaseConfig().enabled) { setStatus("📡 Suivi indisponible : renseignez Supabase (onglet « Pratiques PMR »).", "info"); return false; }
+      if (!liveBaseUrl()) { setStatus("📡 Renseignez l'adresse publique de l'appli (🆘 → Mes proches et réglages).", "info"); return false; }
+      ensureLiveId();
+      live.active = true; live.status = status; live.err = 0; live.startedAt = Date.now();
+      clearInterval(live.timer);
+      live.timer = setInterval(() => {
+        if (Date.now() - live.startedAt > 6 * 3600e3) { stopLiveShare(); return; }
+        if (Date.now() - live.lastPush > 14000) pushLive();
+      }, 5000);
+      await pushLive(); updateLiveUI();
+      return true;
+    }
+    async function stopLiveShare() {
+      const wasActive = live.active;
+      live.active = false; live.auto = false; clearInterval(live.timer); clearTimeout(live.stopT);
+      if (wasActive) { try { await rpc("pmr_live_stop", { p_id: ensureLiveId() }); } catch {} }
+      updateLiveUI();
+    }
+    async function toggleLiveShare() {
+      if (live.active) { await stopLiveShare(); setStatus("📡 Suivi en direct arrêté.", "info"); return; }
+      live.auto = false;
+      if (await startLiveShare("moving")) setStatus("📡 Suivi en direct démarré. Envoyez le lien à votre proche (🆘 → Copier le lien).", "ok");
+    }
+    function copyLiveLink() {
+      const u = liveUrl();
+      if (!u) { setStatus("Lien indisponible : configurez Supabase et l'adresse publique de l'appli.", "info"); return; }
+      if (navigator.clipboard) navigator.clipboard.writeText(u).then(() => setStatus("🔗 Lien de suivi copié : envoyez-le à votre proche.", "ok")).catch(() => {});
+    }
+    function updateLiveUI() {
+      const on = live.active, st = gid("liveState"), btn = gid("liveToggleBtn");
+      if (st) {
+        const sb = getSupabaseConfig();
+        if (!sb.enabled) st.textContent = "Suivi indisponible : renseignez Supabase (onglet « Pratiques PMR ») et exécutez le script SQL fourni.";
+        else if (!liveBaseUrl()) st.textContent = "Renseignez l'adresse publique de l'appli dans les réglages ci-dessous pour créer le lien.";
+        else if (on) st.innerHTML = `<span class="live-on">● Suivi actif</span> — ${live.status === "help" ? "alerte envoyée" : live.status === "arrived" ? "arrivé" : "en déplacement"}${live.err > 2 ? " • ⚠️ réseau instable" : ""}`;
+        else st.textContent = "Un proche voit votre position sur une carte (lien à lui envoyer).";
+      }
+      if (btn) btn.textContent = on ? "⏹ Arrêter le suivi" : "📡 Démarrer le suivi";
+      const hs = gid("hudShare"); if (hs) { hs.classList.toggle("on", on); hs.setAttribute("aria-pressed", String(on)); }
+    }
+    function onArrivedSafety() {
+      if (live.active) {
+        live.status = "arrived"; pushLive(); clearTimeout(live.stopT);
+        live.stopT = setTimeout(() => { if (live.active && live.status === "arrived") stopLiveShare(); }, 10 * 60 * 1000);
+      }
+      if (safety.cPhone && currentRoute) {
+        gid("arrivedName").textContent = safety.cName || "mon contact";
+        gid("arrivedSms").href = smsHref(safety.cPhone, `✅ Bien arrivé à « ${currentRoute.destName} ».`);
+        gid("arrivedCard").style.display = "block";
+        setTimeout(() => { gid("arrivedCard").style.display = "none"; }, 15 * 60 * 1000);
+      }
+      updateLiveUI();
+    }
+
+    // --- Page ouverte depuis un lien de suivi (proche) ---
+    let viewer = { moved: false, last: null, fetchedAt: 0, destKey: "" };
+    function initViewer() {
+      gid("viewerCard").style.display = "block";
+      map.on("dragstart", () => { viewer.moved = true; });
+      viewerPoll(); setInterval(viewerPoll, 5000);
+      setInterval(() => { if (viewer.last) renderViewer(viewer.last); }, 1000);
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") viewerPoll(); });
+    }
+    async function viewerPoll() {
+      try {
+        const d = await rpc("pmr_live_get", { p_id: VIEWER_ID }, 7000);
+        viewer.fetchedAt = Date.now(); viewer.last = d; renderViewer(d, true);
+      } catch { gid("viewerLine").textContent = "Connexion impossible… nouvelle tentative en cours."; }
+    }
+    function renderViewer(d, fresh) {
+      const card = gid("viewerCard");
+      if (!d) { card.className = "viewer-card"; gid("viewerTitle").textContent = "📍 Suivi en direct"; gid("viewerLine").textContent = "Aucun partage en cours pour ce lien."; gid("viewerEta").textContent = ""; return; }
+      const name = (d.name || "").trim() || "Votre proche";
+      const age = d.age_s != null ? d.age_s + (Date.now() - viewer.fetchedAt) / 1000 : (Date.now() - d.ts) / 1000;
+      const ageTxt = age < 10 ? "à l'instant" : age < 60 ? `il y a ${Math.round(age)} s` : `il y a ${Math.round(age / 60)} min`;
+      let cls = "", title = `📍 ${name}`, line = `Position mise à jour ${ageTxt}`;
+      if (d.status === "stopped") { title = `📍 ${name}`; line = "Le partage de position est terminé."; }
+      else if (d.status === "arrived") { cls = " arrived"; title = `✅ ${name} est bien arrivé(e)`; line = `Dernière position ${ageTxt}`; }
+      else if (d.status === "help") { cls = " help"; title = `🆘 ${name} a demandé de l'aide`; line = `Position ${ageTxt} — appelez rapidement`; }
+      else if (age > 120) { cls = " stale"; title = `📍 ${name}`; line = `Signal perdu depuis ${Math.round(age / 60)} min — dernière position affichée`; }
+      card.className = "viewer-card" + cls;
+      gid("viewerTitle").textContent = title; gid("viewerLine").textContent = line;
+      const bits = [];
+      if (d.dest && d.dest.name) bits.push("🏁 vers " + d.dest.name);
+      if (d.eta && d.status === "moving") bits.push("arrivée vers " + hhmm(d.eta));
+      if (d.remain != null && d.status === "moving") bits.push("reste " + fmtDist(d.remain));
+      if (d.spd > 0.3 && d.status === "moving") bits.push(Math.round(d.spd * 3.6) + " km/h");
+      gid("viewerEta").textContent = bits.join(" • ");
+      if (isFinite(d.lat) && isFinite(d.lon)) {
+        gid("viewerNav").href = `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lon}`;
+        if (fresh) {
+          if (!meMarker) { placeMe(d.lat, d.lon, d.hdg || 0); map.jumpTo({ center: [d.lon, d.lat], zoom: 16.2 }); }
+          else moveMe(d.lat, d.lon, d.hdg || 0, 1500);
+          if (!viewer.moved) map.easeTo({ center: [d.lon, d.lat], duration: 1000 });
+          if (d.dest && isFinite(d.dest.lat)) { const k = d.dest.lat + "," + d.dest.lon; if (viewer.destKey !== k) { viewer.destKey = k; placePin("dest", d.dest.lat, d.dest.lon, d.dest.name || "Destination"); } }
+          if (d.status === "help" && navigator.vibrate) navigator.vibrate([300, 150, 300]);
+        }
+      }
+      document.title = (d.status === "help" ? "🆘 " : "") + title;
+    }
+    function viewerRecenter() { viewer.moved = false; const d = viewer.last; if (d && isFinite(d.lat)) map.easeTo({ center: [d.lon, d.lat], zoom: 16.2 }); }
+
+    // =====================================================================================
+    // SYNCHRONISATION DES FAVORIS ET DE L'HISTORIQUE (PC ↔ iPhone)
+    // =====================================================================================
+    const SYNC_KEY = "gps_pmr_sync_v1", TOMB_KEY = "gps_pmr_tomb_v1";
+    let syncCode = (() => { try { return localStorage.getItem(SYNC_KEY) || ""; } catch { return ""; } })();
+    let tomb = readLS(TOMB_KEY);
+    let syncBusy = false, syncTimer = null, syncLast = 0, syncMsg = "", lastSyncHash = "";
+    const fmtCode = c => c.replace(/(.{5})(?=.)/g, "$1-");
+    const normCode = s => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+    function addTomb(x, h) {
+      tomb = tomb.filter(t => !(t.h === h && geoDist(t.lat, t.lon, x.lat, x.lon) < 25));
+      tomb.push({ lat: x.lat, lon: x.lon, ts: Date.now(), h });
+      if (tomb.length > 300) tomb = tomb.slice(-300);
+      writeLS(TOMB_KEY, tomb);
+    }
+    const packLocal = () => ({ v: 1, favs, tomb, hist, upd: Date.now() });
+    const hashLocal = () => JSON.stringify({
+      f: favs.map(f => [f.name, +f.lat.toFixed(5), +f.lon.toFixed(5)]).sort(),
+      t: tomb.map(t => [t.h, +t.lat.toFixed(5), +t.lon.toFixed(5), t.ts]).sort(),
+      h: hist.map(h => [+h.lat.toFixed(5), +h.lon.toFixed(5), h.v || 0, h.n || 0]).sort()
+    });
+    function mergeData(r) {
+      if (!r || typeof r !== "object") return;
+      const ok = x => x && isFinite(x.lat) && isFinite(x.lon);
+      const near = (a, b) => geoDist(a.lat, a.lon, b.lat, b.lon) < 25;
+      const cutoff = Date.now() - 90 * 864e5;
+      const T = [];
+      [...tomb, ...(Array.isArray(r.tomb) ? r.tomb : [])].filter(ok).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(x => {
+        const h = x.h ? 1 : 0;
+        if ((x.ts || 0) > cutoff && !T.some(y => y.h === h && near(x, y))) T.push({ lat: +x.lat, lon: +x.lon, ts: x.ts || 0, h });
+      });
+      const killed = (x, h) => T.some(t => t.h === h && near(t, x) && t.ts >= (x.ts || 0));
+      const F = [];
+      [...favs, ...(Array.isArray(r.favs) ? r.favs : [])].filter(ok).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(f => {
+        if (killed(f, 0) || F.some(g => near(g, f))) return;
+        F.push({ id: f.id || ("f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), name: String(f.name || "Lieu").slice(0, 60), lat: +f.lat, lon: +f.lon, ts: f.ts || Date.now() });
+      });
+      const H = [];
+      [...hist, ...(Array.isArray(r.hist) ? r.hist : [])].filter(ok).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(h => {
+        if (killed(h, 1)) return;
+        const g = H.find(x => near(x, h));
+        if (g) { g.n = Math.max(g.n || 0, h.n || 0); g.v = Math.max(g.v || 0, h.v || 0); }
+        else H.push({ name: String(h.name || "Lieu").slice(0, 80), lat: +h.lat, lon: +h.lon, ts: h.ts || Date.now(), n: h.n || 0, v: h.v || 0 });
+      });
+      H.sort((a, b) => b.ts - a.ts); H.length = Math.min(H.length, 40);
+      tomb = T; favs = F; hist = H;
+      writeLS(TOMB_KEY, tomb); writeLS(FAV_KEY, favs); writeLS(HIST_KEY, hist);
+      afterFavChange(); renderPlaces();
+    }
+    async function syncNow(manual) {
+      if (!syncCode || syncBusy) return;
+      syncBusy = true;
+      try {
+        const remote = await rpc("pmr_sync_get", { p_code: syncCode });
+        if (remote) mergeData(remote);
+        const h = hashLocal();
+        if (!remote || h !== lastSyncHash) { await rpc("pmr_sync_put", { p_code: syncCode, p_data: packLocal() }); }
+        lastSyncHash = h; syncLast = Date.now();
+        syncMsg = `✔ Synchronisé à ${hhmm(syncLast)} — ${favs.length} favori${favs.length > 1 ? "s" : ""}, ${hist.length} récent${hist.length > 1 ? "s" : ""}.`;
+        if (manual) setStatus("🔄 Favoris et historique synchronisés.", "ok");
+      } catch (e) {
+        syncMsg = e.message === "no-sb" ? "Supabase n'est pas configuré." : "Synchronisation impossible pour l'instant (hors ligne ou script SQL absent). Nouvel essai automatique.";
+      } finally { syncBusy = false; updateSyncUI(); }
+    }
+    function scheduleSync() { if (!syncCode || VIEWER_ID) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 4000); }
+    function openSync() { updateSyncUI(); const d = gid("syncDlg"); if (!d.open) d.showModal(); }
+    function updateSyncUI() {
+      const has = !!syncCode;
+      gid("syncHasCode").style.display = has ? "block" : "none";
+      gid("syncNoCode").style.display = has ? "none" : "block";
+      if (has) gid("syncCodeBox").textContent = fmtCode(syncCode);
+      gid("syncState").textContent = !getSupabaseConfig().enabled
+        ? "Supabase n'est pas configuré : la synchro automatique est indisponible. Utilisez le transfert par code texte ci-dessous."
+        : (syncMsg || (has ? "Synchronisation active." : "Créez un code sur cet appareil, puis saisissez-le sur l'autre."));
+    }
+    async function createSyncCode() {
+      if (!getSupabaseConfig().enabled) { updateSyncUI(); return; }
+      syncCode = randCode(20); try { localStorage.setItem(SYNC_KEY, syncCode); } catch {}
+      lastSyncHash = ""; updateSyncUI(); await syncNow(true);
+    }
+    async function useSyncCode() {
+      const c = normCode(gid("syncCodeInput").value);
+      if (c.length < 16) { syncMsg = "Code invalide : il comporte 20 caractères."; updateSyncUI(); return; }
+      syncCode = c; try { localStorage.setItem(SYNC_KEY, c); } catch {}
+      lastSyncHash = ""; updateSyncUI(); await syncNow(true);
+    }
+    function leaveSync() { syncCode = ""; syncMsg = ""; try { localStorage.removeItem(SYNC_KEY); } catch {} updateSyncUI(); }
+    function copySyncCode() { if (navigator.clipboard && syncCode) navigator.clipboard.writeText(fmtCode(syncCode)).then(() => setStatus("📋 Code copié.", "ok")).catch(() => {}); }
+    function exportTransferCode() {
+      const code = "PMR1." + b64uEnc(JSON.stringify({ v: 1, favs, tomb }));
+      gid("transferBox").value = code;
+      if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => setStatus("📋 Code de transfert copié.", "ok")).catch(() => {});
+    }
+    function importTransferCode() {
+      const raw = gid("transferBox").value.replace(/\s+/g, "");
+      try {
+        if (!raw.startsWith("PMR1.")) throw 0;
+        const d = JSON.parse(b64uDec(raw.slice(5)));
+        mergeData(d); scheduleSync();
+        setStatus(`⬇️ Code importé : ${favs.length} favori${favs.length > 1 ? "s" : ""} au total.`, "ok");
+        gid("transferBox").value = "";
+      } catch { setStatus("❌ Code de transfert invalide.", "error"); }
+    }
+
+    (function initSafetySync() {
+      gid("routeAlts").addEventListener("click", e => { const b = e.target.closest("[data-k]"); if (b) selectRouteVariant(b.dataset.k); });
+      if (VIEWER_ID) return;
+      updateLiveUI(); updateSyncUI();
+      if (syncCode) setTimeout(() => syncNow(false), 2500);
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && syncCode && Date.now() - syncLast > 30000) syncNow(false); });
+    })();
+
+    // ===== Horaires OpenStreetMap (opening_hours) : « ouvert maintenant » =====
+    const OH_DAYS = { Mo: 0, Tu: 1, We: 2, Th: 3, Fr: 4, Sa: 5, Su: 6 };
+    const _ohCache = new Map();
+    // Analyse une valeur opening_hours simple. Retourne { days: [7 listes d'intervalles en minutes] } ou null si non gérée.
+    function parseOpeningHours(str) {
+      if (!str || typeof str !== "string") return null;
+      if (_ohCache.has(str)) return _ohCache.get(str);
+      let res = null;
+      try { res = _parseOH(str); } catch { res = null; }
+      if (_ohCache.size > 3000) _ohCache.clear();
+      _ohCache.set(str, res);
+      return res;
+    }
+    function _parseOH(src) {
+      let s = src.trim().replace(/\s+/g, " ");
+      if (/^24\/7$/i.test(s)) return { days: Array.from({ length: 7 }, () => [[0, 1440]]) };
+      if (/sunrise|sunset|dawn|dusk|week|easter|\[|"|\|\||\+|[A-Z][a-z]{2}\s*\d|(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/.test(s)) return null;
+      const days = Array.from({ length: 7 }, () => null);      // null = aucune règle → fermé
+      const dayIdx = tok => OH_DAYS[tok];
+      const expandDays = spec => {
+        const out = new Set();
+        for (const part of spec.split(",")) {
+          const p = part.trim(); if (!p) continue;
+          const m = p.match(/^(Mo|Tu|We|Th|Fr|Sa|Su)(?:-(Mo|Tu|We|Th|Fr|Sa|Su))?$/);
+          if (!m) return null;
+          const a = dayIdx(m[1]), b = m[2] ? dayIdx(m[2]) : a;
+          for (let d = a, n = 0; n < 8; n++, d = (d + 1) % 7) { out.add(d); if (d === b) break; }
+        }
+        return out;
+      };
+      const parseTimes = spec => {
+        const out = [];
+        for (const part of spec.split(",")) {
+          const m = part.trim().match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/);
+          if (!m) return null;
+          const a = (+m[1]) * 60 + (+m[2]);
+          let b = (+m[3]) * 60 + (+m[4]);
+          if (a > 1440 || b > 2880 || (+m[2]) > 59 || (+m[4]) > 59) return null;
+          if (b <= a) b += 1440;                                // passe minuit
+          out.push([a, b]);
+        }
+        return out;
+      };
+      let any = false;
+      for (const rawRule of s.split(";")) {
+        const rule = rawRule.trim(); if (!rule) continue;
+        if (/^(PH|SH)\b/.test(rule)) continue;                // jours fériés / vacances : non gérés, ignorés
+        let pending = new Set(), addTo = new Map();            // jour → intervalles (ajout dans la même règle)
+        const pieces = rule.split(/,\s*(?=(?:Mo|Tu|We|Th|Fr|Sa|Su|PH|SH)\b)/);
+        let allDays = null;
+        for (const pieceRaw of pieces) {
+          let piece = pieceRaw.trim();
+          if (/^(PH|SH)\b/.test(piece)) continue;
+          let dspec = "", rest = piece;
+          const dm = piece.match(/^((?:(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?)(?:,(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?)*)\s*(.*)$/);
+          if (dm) { dspec = dm[1]; rest = dm[2]; }
+          const ds = dspec ? expandDays(dspec) : new Set([0, 1, 2, 3, 4, 5, 6]);
+          if (!ds) return null;
+          if (!rest) { ds.forEach(d => pending.add(d)); continue; }      // jours sans heures : on attend la suite
+          ds.forEach(d => pending.add(d));
+          let ivs;
+          if (/^(off|closed)$/i.test(rest)) ivs = [];
+          else if (/^open$/i.test(rest)) ivs = [[0, 1440]];
+          else { ivs = parseTimes(rest); if (!ivs) return null; }
+          pending.forEach(d => addTo.set(d, (addTo.get(d) || []).concat(ivs)));
+          pending = new Set();
+        }
+        if (pending.size) return null;
+        addTo.forEach((ivs, d) => { days[d] = ivs; any = true; });
+      }
+      if (!any) return null;
+      return { days: days.map(x => x || []) };
+    }
+    let _parisFmt = null, _parisMemo = { k: -1, v: null };
+    function parisClock(date) {
+      const d = date || new Date(), k = Math.floor(d.getTime() / 60000);
+      if (_parisMemo.k === k) return _parisMemo.v;
+      if (!_parisFmt) _parisFmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+      const o = {}; _parisFmt.formatToParts(d).forEach(p => { o[p.type] = p.value; });
+      const wd = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 }[o.weekday];
+      const v = { wd, min: (+o.hour) * 60 + (+o.minute) };
+      _parisMemo = { k, v };
+      return v;
+    }
+    // true = ouvert, false = fermé, null = horaires absents ou non interprétables
+    function isOpenNow(str, date) {
+      const p = parseOpeningHours(str);
+      if (!p) return null;
+      const { wd, min } = parisClock(date);
+      if (p.days[wd].some(([a, b]) => min >= a && min < b)) return true;
+      const prev = p.days[(wd + 6) % 7];
+      if (prev.some(([a, b]) => b > 1440 && min + 1440 >= a && min + 1440 < b)) return true;
+      return false;
+    }
+    // Prochaine heure de fermeture / ouverture, pour le libellé (« jusqu'à 19:00 »)
+    function openingNote(str, date) {
+      const p = parseOpeningHours(str); if (!p) return "";
+      const { wd, min } = parisClock(date);
+      const fmt = m => { m %= 1440; return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); };
+      const open = isOpenNow(str, date);
+      if (open) {
+        for (const [a, b] of p.days[wd]) if (min >= a && min < b) return b >= 1440 && a === 0 && b === 1440 ? "" : "jusqu'à " + fmt(b);
+        for (const [a, b] of p.days[(wd + 6) % 7]) if (b > 1440 && min + 1440 >= a && min + 1440 < b) return "jusqu'à " + fmt(b);
+        return "";
+      }
+      const later = p.days[wd].filter(([a]) => a > min).sort((x, y) => x[0] - y[0])[0];
+      if (later) return "ouvre à " + fmt(later[0]);
+      return "";
+    }
+
+    // ===== Filtres fins (Accèslibre + OSM) =====
+    const fineFilters = { door: 0, wc: false, ramp: false, open: false };
+    function parseWidthCm(v) {
+      if (v == null || v === "") return null;
+      const m = String(v).replace(",", ".").match(/(\d+(?:\.\d+)?)\s*(cm|m)?/i);
+      if (!m) return null;
+      const x = parseFloat(m[1]); if (!isFinite(x) || x <= 0) return null;
+      const u = (m[2] || "").toLowerCase();
+      const cm = u === "cm" ? x : (u === "m" || x < 10 ? x * 100 : x);
+      return cm >= 30 && cm <= 400 ? Math.round(cm) : null;
+    }
+    function mergeAl(a, b) {
+      const o = Object.assign({}, a || {});
+      if (!b) return o;
+      if (b.door) o.door = b.door;
+      ["ramp", "wc", "flat", "lift"].forEach(k => { if (b[k]) o[k] = true; });
+      return o;
+    }
+    function fineActive() { return fineFilters.door > 0 || fineFilters.door === -1 || fineFilters.wc || fineFilters.ramp || fineFilters.open; }
+    function doorThreshold() { return fineFilters.door === -1 ? (getWc().width || 70) + 10 : fineFilters.door; }
+    // Un lieu passe-t-il les filtres fins ? (lieux seulement : parkings / arrêts exclus dès qu'un filtre est actif)
+    function placePassesFine(p) {
+      if (!fineActive()) return true;
+      if (p.cat === "tram" || p.cat === "bus" || p.cat === "parking") return false;
+      const al = p.al || {};
+      if (fineFilters.door !== 0) { const t = doorThreshold(); if (!(al.door >= t)) return false; }
+      if (fineFilters.wc && !(al.wc || p.toiletsPMR === "yes" || p.cat === "toilet")) return false;
+      if (fineFilters.ramp && !(al.ramp || al.flat)) return false;
+      if (fineFilters.open && isOpenNow(p.hours) !== true) return false;
+      return true;
+    }
+    function applyFineChange() {
+      refreshFineChips();
+      renderDirectory();
+      if (typeof renderMapSourcesAndLayers === "function") renderMapSourcesAndLayers();
+      try { localStorage.setItem("gps_pmr_fine", JSON.stringify(fineFilters)); } catch {}
+    }
+    function toggleFine(key, val, btn) {
+      if (key === "door") fineFilters.door = fineFilters.door === val ? 0 : val;
+      else fineFilters[key] = !fineFilters[key];
+      applyFineChange();
+    }
+    function resetFine() { fineFilters.door = 0; fineFilters.wc = fineFilters.ramp = fineFilters.open = false; applyFineChange(); }
+    (function restoreFine() {
+      try {
+        const o = JSON.parse(localStorage.getItem("gps_pmr_fine") || "null");
+        if (o && typeof o === "object") { fineFilters.door = [0, 80, 90, -1].includes(o.door) ? o.door : 0; fineFilters.wc = !!o.wc; fineFilters.ramp = !!o.ramp; fineFilters.open = !!o.open; }
+      } catch {}
+    })();
+    function refreshFineChips() {
+      const set = (id, on) => { const el = document.querySelector(`#dirFineChips [data-f="${id}"]`); if (el) { el.classList.toggle("active", !!on); el.setAttribute("aria-pressed", on ? "true" : "false"); } };
+      set("door80", fineFilters.door === 80); set("door90", fineFilters.door === 90); set("doorme", fineFilters.door === -1);
+      set("wc", fineFilters.wc); set("ramp", fineFilters.ramp); set("open", fineFilters.open);
+      const me = document.querySelector('#dirFineChips [data-f="doorme"]');
+      if (me) me.textContent = `🚪 Mon fauteuil (≥ ${(getWc().width || 70) + 10} cm)`;
+      const rs = gid("fineReset"); if (rs) rs.style.display = fineActive() ? "" : "none";
+      const note = gid("dirFineNote");
+      if (note) {
+        const bits = [];
+        if (fineFilters.door !== 0) bits.push("largeur de porte renseignée dans Accèslibre/OSM");
+        if (fineFilters.open) bits.push("horaires OpenStreetMap interprétables");
+        note.style.display = fineActive() ? "block" : "none";
+        note.textContent = fineActive() ? "Seuls les lieux avec " + (bits.length ? bits.join(" et ") : "cette information renseignée") + " sont listés (un lieu non renseigné n'est pas forcément inaccessible)." : "";
+      }
+    }
+    function openBadgeHTML(p) {
+      const st = isOpenNow(p.hours);
+      if (st === null) return "";
+      const note = openingNote(p.hours);
+      return st ? `<span class="badge b-yes">🟢 Ouvert${note ? " " + escapeHTML(note) : ""}</span>`
+                : `<span class="badge b-no">🔴 Fermé${note ? " • " + escapeHTML(note) : ""}</span>`;
+    }
+
+    // =====================================================================================
+    // TRAM + MARCHE, avec alertes Irigo (flux GTFS-RT « service alerts » décodé sans bibliothèque)
+    // =====================================================================================
+    const IRIGO_ALERTS_URL = "https://notify.ratpdev.com/api/networks/RD%20ANGERS/alerts/gtfsrt";
+    function pbVarint(b, i) { let r = 0, m = 1, c; do { c = b[i++]; r += (c & 0x7f) * m; m *= 128; } while ((c & 0x80) && i < b.length); return [r, i]; }
+    function pbFields(b, s, e) {
+      const out = []; let i = s;
+      while (i < e) {
+        let t; [t, i] = pbVarint(b, i);
+        const f = Math.floor(t / 8), w = t % 8;
+        if (w === 0) { let v; [v, i] = pbVarint(b, i); out.push({ f, w, v }); }
+        else if (w === 2) { let l; [l, i] = pbVarint(b, i); if (i + l > e) throw new Error("pb"); out.push({ f, w, s: i, e: i + l }); i += l; }
+        else if (w === 1) i += 8;
+        else if (w === 5) i += 4;
+        else throw new Error("pb");
+        if (i > e) throw new Error("pb");
+      }
+      return out;
+    }
+    const pbStr = (b, s, e) => new TextDecoder("utf-8").decode(b.subarray(s, e));
+    function pbTranslated(b, f) {
+      let first = "";
+      for (const tr of pbFields(b, f.s, f.e)) {
+        if (tr.f !== 1 || tr.w !== 2) continue;
+        let text = "", lang = "";
+        for (const x of pbFields(b, tr.s, tr.e)) { if (x.f === 1 && x.w === 2) text = pbStr(b, x.s, x.e); if (x.f === 2 && x.w === 2) lang = pbStr(b, x.s, x.e); }
+        if (!first) first = text;
+        if (/^fr/i.test(lang)) return text;
+      }
+      return first;
+    }
+    function decodeGtfsRtAlerts(buf) {
+      const b = buf instanceof Uint8Array ? buf : new Uint8Array(buf), alerts = [];
+      for (const ent of pbFields(b, 0, b.length)) {
+        if (ent.f !== 2 || ent.w !== 2) continue;
+        for (const af of pbFields(b, ent.s, ent.e)) {
+          if (af.f !== 5 || af.w !== 2) continue;
+          const a = { routes: [], stops: [], header: "", desc: "", url: "", start: 0, end: 0 };
+          for (const f of pbFields(b, af.s, af.e)) {
+            if (f.f === 1 && f.w === 2) { for (const t of pbFields(b, f.s, f.e)) { if (t.f === 1 && t.w === 0) a.start = t.v; if (t.f === 2 && t.w === 0) a.end = t.v; } }
+            else if (f.f === 5 && f.w === 2) { for (const t of pbFields(b, f.s, f.e)) { if (t.f === 2 && t.w === 2) a.routes.push(pbStr(b, t.s, t.e)); if (t.f === 5 && t.w === 2) a.stops.push(pbStr(b, t.s, t.e)); } }
+            else if (f.f === 8 && f.w === 2) a.url = pbTranslated(b, f);
+            else if (f.f === 10 && f.w === 2) a.header = pbTranslated(b, f);
+            else if (f.f === 11 && f.w === 2) a.desc = pbTranslated(b, f);
+          }
+          alerts.push(a);
+        }
+      }
+      return alerts;
+    }
+    const normTxt = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    let irigoAlertsState = { ts: 0, list: null, ok: false, promise: null };
+    async function getIrigoAlerts() {
+      if (Date.now() - irigoAlertsState.ts < 5 * 60 * 1000) return irigoAlertsState;
+      if (irigoAlertsState.promise) return irigoAlertsState.promise;
+      irigoAlertsState.promise = (async () => {
+        try {
+          const res = await fetchWithTimeout(IRIGO_ALERTS_URL, {}, 6000);
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const list = decodeGtfsRtAlerts(new Uint8Array(await res.arrayBuffer()));
+          const now = Date.now() / 1000;
+          irigoAlertsState = { ts: Date.now(), ok: true, promise: null, list: list.filter(a => (!a.start || a.start <= now) && (!a.end || a.end >= now)) };
+        } catch { irigoAlertsState = { ts: Date.now(), ok: false, list: null, promise: null }; }
+        return irigoAlertsState;
+      })();
+      return irigoAlertsState.promise;
+    }
+    const ELEVATOR_RE = /ascenseur|elevateur|escalator|monte-charge|equipement.*(hors|panne)/;
+    function tramNotices(st, boardName, alightName, line) {
+      const out = { ok: !!(st && st.ok), elevator: [], line: [] };
+      if (!out.ok) return out;
+      const bn = normTxt(boardName), an = normTxt(alightName);
+      const lineRe = new RegExp(`\\b(?:tram|ligne)s?\\s+${line}\\b`, "i");
+      for (const a of st.list) {
+        const txt = normTxt(a.header + " " + a.desc);
+        const mentionsStop = (bn.length >= 4 && txt.includes(bn)) || (an.length >= 4 && txt.includes(an));
+        if (ELEVATOR_RE.test(txt)) { if (mentionsStop) out.elevator.push(a); }   // panne sur un autre arrêt : sans objet ici
+        else if (a.routes.some(r => r.toLowerCase() === String(line).toLowerCase()) || lineRe.test(a.header + " " + a.desc)) out.line.push(a);
+      }
+      return out;
+    }
+    // Portion de la ligne de tram entre deux arrêts (sommet le plus proche de chaque arrêt)
+    function tramSlice(line, a, b) {
+      let best = null;
+      for (const f of irigoTramFeatures || []) {
+        if (f.properties && f.properties.shortName !== line) continue;
+        const g = f.geometry; if (!g) continue;
+        const parts = g.type === "MultiLineString" ? g.coordinates : (g.type === "LineString" ? [g.coordinates] : []);
+        for (const pts of parts) {
+          let ia = -1, ib = -1, da = Infinity, db = Infinity;
+          pts.forEach((c, i) => {
+            const x = distanceMeters(a.lat, a.lon, c[1], c[0]); if (x < da) { da = x; ia = i; }
+            const y = distanceMeters(b.lat, b.lon, c[1], c[0]); if (y < db) { db = y; ib = i; }
+          });
+          if (da > 120 || db > 120 || ia === ib) continue;
+          const sl = ia < ib ? pts.slice(ia, ib + 1) : pts.slice(ib, ia + 1).reverse();
+          if (!best || sl.length > best.length) best = sl;
+        }
+      }
+      return best;
+    }
+    const pathLen = pts => { let d = 0; for (let i = 1; i < pts.length; i++) d += distanceMeters(pts[i - 1][1], pts[i - 1][0], pts[i][1], pts[i][0]); return d; };
+    const TRAM_SPEED = 5.0, TRAM_WAIT_S = 300;           // ≈ 18 km/h commerciale ; attente moyenne estimée 5 min
+
+    async function buildTramVariant(origin, lat, lon, main) {
+      if (activeTransportTab === "car") return null;
+      if (!isNearAngers(origin[1], origin[0]) || !isNearAngers(lat, lon)) return null;
+      const stops = irigoTramStops || [];
+      if (stops.length < 2 || main.lengthM < 700) return null;
+      const near = (la, lo) => stops.map(s => ({ s, d: distanceMeters(la, lo, s.lat, s.lon) })).filter(x => x.d <= 1500).sort((a, b) => a.d - b.d).slice(0, 5);
+      const A = near(origin[1], origin[0]), B = near(lat, lon);
+      if (!A.length || !B.length) return null;
+      const st = await getIrigoAlerts();
+      const pairs = [];
+      for (const a of A) for (const b of B) {
+        if (a.s.name === b.s.name) continue;
+        const shared = (a.s.lines || []).filter(l => (b.s.lines || []).includes(l));
+        if (!shared.length) continue;
+        const ride = distanceMeters(a.s.lat, a.s.lon, b.s.lat, b.s.lon);
+        if (ride < 500) continue;
+        let cost = (a.d + b.d) * 1.3;
+        const n = tramNotices(st, a.s.name, b.s.name, shared[0]);
+        if (n.elevator.length) cost += 100000;                // arrêt avec ascenseur signalé en panne : on préfère une autre paire
+        pairs.push({ a, b, line: shared[0], cost, notices: n });
+      }
+      if (!pairs.length) return null;
+      pairs.sort((x, y) => x.cost - y.cost);
+      const P = pairs[0];
+      const avoided = pairs.slice(1).find(p => p.notices.elevator.length && p.cost - 100000 < P.cost);
+      const avoidedNote = !P.notices.elevator.length && avoided ? avoided.notices.elevator[0].header || avoided.notices.elevator[0].desc : "";
+      if ((P.a.d + P.b.d) * 1.3 > main.lengthM * 0.75) return null;   // la marche n'est pas vraiment réduite
+      const mg = getWc().maxSlope;
+      const [t1, t2] = await Promise.all([
+        callValhalla(origin, P.a.s.lat, P.a.s.lon, mg, null).then(parseTrip).catch(() => null),
+        callValhalla([P.b.s.lon, P.b.s.lat], lat, lon, mg, null).then(parseTrip).catch(() => null)
+      ]);
+      if (!t1 || !t2) return null;
+      const walkM = t1.lengthM + t2.lengthM;
+      if (walkM > main.lengthM * 0.7) return null;
+      const slice = tramSlice(P.line, P.a.s, P.b.s) || [[P.a.s.lon, P.a.s.lat], [P.b.s.lon, P.b.s.lat]];
+      const rideM = Math.round(pathLen(slice));
+      const n1 = t1.coords.length;
+      const coords = [...t1.coords, ...slice, ...t2.coords];
+      const off2 = n1 + slice.length;
+      const steps = [
+        ...t1.steps.slice(0, -1),
+        { instruction: `Arrivez à l'arrêt de tram « ${P.a.s.name} ».`, distance: 0, type: 0, verbalPost: "", beginIdx: n1 - 1, endIdx: n1 - 1 },
+        { instruction: `Montez dans le tram ${P.line} à « ${P.a.s.name} » et descendez à « ${P.b.s.name} ».`, distance: rideM, type: 0, transit: true, verbalPost: "", beginIdx: n1, endIdx: off2 - 1 },
+        ...t2.steps.map(s => ({ ...s, beginIdx: s.beginIdx + off2, endIdx: s.endIdx + off2 }))
+      ];
+      const walkSpeedSec = (t1.timeSec + t2.timeSec);
+      const timeSec = Math.round(walkSpeedSec + TRAM_WAIT_S + rideM / TRAM_SPEED);
+      const geoAll = makeRouteGeo(coords);
+      return {
+        key: "tram", ico: "🚊", label: "Tram + marche", coords, steps, timeSec, lengthM: walkM + rideM, walkM, rideM,
+        line: P.line, avoidedNote, board: P.a.s, alight: P.b.s, notices: P.notices, alertsOk: !!(st && st.ok), alertsTs: st ? st.ts : 0,
+        legs: [[t1.coords, 0], [t2.coords, geoAll.cum[Math.min(off2, geoAll.cum.length - 1)]]],
+        alerts: null, analysis: null, score: null
+      };
+    }
+    async function analyzeTramVariant(v) {
+      const wc = getWc(), out = []; let okS = true, okH = true, kerbs = 0;
+      for (const [cs, off] of v.legs) {
+        const geo = makeRouteGeo(cs);
+        const [sl, hz] = await Promise.all([computeSlopeAlerts(geo, wc).catch(() => null), fetchHazardAlerts(geo, wc).catch(() => null)]);
+        if (!sl) okS = false; if (!hz) okH = false;
+        [...(sl || []), ...(hz ? hz.alerts : [])].forEach(a => out.push({ ...a, along: a.along + off }));
+        if (hz) kerbs += hz.unknownKerbs || 0;
+      }
+      v.analysis = { slopes: okS ? "ok" : "unavailable", hazards: okH ? "ok" : "unavailable", unknownKerbs: kerbs };
+      v.alerts = out.sort((a, b) => a.along - b.along);
+      v.score = comfortScore(v.alerts, v.analysis, v.steps);
+    }
+    async function addTramVariant(token, origin, lat, lon, main) {
+      let v = null;
+      try { v = await buildTramVariant(origin, lat, lon, main); } catch { v = null; }
+      if (!v || token !== variants.token) return;
+      variants.list.push(v);
+      renderAlts(); drawAltLines();
+      try { await analyzeTramVariant(v); } catch {}
+      if (token !== variants.token) return;
+      renderAlts();
+      if (variants.sel === "tram" && currentRoute && currentRoute.variantKey === "tram") {
+        currentRoute.alerts = v.alerts || []; currentRoute.analysis = v.analysis;
+        renderAlerts(currentRoute); drawAlertsOnMap(currentRoute); persistLastRoute();
+      }
+      if (variants.rainy) shelterForVariants(token);
+    }
+    function renderTramInfo() {
+      const box = gid("tramInfo"); if (!box) return;
+      const v = variants.list.find(x => x.key === "tram");
+      if (!v || variants.sel !== "tram") { box.style.display = "none"; box.innerHTML = ""; return; }
+      const n = v.notices || { ok: false, elevator: [], line: [] };
+      const mins = m => Math.max(1, Math.round(m / 60));
+      let h = `<div class="sub" style="font-weight:700;margin-bottom:4px;">🚊 Tram ligne ${escapeHTML(v.line)} + marche</div>`;
+      h += `<div class="step-item">🚶 Marche ${fmtDist(v.walkM)} (au lieu de ${fmtDist(variants.list[0].lengthM)}), tram ${fmtDist(v.rideM)} ≈ ${mins(v.rideM / TRAM_SPEED)} min, attente estimée ≈ ${mins(TRAM_WAIT_S)} min (prochains passages sur la fiche de l'arrêt).</div>`;
+      h += `<div class="step-item">⬆️ Montée : <b>${escapeHTML(v.board.name)}</b> ${v.board.accessible === true ? "♿ arrêt accessible" : "⚠️ accessibilité à vérifier"} • ⬇️ Descente : <b>${escapeHTML(v.alight.name)}</b> ${v.alight.accessible === true ? "♿ arrêt accessible" : "⚠️ accessibilité à vérifier"}</div>`;
+      if (v.avoidedNote) h += `<div class="step-item"><span class="badge b-lim">🛗 Arrêt plus proche évité</span> ${escapeHTML(v.avoidedNote)}</div>`;
+      if (!n.ok) h += `<div class="step-item">ℹ️ Alertes Irigo (ascenseurs, perturbations) non consultables pour l'instant : vérifiez sur <a href="https://www.irigo.fr" target="_blank" rel="noopener">irigo.fr</a> avant de partir.</div>`;
+      else {
+        n.elevator.forEach(a => { h += `<div class="step-item"><span class="badge b-no">🛗 Ascenseur / équipement signalé</span> ${escapeHTML(a.header || a.desc)}</div>`; });
+        n.line.forEach(a => { h += `<div class="step-item"><span class="badge b-lim">⚠️ Perturbation ligne ${escapeHTML(v.line)}</span> ${escapeHTML(a.header || a.desc)}${/^https:\/\//.test(a.url) ? ` <a href="${escapeHTML(a.url)}" target="_blank" rel="noopener">détails ↗</a>` : ""}</div>`; });
+        if (!n.elevator.length && !n.line.length) h += `<div class="step-item"><span class="badge b-yes">✅ Aucune panne d'ascenseur ni perturbation signalée par Irigo</span> <span class="sub">(flux d'alertes consulté à ${hhmm(v.alertsTs)})</span></div>`;
+        else if (!n.elevator.length) h += `<div class="sub">Aucune panne d'ascenseur signalée sur ces arrêts. Irigo ne publie pas de statut d'équipement dédié : seules les alertes du réseau sont lues.</div>`;
+      }
+      box.innerHTML = h; box.style.display = "block";
+    }
+
+    // =====================================================================================
+    // MÉTÉO ↔ CHOIX DU TRAJET : pluie prévue pendant la marche → trajet plus abrité ou tram
+    // =====================================================================================
+    const rainCache = new Map();
+    async function getRainOutlook(lat, lon) {
+      const key = lat.toFixed(2) + "_" + lon.toFixed(2), c = rainCache.get(key);
+      if (c && Date.now() - c.ts < 10 * 60 * 1000) return c.data;
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&minutely_15=precipitation&forecast_minutely_15=12&hourly=precipitation_probability&forecast_hours=4&current=precipitation,rain,weather_code&timeformat=unixtime&timezone=auto`;
+        const res = await fetchWithTimeout(url, {}, 5500);
+        if (!res.ok) return null;
+        const j = await res.json();
+        if (!j.minutely_15 || !Array.isArray(j.minutely_15.time)) return null;
+        const data = {
+          // chaque valeur minutely_15 cumule les 15 minutes PRÉCÉDANT l'horodatage
+          slots: j.minutely_15.time.map((t, i) => ({ end: t * 1000, mm: Number(j.minutely_15.precipitation[i]) || 0 })),
+          hourly: ((j.hourly && j.hourly.time) || []).map((t, i) => ({ t: t * 1000, p: Number(j.hourly.precipitation_probability[i]) || 0 })),
+          curMm: j.current ? (Number(j.current.rain) || 0) + (Number(j.current.precipitation) || 0) : 0
+        };
+        rainCache.set(key, { ts: Date.now(), data });
+        return data;
+      } catch { return null; }
+    }
+    // Pluie attendue pendant [maintenant, maintenant + durée] : mm cumulés, minutes mouillées, probabilité max
+    function rainDuring(o, durMs, nowMs = Date.now()) {
+      let mm = 0, wetMin = 0, prob = 0;
+      const end = nowMs + durMs;
+      for (const s of o.slots) {
+        const a = s.end - 15 * 60000, b = s.end;
+        const ov = Math.min(b, end) - Math.max(a, nowMs);
+        if (ov <= 0) continue;
+        mm += s.mm * (ov / (15 * 60000));
+        if (s.mm >= 0.1) wetMin += ov / 60000;
+      }
+      for (const h of o.hourly) { if (h.t + 3600000 > nowMs && h.t < end) prob = Math.max(prob, h.p); }
+      if (o.curMm >= 0.1 && wetMin === 0) { wetMin = Math.min(15, durMs / 60000); mm = Math.max(mm, o.curMm); }
+      return { mm: Math.round(mm * 10) / 10, wetMin: Math.round(wetMin), prob };
+    }
+    function isRainy(r) { return r.mm >= 0.3 || r.wetMin >= 5 || (r.prob >= 70 && r.mm >= 0.1); }
+
+    async function startRainCheck(token, main) {
+      variants.rain = null; variants.rainy = false;
+      const mid = main.coords[Math.floor(main.coords.length / 2)];
+      const o = await getRainOutlook(mid[1], mid[0]);
+      if (token !== variants.token) return;
+      if (!o) { variants.rain = { status: "unknown" }; renderRainAdvice(); return; }
+      const r = rainDuring(o, Math.max(main.timeSec, 600) * 1000);
+      variants.rain = { status: isRainy(r) ? "wet" : "dry", ...r };
+      variants.rainy = variants.rain.status === "wet";
+      renderRainAdvice();
+      if (variants.rainy) shelterForVariants(token);
+    }
+
+    // Part du trajet à couvert (OSM : covered=yes, arcades, passages sous bâtiments)
+    async function fetchShelterShare(coords) {
+      const geo = makeRouteGeo(coords);
+      if (geo.total < 40 || geo.total > 8000) return null;
+      const pts = [], step = Math.max(40, geo.total / 70);
+      for (let d = 0; d <= geo.total + 1; d += step) { const p = pointAtDistance(geo, Math.min(d, geo.total)); pts.push(p.lat.toFixed(5), p.lon.toFixed(5)); }
+      const a = pts.join(",");
+      const ql = `[out:json][timeout:20];(way(around:15,${a})["covered"~"^(yes|arcade|colonnade)$"];way(around:15,${a})["tunnel"="building_passage"];way(around:15,${a})["highway"]["covered"="booth"];);out geom qt;`;
+      const json = await queryOverpass(ql, null, 14000);
+      if (!json) return null;
+      const bins = new Set();
+      for (const el of json.elements) {
+        const g = el.geometry; if (!g || g.length < 2) continue;
+        for (let i = 1; i < g.length; i++) {
+          const segLen = distanceMeters(g[i - 1].lat, g[i - 1].lon, g[i].lat, g[i].lon);
+          const n = Math.max(1, Math.min(40, Math.ceil(segLen / 5)));
+          for (let j = 0; j <= n; j++) {                       // un point tous les ~5 m le long du segment
+            const t = j / n, la = g[i - 1].lat + (g[i].lat - g[i - 1].lat) * t, lo = g[i - 1].lon + (g[i].lon - g[i - 1].lon) * t;
+            const pr = projectOnRoute(geo, la, lo, -1e6);
+            if (pr.off <= 14) bins.add(Math.floor(pr.along / 10));
+          }
+        }
+      }
+      return Math.min(1, (bins.size * 10) / geo.total);
+    }
+    async function analyzeShelter(v) {
+      if (v.shelter !== undefined) return;
+      const legs = v.legs ? v.legs.map(l => l[0]) : [v.coords];
+      let cov = 0, tot = 0, ok = true;
+      for (const cs of legs) {
+        const len = makeRouteGeo(cs).total;
+        const sh = await fetchShelterShare(cs).catch(() => null);
+        if (sh == null) { ok = false; break; }
+        cov += sh * len; tot += len;
+      }
+      v.shelter = ok && tot > 0 ? cov / tot : null;
+    }
+    async function shelterForVariants(token) {
+      for (const v of variants.list.slice()) {
+        if (token !== variants.token) return;
+        if (v.shelter === undefined) { await analyzeShelter(v); if (token !== variants.token) return; renderAlts(); }
+      }
+    }
+    // Minutes passées à découvert (au plus : on suppose qu'il pleut pendant tout le trajet)
+    function exposedMin(v) {
+      const walkM = v.walkM != null ? v.walkM : v.lengthM;
+      const speed = profile === "manual" ? 1.1 : 1.5;
+      return Math.round(walkM * (1 - (v.shelter || 0)) / speed / 60);
+    }
+    function altExtra(v) {
+      const bits = [];
+      if (v.key === "tram") bits.push("marche " + fmtDist(v.walkM));
+      if (variants.rainy && v.shelter != null) bits.push("☂️ " + Math.round(v.shelter * 100) + " % abrité");
+      if (v.key === "tram" && v.notices && v.notices.elevator && v.notices.elevator.length) bits.push("🛗 alerte");
+      else if (v.key === "tram" && v.notices && v.notices.line && v.notices.line.length) bits.push("⚠️ perturbation");
+      return bits.length ? " • " + bits.join(" • ") : "";
+    }
+    function renderRainAdvice() {
+      const box = gid("rainAdvice"); if (!box) return;
+      const r = variants.rain, L = variants.list;
+      if (!r || L.length < 1 || r.status === "unknown") { box.style.display = "none"; box.innerHTML = ""; return; }
+      if (r.status === "dry") {
+        box.className = "rain-card dry"; box.style.display = "block";
+        box.innerHTML = `<span class="badge b-yes">☂️ Pas de pluie prévue pendant le trajet</span>`; return;
+      }
+      const cur = L.find(v => v.key === variants.sel) || L[0];
+      const pending = L.some(v => v.shelter === undefined);
+      const pm = r.wetMin ? `${r.wetMin} min de pluie` : `${r.prob} % de risque`;
+      let h = `<div class="sub" style="font-weight:700;margin-bottom:4px;">🌧️ Pluie prévue pendant votre trajet (${escapeHTML(pm)}${r.mm ? `, ≈ ${String(r.mm).replace(".", ",")} mm` : ""})</div>`;
+      const curExp = exposedMin(cur);
+      const cands = L.filter(v => v !== cur && (v.shelter != null || v.key === "tram")).map(v => ({ v, exp: exposedMin(v) }))
+        .filter(x => x.exp <= curExp * 0.7 && x.exp <= curExp - 2 && (x.v.key === "tram" || x.v.timeSec <= cur.timeSec * 1.4))
+        .sort((a, b) => a.exp - b.exp || a.v.timeSec - b.v.timeSec);
+      if (cands.length) {
+        const b = cands[0], dt = Math.round((b.v.timeSec - cur.timeSec) / 60);
+        h += `<div class="step-item">${b.v.ico} <b>${escapeHTML(b.v.label)}</b> : ≈ ${b.exp} min à découvert contre ${curExp} min pour « ${escapeHTML(cur.label)} » (${dt === 0 ? "même durée" : (dt > 0 ? "+" : "−") + Math.abs(dt) + " min"}).</div>
+          <button type="button" class="primary" style="width:100%;margin-top:4px;" data-rain-pick="${b.v.key}">${b.v.ico} Choisir « ${escapeHTML(b.v.label)} »</button>`;
+      } else if (pending) {
+        h += `<div class="sub">🔎 Recherche d'un trajet plus abrité…</div>`;
+      } else {
+        h += `<div class="sub">${cur.shelter != null ? `Environ ${Math.round(cur.shelter * 100)} % de ce trajet est à couvert. ` : ""}Aucune alternative nettement plus abritée trouvée (les abris ne sont pas toujours cartographiés dans OpenStreetMap) : prévoyez une protection.</div>`;
+      }
+      box.className = "rain-card wet"; box.innerHTML = h; box.style.display = "block";
+      const btn = box.querySelector("[data-rain-pick]");
+      if (btn) btn.addEventListener("click", () => selectRouteVariant(btn.getAttribute("data-rain-pick")));
+    }
+
     map.on("load", () => {
+      if (VIEWER_ID) { initViewer(); return; }
       initSettingsInputsOnce();
       { const c = document.getElementById("bgAudioChk"); if (c) { c.checked = bgAudioEnabled; if (NATIVE && c.closest("label")) c.closest("label").style.display = "none"; } }
       updateProfileUI();
