@@ -591,7 +591,7 @@
 
   <div class="floating-right">
     <div class="toolbar" role="toolbar" aria-label="Outils de la carte">
-      <button id="layersBtn" class="pill-bar" onclick="toggleLayersPanel()" aria-expanded="false" aria-controls="layerToggles" aria-label="Afficher ou masquer les couches de la carte" title="Couches (C)"><span class="ico">🗂️</span><span class="lbl">Couches</span></button>
+      <button id="layersBtn" class="pill-bar" onclick="toggleLayersPanel()" aria-expanded="false" aria-controls="layerToggles" aria-label="Afficher ou masquer les filtres de la carte" title="Filtres (C)"><span class="ico"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" aria-hidden="true" style="vertical-align:-0.15em"><path d="M3 4.5h18l-7 8.2v6.3l-4 2v-8.3z" fill="#007aff" stroke="#007aff" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="lbl">Filtres</span></button>
       <button id="largeModeBtn" class="pill-bar" onclick="toggleLargeMode()" aria-pressed="false" aria-label="Activer le mode gros boutons et grand texte" title="Grand format (L)"><span class="ico">👁️</span><span class="lbl">Grand format</span></button>
       <button id="darkModeBtn" class="pill-bar" onclick="toggleDarkMode()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit" title="Jour / Nuit (N)"><span class="ico">🌓</span><span class="lbl">Jour / Nuit</span></button>
       <button class="pill-bar" onclick="recenterOnStart()" aria-label="Recentrer la carte sur ma position actuelle" title="Ma position (G)"><span class="ico">🎯</span><span class="lbl">Ma position</span></button>
@@ -600,7 +600,7 @@
       <button class="pill-bar" onclick="openHelp()" aria-label="Aide et raccourcis clavier" title="Raccourcis (?)"><span class="ico">⌨️</span><span class="lbl">Aide</span></button>
     </div>
 
-    <div class="pill-bar" id="layerToggles" role="group" aria-label="Filtres de couches sur la carte">
+    <div class="pill-bar" id="layerToggles" role="group" aria-label="Filtres de la carte">
       <button class="chip active" data-layer="parking" onclick="toggleMapLayer('parking', this)">🅿️ Parkings</button>
       <button class="chip active" data-layer="toilet" onclick="toggleMapLayer('toilet', this)">🚻 Toilettes PMR</button>
       <button class="chip active" data-layer="restaurant" onclick="toggleMapLayer('restaurant', this)">🍽️ Restos</button>
@@ -717,7 +717,7 @@
     <table>
       <tr><td><span class="kbd">/</span></td><td>Aller au champ « Destination »</td></tr>
       <tr><td><span class="kbd">S</span></td><td>Afficher / masquer le panneau</td></tr>
-      <tr><td><span class="kbd">C</span></td><td>Couches de la carte</td></tr>
+      <tr><td><span class="kbd">C</span></td><td>Filtres de la carte</td></tr>
       <tr><td><span class="kbd">G</span></td><td>Centrer sur ma position</td></tr>
       <tr><td><span class="kbd">R</span></td><td>Actualiser les lieux de la zone</td></tr>
       <tr><td><span class="kbd">F</span></td><td>Destination en favori ⭐</td></tr>
