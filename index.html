@@ -1,5 +1,28 @@
-﻿Voici le code complet prêt à copier-coller directement dans ton fichier
-index.html :
+﻿Voici le code complet index.html avec la flèche de navigation GPS en temps réel
+intégrée :
+
+Ce que cette flèche fait exactement
+
+1.  Dès qu'un itinéraire est calculé : une flèche directionnelle bleue et
+    blanche (avec halo pulsant) se place sur votre position de départ et
+    s'oriente dans le sens exact du trajet.
+2.  En déplacement réel (téléphone / tablette / PC avec GPS) :
+      - La flèche suit votre position exacte en temps réel (watchPosition),
+        pivote automatiquement selon votre cap (heading GPS ou calcul de
+        trajectoire), et la carte suit votre avancée en vue inclinée
+        (désactivable d'un glissement de doigt, avec un bouton 🎯 Suivre pour
+        recentrer).
+      - La distance jusqu'au prochain virage se décompte en direct et l'étape
+        suivante (avec annonce vocale) se déclenche automatiquement à moins
+        de 18 m.
+3.  Pour tester tout de suite depuis ton PC sans bouger :
+      - Clique sur « Y aller », puis clique sur ▶️ Simuler dans le bandeau noir
+        : tu verras la flèche parcourir l'itinéraire en temps réel, tourner à
+        chaque rue, décompter les mètres et lire les instructions vocales
+        automatiquement !
+
+Copie tout le code ci-dessous dans C:\AngersPMR-Windows\index.html (puis pense à
+le re-uploader sur ton dépôt GitHub GPS_PMR) :
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -231,6 +254,37 @@ index.html :
       background: #007aff; border: 3px solid #ffffff;
       box-shadow: 0 0 0 6px rgba(0, 122, 255, 0.28), 0 2px 6px rgba(0,0,0,0.3);
     }
+
+    /* Flèche directionnelle GPS temps réel façon Apple Plans / Waze */
+    .nav-arrow-wrap {
+      position: relative;
+      width: 46px;
+      height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .nav-arrow-halo {
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(0, 122, 255, 0.26);
+      animation: navPulse 1.8s infinite ease-out;
+    }
+    .nav-arrow-puck {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      filter: drop-shadow(0 3px 8px rgba(0,0,0,0.42));
+    }
+    @keyframes navPulse {
+      0% { transform: scale(0.85); opacity: 0.9; }
+      70% { transform: scale(1.35); opacity: 0; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
     .route-pin {
       width: 26px; height: 26px; border-radius: 50%;
       color: #fff; font-weight: 800; font-size: 12px;
@@ -443,14 +497,19 @@ index.html :
         </div>
       </div>
 
-      <!-- GUIDAGE VOCAL -->
+      <!-- GUIDAGE VOCAL + FLÈCHE TEMPS RÉEL -->
       <div id="navBox" class="nav-banner" style="display:none;">
-        <div class="sub" style="color:#a1a1aa;">GUIDAGE VOCAL EN COURS</div>
-        <div id="navDist" style="font-size:26px; font-weight:800;">0 m</div>
+        <div class="row between">
+          <span class="sub" style="color:#a1a1aa;font-weight:700;">GUIDAGE GPS EN DIRECT</span>
+          <span id="navHeadingBadge" class="sub" style="color:#66b2ff;font-weight:700;">🧭 Cap actif</span>
+        </div>
+        <div id="navDist" style="font-size:26px; font-weight:800; margin-top:2px;">0 m</div>
         <div id="navInstruction" style="font-size:15px; font-weight:600; margin-top:4px;"></div>
-        <div class="row" style="margin-top:10px;">
-          <button class="primary" style="flex:1;" onclick="nextStep()">⏭️ Suivant</button>
-          <button class="danger" onclick="stopGuidance()">Fin</button>
+        <div class="row" style="margin-top:10px; flex-wrap:wrap;">
+          <button id="simBtn" class="go" style="flex:1; font-size:12.5px;" onclick="toggleSimulation()">▶️ Simuler</button>
+          <button class="primary" style="flex:1; font-size:12.5px;" onclick="nextStep()">⏭️ Suivant</button>
+          <button style="background:#2c2c34;color:#fff;border:1px solid rgba(255,255,255,0.2);font-size:12.5px;" onclick="enableFollowCamera()">🎯 Suivre</button>
+          <button class="danger" style="font-size:12.5px;" onclick="stopGuidance()">Fin</button>
         </div>
       </div>
 
@@ -546,6 +605,16 @@ index.html :
     let currentRoute = null;
     let navIndex = 0;
 
+    // État Flèche de navigation GPS temps réel
+    let isNavigating = false;
+    let autoFollowCamera = true;
+    let navArrowMarker = null;
+    let currentHeading = 0;
+    let prevUserPos = null;
+    let simTimer = null;
+    let simSegmentIndex = 0;
+    let simProgress = 0;
+
     let userPos = null;
     let userMarker = null;
     let originPinMarker = null;
@@ -598,6 +667,11 @@ index.html :
       zoom: 14
     });
 
+    // Mettre en pause le suivi automatique si l'utilisateur déplace manuellement la carte
+    map.on("dragstart", () => {
+      if (isNavigating) autoFollowCamera = false;
+    });
+
     function escapeHTML(str) {
       return String(str || "").replace(/[&<>"']/g, s => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]));
     }
@@ -608,6 +682,15 @@ index.html :
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
       return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    }
+
+    function computeBearing(lat1, lon1, lat2, lon2) {
+      const toRad = d => d * Math.PI / 180;
+      const toDeg = r => r * 180 / Math.PI;
+      const p1 = toRad(lat1), p2 = toRad(lat2), dl = toRad(lon2 - lon1);
+      const y = Math.sin(dl) * Math.cos(p2);
+      const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+      return (toDeg(Math.atan2(y, x)) + 360) % 360;
     }
 
     function setStatus(message, type = "info") {
@@ -640,6 +723,183 @@ index.html :
         if (!parsed || (Date.now() - parsed.ts) > maxAgeHours * 3600 * 1000) return null;
         return parsed.data;
       } catch { return null; }
+    }
+
+    // MARK: - Flèche de navigation GPS temps réel
+
+    function ensureNavArrowMarker(lat, lon, bearingDeg) {
+      currentHeading = bearingDeg;
+      if (!navArrowMarker) {
+        const el = document.createElement("div");
+        el.className = "nav-arrow-wrap";
+        el.innerHTML = `
+          <div class="nav-arrow-halo"></div>
+          <div class="nav-arrow-puck">
+            <svg viewBox="0 0 36 36" width="36" height="36">
+              <circle cx="18" cy="18" r="15.5" fill="#007aff" stroke="#ffffff" stroke-width="3"/>
+              <path d="M18 7.5 L25.5 25 L18 21.3 L10.5 25 Z" fill="#ffffff"/>
+            </svg>
+          </div>
+        `;
+        navArrowMarker = new maplibregl.Marker({ element: el, rotationAlignment: "map" })
+          .setLngLat([lon, lat])
+          .setRotation(bearingDeg)
+          .addTo(map);
+      } else {
+        navArrowMarker.setLngLat([lon, lat]).setRotation(bearingDeg);
+      }
+
+      // Masquer le simple point bleu pendant que la flèche est active pour éviter les doublons
+      if (userMarker) userMarker.getElement().style.display = "none";
+
+      const badge = document.getElementById("navHeadingBadge");
+      if (badge) badge.textContent = `🧭 Cap ${Math.round(bearingDeg)}°`;
+    }
+
+    function removeNavArrowMarker() {
+      if (navArrowMarker) {
+        navArrowMarker.remove();
+        navArrowMarker = null;
+      }
+      if (userMarker) userMarker.getElement().style.display = "block";
+    }
+
+    function enableFollowCamera() {
+      autoFollowCamera = true;
+      if (navArrowMarker) {
+        const lngLat = navArrowMarker.getLngLat();
+        map.easeTo({
+          center: [lngLat.lng, lngLat.lat],
+          zoom: 17.3,
+          pitch: 45,
+          bearing: currentHeading,
+          duration: 500
+        });
+      }
+    }
+
+    function updateNavigationFromRealGPS(lat, lon, rawHeading) {
+      if (!currentRoute) return;
+
+      // Calculer le cap : priorité au capteur GPS si valide, sinon cap du déplacement (> 3m)
+      let heading = currentHeading;
+      if (rawHeading != null && !isNaN(rawHeading) && rawHeading >= 0) {
+        heading = rawHeading;
+      } else if (prevUserPos && distanceMeters(prevUserPos.lat, prevUserPos.lon, lat, lon) >= 3) {
+        heading = computeBearing(prevUserPos.lat, prevUserPos.lon, lat, lon);
+      }
+
+      if (isNavigating && !simTimer) {
+        ensureNavArrowMarker(lat, lon, heading);
+
+        if (autoFollowCamera) {
+          map.easeTo({
+            center: [lon, lat],
+            bearing: heading,
+            pitch: 45,
+            zoom: Math.max(map.getZoom(), 17),
+            duration: 350
+          });
+        }
+
+        // Mettre à jour le décompte en direct et avancer automatiquement d'étape à < 18 m
+        const step = currentRoute.steps[navIndex];
+        if (step && currentRoute.coords.length > 0) {
+          const targetIdx = Math.min(step.endIdx ?? (currentRoute.coords.length - 1), currentRoute.coords.length - 1);
+          const targetPt = currentRoute.coords[targetIdx];
+          if (targetPt) {
+            const remaining = distanceMeters(lat, lon, targetPt[1], targetPt[0]);
+            document.getElementById("navDist").textContent = `${remaining} m`;
+            if (remaining < 18 && navIndex < currentRoute.steps.length - 1) {
+              navIndex++;
+              showCurrentStep();
+            }
+          }
+        }
+      }
+    }
+
+    function toggleSimulation() {
+      if (simTimer) {
+        stopSimulation();
+        return;
+      }
+      if (!currentRoute || !currentRoute.coords || currentRoute.coords.length < 2) return;
+
+      isNavigating = true;
+      autoFollowCamera = true;
+      simSegmentIndex = 0;
+      simProgress = 0;
+      navIndex = 0;
+      document.getElementById("simBtn").textContent = "⏸️ Pause";
+      showCurrentStep();
+
+      const coords = currentRoute.coords;
+
+      simTimer = setInterval(() => {
+        if (!currentRoute || simSegmentIndex >= coords.length - 1) {
+          stopSimulation();
+          const last = coords[coords.length - 1];
+          ensureNavArrowMarker(last[1], last[0], currentHeading);
+          document.getElementById("navDist").textContent = "0 m";
+          document.getElementById("navInstruction").textContent = "Arrivé : " + currentRoute.destName;
+          speakFR("Vous êtes arrivé à destination.");
+          return;
+        }
+
+        const p1 = coords[simSegmentIndex];
+        const p2 = coords[simSegmentIndex + 1];
+        const segLen = Math.max(1, distanceMeters(p1[1], p1[0], p2[1], p2[0]));
+
+        // Vitesse réaliste (~1,8 m par tick de 80 ms pour bien voir la flèche avancer en fluidité)
+        simProgress += 1.8 / segLen;
+        while (simProgress >= 1 && simSegmentIndex < coords.length - 2) {
+          simProgress -= 1;
+          simSegmentIndex++;
+        }
+        if (simSegmentIndex >= coords.length - 1) simProgress = 1;
+
+        const a = coords[simSegmentIndex];
+        const b = coords[Math.min(simSegmentIndex + 1, coords.length - 1)];
+        const curLon = a[0] + (b[0] - a[0]) * Math.min(1, simProgress);
+        const curLat = a[1] + (b[1] - a[1]) * Math.min(1, simProgress);
+        const bearing = (a[0] !== b[0] || a[1] !== b[1]) ? computeBearing(a[1], a[0], b[1], b[0]) : currentHeading;
+
+        ensureNavArrowMarker(curLat, curLon, bearing);
+
+        if (autoFollowCamera) {
+          map.jumpTo({
+            center: [curLon, curLat],
+            bearing: bearing,
+            pitch: 45,
+            zoom: 17.3
+          });
+        }
+
+        // Synchroniser l'étape de guidage + distance restante
+        const stepIdx = currentRoute.steps.findIndex(s => simSegmentIndex >= s.beginIdx && simSegmentIndex <= s.endIdx);
+        if (stepIdx !== -1 && stepIdx !== navIndex) {
+          navIndex = stepIdx;
+          showCurrentStep();
+        }
+        const curStep = currentRoute.steps[navIndex];
+        if (curStep) {
+          const endPt = coords[Math.min(curStep.endIdx, coords.length - 1)];
+          if (endPt) {
+            const rem = distanceMeters(curLat, curLon, endPt[1], endPt[0]);
+            document.getElementById("navDist").textContent = `${rem} m`;
+          }
+        }
+      }, 80);
+    }
+
+    function stopSimulation() {
+      if (simTimer) {
+        clearInterval(simTimer);
+        simTimer = null;
+      }
+      const btn = document.getElementById("simBtn");
+      if (btn) btn.textContent = "▶️ Simuler";
     }
 
     // MARK: - Supabase (Obstacles partagés + Votes lieux)
@@ -1695,6 +1955,7 @@ index.html :
         pos => {
           const lat = pos.coords.latitude, lon = pos.coords.longitude;
           const isFirstFix = userPos === null;
+          prevUserPos = userPos;
           userPos = { lat, lon };
 
           if (!userMarker) {
@@ -1715,10 +1976,11 @@ index.html :
               map.flyTo({ center: [lon, lat], zoom: 15 });
               refreshPlaceDistances();
             }
+            updateNavigationFromRealGPS(lat, lon, pos.coords.heading);
           }
         },
         () => { document.getElementById("gpsStatusLabel").textContent = "GPS indisponible"; },
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 8000 }
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 8000 }
       );
     }
 
@@ -1732,7 +1994,13 @@ index.html :
       return ANGERS;
     }
 
-    function recenterOnStart() { map.flyTo({ center: getOriginCoordinate(), zoom: 15 }); }
+    function recenterOnStart() {
+      if (isNavigating && navArrowMarker) {
+        enableFollowCamera();
+      } else {
+        map.flyTo({ center: getOriginCoordinate(), zoom: 15, pitch: 0, bearing: 0 });
+      }
+    }
 
     function refreshPlaceDistances() {
       const [oLon, oLat] = getOriginCoordinate();
@@ -1818,7 +2086,7 @@ index.html :
       renderMapSourcesAndLayers();
     }
 
-    // MARK: - Chargement progressif rapide (Cache + Vagues parallèles)
+    // MARK: - Chargement progressif rapide
 
     async function loadAllData() {
       document.getElementById("sbUrlInput").value = localStorage.getItem("sb_url") || DEFAULT_SUPABASE_URL;
@@ -2566,6 +2834,7 @@ index.html :
     }
 
     async function routeTo(lat, lon, name, options = {}) {
+      stopGuidance();
       const isCar = activeTransportTab === "car";
 
       if (!options.isParkingRoute) {
@@ -2596,11 +2865,22 @@ index.html :
         const leg = data.trip.legs[0];
         const coords = decodePolyline6(leg.shape);
         const geojson = { type: "Feature", geometry: { type: "LineString", coordinates: coords } };
-        const steps = leg.maneuvers.map(m => ({ instruction: m.instruction, distance: Math.round(m.length * 1000) }));
+        const steps = leg.maneuvers.map(m => ({
+          instruction: m.instruction,
+          distance: Math.round(m.length * 1000),
+          beginIdx: m.begin_shape_index ?? 0,
+          endIdx: m.end_shape_index ?? (coords.length - 1)
+        }));
 
-        currentRoute = { geojson, steps, destLat: lat, destLon: lon, destName: name };
+        currentRoute = { geojson, coords, steps, destLat: lat, destLon: lon, destName: name };
         if (map.getSource("route")) map.getSource("route").setData(geojson);
         else renderMapSourcesAndLayers();
+
+        // Placer immédiatement la flèche directionnelle au départ orientée dans le sens du trajet
+        if (coords.length >= 2) {
+          const initBearing = computeBearing(coords[0][1], coords[0][0], coords[1][1], coords[1][0]);
+          ensureNavArrowMarker(coords[0][1], coords[0][0], initBearing);
+        }
 
         const bounds = coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]));
         const isMobile = window.innerWidth <= 768;
@@ -2641,16 +2921,70 @@ index.html :
       u.lang = "fr-FR";
       window.speechSynthesis.speak(u);
     }
-    function startGuidance() { if (!currentRoute) return; navIndex = 0; document.getElementById("navBox").style.display = "block"; showCurrentStep(); }
+
+    function startGuidance() {
+      if (!currentRoute) return;
+      stopSimulation();
+      isNavigating = true;
+      autoFollowCamera = true;
+      navIndex = 0;
+      document.getElementById("navBox").style.display = "block";
+
+      const coords = currentRoute.coords;
+      const startPt = (userPos && distanceMeters(ANGERS[1], ANGERS[0], userPos.lat, userPos.lon) <= 25000 && selectedOrigin.isGPS)
+        ? [userPos.lon, userPos.lat]
+        : coords[0];
+
+      const bearing = coords.length >= 2
+        ? computeBearing(coords[0][1], coords[0][0], coords[1][1], coords[1][0])
+        : currentHeading;
+
+      ensureNavArrowMarker(startPt[1], startPt[0], bearing);
+      enableFollowCamera();
+      showCurrentStep();
+    }
+
     function showCurrentStep() {
       const step = currentRoute.steps[navIndex];
-      if (!step) { document.getElementById("navInstruction").textContent = "Arrivé : " + currentRoute.destName; speakFR("Vous êtes arrivé à destination."); return; }
+      if (!step) {
+        document.getElementById("navDist").textContent = "0 m";
+        document.getElementById("navInstruction").textContent = "Arrivé : " + currentRoute.destName;
+        speakFR("Vous êtes arrivé à destination.");
+        return;
+      }
       document.getElementById("navDist").textContent = `${step.distance} m`;
       document.getElementById("navInstruction").textContent = step.instruction;
       speakFR(step.instruction);
     }
-    function nextStep() { navIndex++; showCurrentStep(); }
-    function stopGuidance() { window.speechSynthesis.cancel(); document.getElementById("navBox").style.display = "none"; }
+
+    function nextStep() {
+      if (!currentRoute) return;
+      navIndex++;
+      const step = currentRoute.steps[navIndex];
+      if (step && currentRoute.coords.length > 0) {
+        const pt = currentRoute.coords[Math.min(step.beginIdx, currentRoute.coords.length - 1)];
+        const nextPt = currentRoute.coords[Math.min(step.beginIdx + 1, currentRoute.coords.length - 1)];
+        if (pt) {
+          const brg = (pt[0] !== nextPt[0] || pt[1] !== nextPt[1])
+            ? computeBearing(pt[1], pt[0], nextPt[1], nextPt[0])
+            : currentHeading;
+          ensureNavArrowMarker(pt[1], pt[0], brg);
+          if (autoFollowCamera) enableFollowCamera();
+        }
+      }
+      showCurrentStep();
+    }
+
+    function stopGuidance() {
+      stopSimulation();
+      isNavigating = false;
+      window.speechSynthesis.cancel();
+      document.getElementById("navBox").style.display = "none";
+      removeNavArrowMarker();
+      if (map.getPitch() !== 0 || map.getBearing() !== 0) {
+        map.easeTo({ pitch: 0, bearing: 0, duration: 400 });
+      }
+    }
 
     async function reportObstacleAtCenter() {
       const c = map.getCenter();
