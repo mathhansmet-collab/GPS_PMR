@@ -7,6 +7,11 @@
   <meta name="apple-mobile-web-app-title" content="GPS PMR" />
   <meta name="theme-color" content="#ffffff" />
   <title>GPS PMR — France • Navigation & Pratiques PMR</title>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
+  <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+  <link rel="preconnect" href="https://overpass-api.de" crossorigin />
+  <link rel="preconnect" href="https://data.angers.fr" crossorigin />
+  <link rel="preconnect" href="https://data.geopf.fr" crossorigin />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <style>
@@ -1621,10 +1626,11 @@
         }, 6000).then(async res => {
           if (res.ok) {
             const rows = await res.json();
-            communityObstacles = (rows || []).map(o => ({
+            const remote = (rows || []).map(o => ({
               id: o.id, category: o.category || "Obstacle", description: o.description || "",
               lat: o.latitude, lon: o.longitude, confirmationCount: o.confirmation_count || 1, isSupabase: true
             }));
+            communityObstacles = [...remote, ...localObs];          // signalements locaux conservés
           } else { communityObstacles = localObs; }
         }),
         fetchWithTimeout(`${sb.url}/rest/v1/place_accessibility_votes?select=place_key,access_status&order=updated_at.desc&limit=500`, {
@@ -1735,7 +1741,7 @@
         let records = (await res.json()).results || [];
 
         if (records.length === 0 && stopName) {
-          const cleanName = stopName.replace(/[-']/g, " ").trim();
+          const cleanName = stopName.replace(/[-'"\\]/g, " ").trim();
           const urlByName = `https://data.angers.fr/api/explore/v2.1/catalog/datasets/bus-tram-circulation-passages/records?where=${encodeURIComponent(`search(nomarret,"${cleanName}") AND depart>=now()`)}&order_by=depart%20asc&limit=12`;
           const r2 = await fetchWithTimeout(urlByName, {}, 6000);
           if (r2.ok) records = (await r2.json()).results || [];
@@ -2018,14 +2024,21 @@
         }
 
         if (acceslibreDatasetCSVId) {
-          const rows = [];
-          let nextUrl = `https://tabular-api.data.gouv.fr/api/resources/${acceslibreDatasetCSVId}/data/?commune__exact=${encodeURIComponent(communeName)}&page_size=200`;
-          for (let p = 0; p < 5 && nextUrl; p++) {
-            const r = await fetchWithTimeout(nextUrl, {}, 6500);
-            if (!r.ok) { rows.length = 0; break; }
-            const j = await r.json();
-            rows.push(...(j.data || []));
-            nextUrl = j.links?.next || null;
+          let rows = [];
+          const baseUrl = `https://tabular-api.data.gouv.fr/api/resources/${acceslibreDatasetCSVId}/data/?commune__exact=${encodeURIComponent(communeName)}&page_size=200`;
+          const r1 = await fetchWithTimeout(baseUrl, {}, 6500);
+          if (r1.ok) {
+            const j1 = await r1.json();
+            rows = (j1.data || []).slice();
+            const total = Number(j1.meta?.total) || rows.length;
+            const pages = Math.min(6, Math.ceil(total / 200));
+            if (pages > 1) {                                       // pages suivantes demandées ensemble (et non l'une après l'autre)
+              const rest = await Promise.allSettled(
+                Array.from({ length: pages - 1 }, (_, i) =>
+                  fetchWithTimeout(`${baseUrl}&page=${i + 2}`, {}, 7000).then(r => r.ok ? r.json() : { data: [] }))
+              );
+              rest.forEach(r => { if (r.status === "fulfilled") rows.push(...(r.value.data || [])); });
+            }
           }
           if (rows.length > 0) {
             const mapped = rows.map(row => ({
@@ -3312,12 +3325,38 @@
 
     // MARK: - Fusion rapide avec pré-indexation de recherche
 
+    // Regroupe les reconstructions demandées à quelques ms d'intervalle (cache, OSM, Angers, Accèslibre arrivent en rafale)
+    let rebuildTimer = null;
+    function scheduleRebuild(delay = 90) {
+      if (rebuildTimer) return;
+      rebuildTimer = setTimeout(() => { rebuildTimer = null; rebuildMergedPlacesAndRefreshUI(); }, delay);
+    }
+
     function rebuildMergedPlacesAndRefreshUI() {
+      if (rebuildTimer) { clearTimeout(rebuildTimer); rebuildTimer = null; }
       const inAngers = isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon);
       const merged = [
         ...(inAngers ? angersMuniPlaces : []).map(p => ({ ...p, features: [...(p.features || [])] })),
         ...osmPlaces.map(p => ({ ...p, features: [...(p.features || [])] }))
       ];
+
+      // Index spatial (cases d'environ 55 m × 50 m) : évite le parcours complet pour chaque fiche Accèslibre
+      const cellOf = (la, lo) => [Math.floor(la / 0.0005), Math.floor(lo / 0.0007)];
+      const grid = new Map();
+      const addToGrid = pl => {
+        const [a, b] = cellOf(pl.lat, pl.lon), k = pl.cat + "|" + a + "|" + b;
+        const arr = grid.get(k);
+        if (arr) arr.push(pl); else grid.set(k, [pl]);
+      };
+      const findNear = (cat, la, lo) => {
+        const [a, b] = cellOf(la, lo);
+        for (let da = -1; da <= 1; da++) for (let db = -1; db <= 1; db++) {
+          const arr = grid.get(cat + "|" + (a + da) + "|" + (b + db));
+          if (arr) for (const pl of arr) if (distanceMeters(pl.lat, pl.lon, la, lo) < 35) return pl;
+        }
+        return null;
+      };
+      merged.forEach(addToGrid);
 
       for (const item of acceslibreRawItems) {
         if (!item.name || isNaN(item.lat) || isNaN(item.lon)) continue;
@@ -3326,12 +3365,7 @@
         const prof = extractAcceslibreProfile(item.raw);
 
         // Pré-filtre rectangulaire rapide (~40 m) avant trigonométrie
-        const existing = merged.find(p =>
-          p.cat === cat &&
-          Math.abs(p.lat - item.lat) < 0.0004 &&
-          Math.abs(p.lon - item.lon) < 0.0006 &&
-          distanceMeters(p.lat, p.lon, item.lat, item.lon) < 35
-        );
+        const existing = findNear(cat, item.lat, item.lon);
 
         if (existing) {
           if (prof.access !== "unknown") { existing.access = prof.access; existing.accessLabel = prof.accessLabel; }
@@ -3344,14 +3378,16 @@
             existing.details = [item.activite, existing.details].filter(Boolean).join(" • ");
           }
         } else {
-          merged.push({
-            id: "al_" + Math.random().toString(36).slice(2, 10),
+          const np = {
+            id: "al_" + item.lat.toFixed(5) + "_" + item.lon.toFixed(5) + "_" + (item.name || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 12),
             cat, name: item.name, address: item.address, lat: item.lat, lon: item.lon,
             access: prof.access, accessLabel: prof.accessLabel,
             details: item.activite || "Établissement Accèslibre",
             toiletsPMR: prof.toiletsPMR, features: prof.features,
             isAcceslibre: true, isCommunityVerified: false, webUrl: item.web_url
-          });
+          };
+          merged.push(np);
+          addToGrid(np);
         }
       }
 
@@ -3384,11 +3420,50 @@
 
     // MARK: - Chargement dynamique haute performance (France entière + Bonus Angers)
 
-    async function loadZoneData(lat, lon, force = false) {
+    // --- Cache des zones (mémoire + localStorage, 4 zones max) ---
+    const ZONE_LS_PREFIX = "gps_pmr_zone_v1_";
+    const ZONE_LS_INDEX = "gps_pmr_zone_index_v1";
+    function getZoneCache(key) {
+      if (zoneMemoryCache.has(key)) return zoneMemoryCache.get(key);
+      try {
+        const raw = localStorage.getItem(ZONE_LS_PREFIX + key);
+        if (!raw) return null;
+        const d = JSON.parse(raw);
+        if (!d || Date.now() - d.ts > 6 * 3600 * 1000) return null;
+        zoneMemoryCache.set(key, d);
+        return d;
+      } catch { return null; }
+    }
+    function setZoneCache(key, entry) {
+      zoneMemoryCache.set(key, entry);
+      const write = () => {
+        localStorage.setItem(ZONE_LS_PREFIX + key, JSON.stringify(entry));
+        let idx = []; try { idx = JSON.parse(localStorage.getItem(ZONE_LS_INDEX) || "[]"); } catch {}
+        idx = [key, ...idx.filter(k => k !== key)];
+        idx.slice(4).forEach(k => localStorage.removeItem(ZONE_LS_PREFIX + k));
+        localStorage.setItem(ZONE_LS_INDEX, JSON.stringify(idx.slice(0, 4)));
+      };
+      try { write(); } catch {
+        try {                                              // quota plein : on vide les anciennes zones et on réessaie une fois
+          let idx = []; try { idx = JSON.parse(localStorage.getItem(ZONE_LS_INDEX) || "[]"); } catch {}
+          idx.forEach(k => localStorage.removeItem(ZONE_LS_PREFIX + k));
+          localStorage.removeItem(ZONE_LS_INDEX);
+          write();
+        } catch {}
+      }
+    }
+
+    // Champs Supabase / Accèslibre remplis une seule fois (et non à chaque déplacement : cela écrasait la saisie en cours)
+    function initSettingsInputsOnce() {
       document.getElementById("sbUrlInput").value = localStorage.getItem("sb_url") || DEFAULT_SUPABASE_URL;
       document.getElementById("sbKeyInput").value = localStorage.getItem("sb_key") || DEFAULT_SUPABASE_KEY;
       document.getElementById("acceslibreKeyInput").value = localStorage.getItem("acceslibre_key") || "";
+    }
 
+    let lastAlCity = "";
+    const communeMemo = new Map();
+
+    async function loadZoneData(lat, lon, force = false) {
       currentZoneCenter = { lat, lon };
       lastFetchedZoneCenter = { lat, lon };
 
@@ -3398,52 +3473,71 @@
       zoneAbort = new AbortController();
       const signal = zoneAbort.signal;
 
-      if (!force && zoneMemoryCache.has(tileKey)) {
-        const cached = zoneMemoryCache.get(tileKey);
+      // 1. Affichage immédiat depuis le cache s'il existe (même ancien : il sera rafraîchi en arrière-plan)
+      const cached = force ? null : getZoneCache(tileKey);
+      let fresh = false;
+      if (cached) {
         osmPlaces = cached.osmPlaces;
         osmTramStops = cached.osmTramStops;
         osmBusStops = cached.osmBusStops;
+        fresh = Date.now() - cached.ts < 20 * 60 * 1000;   // < 20 min : inutile de réinterroger OSM
         rebuildMergedPlacesAndRefreshUI();
+        setStatus(fresh ? "✅ Lieux chargés (cache récent)." : "⏳ Mise à jour des lieux…", fresh ? "ok" : "info");
       } else {
         setStatus("⏳ Chargement des lieux accessibles dans cette zone…", "info");
       }
 
-      const communePromise = reverseGeocodeCommune(lat, lon).then(city => {
+      // 2. Commune (mémorisée par zone)
+      const communePromise = (communeMemo.has(tileKey) ? Promise.resolve(communeMemo.get(tileKey)) : reverseGeocodeCommune(lat, lon)).then(city => {
         if (signal.aborted) return "";
         if (city) {
+          communeMemo.set(tileKey, city);
           currentCommune = city;
           document.getElementById("zoneCityBadge").textContent = `🇫🇷 ${city}`;
         }
         return city;
       });
 
-      const osmPromise = fetchOverpassZoneSplit(lat, lon, signal).then(parsed => {
-        if (signal.aborted || !parsed) return;
-        osmPlaces = parsed.places;
-        osmTramStops = parsed.tramStops;
-        osmBusStops = parsed.busStops;
-        zoneMemoryCache.set(tileKey, { osmPlaces, osmTramStops, osmBusStops });
-        rebuildMergedPlacesAndRefreshUI();
+      // 3. OpenStreetMap : 3 requêtes en parallèle, la carte se remplit au fil des réponses
+      const osmPromise = fresh ? Promise.resolve() : fetchOverpassZoneSplit(lat, lon, signal, partial => {
+        if (signal.aborted) return;
+        osmPlaces = partial.places; osmTramStops = partial.tramStops; osmBusStops = partial.busStops;
+        scheduleRebuild();
+      }).then(parsed => {
+        if (signal.aborted) return;
+        if (!parsed) {                                      // échec réseau : on pourra réessayer au prochain mouvement
+          lastFetchedZoneCenter = null;
+          if (!cached) setStatus("⚠️ Données OpenStreetMap indisponibles pour le moment (réessai au prochain déplacement).", "error");
+          return;
+        }
+        osmPlaces = parsed.places; osmTramStops = parsed.tramStops; osmBusStops = parsed.busStops;
+        if (parsed.complete) setZoneCache(tileKey, { ts: Date.now(), osmPlaces, osmTramStops, osmBusStops });
+        else lastFetchedZoneCenter = null;                  // réponse partielle : on réessaiera
+        scheduleRebuild();
       });
 
-      const commPromise = loadCommunityData(lat, lon);
+      // 4. Communauté, Angers et Accèslibre démarrent AUSSITÔT, sans attendre OSM
+      const commPromise = loadCommunityData(lat, lon).then(() => { if (!signal.aborted) scheduleRebuild(); });
       const angersPromise = isNearAngers(lat, lon) ? loadAngersExtrasOnce() : Promise.resolve();
-
-      await Promise.allSettled([osmPromise, commPromise, angersPromise]);
-      if (signal.aborted) return;
-
-      const detectedCity = await communePromise;
-      if (signal.aborted) return;
-
-      if (detectedCity) {
-        const alItems = await fetchAcceslibreForCommune(detectedCity);
-        if (!signal.aborted && alItems.length > 0) {
-          acceslibreRawItems = alItems;
-          rebuildMergedPlacesAndRefreshUI();
+      const alPromise = communePromise.then(async city => {
+        if (!city || signal.aborted) return;
+        const items = await fetchAcceslibreForCommune(city);
+        if (signal.aborted) return;
+        if (items.length > 0 || city !== lastAlCity) {
+          acceslibreRawItems = items;
+          lastAlCity = city;
+          scheduleRebuild();
         }
-      }
+      });
 
-      setStatus(`✅ Zone ${detectedCity || ""} prête (${allPlaces.length + tramStops.length} lieux).`, "ok");
+      await Promise.allSettled([osmPromise, commPromise, angersPromise, alPromise]);
+      if (signal.aborted) return;
+
+      rebuildMergedPlacesAndRefreshUI();
+      const detectedCity = await communePromise;
+      if (lastFetchedZoneCenter) {
+        setStatus(`✅ Zone ${detectedCity || ""} prête (${allPlaces.length + tramStops.length} lieux).`, "ok");
+      }
     }
 
     let angersLoadedOnce = false;
@@ -3463,13 +3557,17 @@
         busColors = cachedIrigo.busColors || {};
         irigoBusStops = cachedIrigo.busStops || [];
       }
+      if (cachedMuni || cachedIrigo) scheduleRebuild(0);       // affichage immédiat depuis le cache
 
+      // On ne retélécharge que ce qui manque ou a expiré (parkings/toilettes 12 h, réseau Irigo 24 h). Les travaux sont toujours rafraîchis.
+      const skip = Promise.reject(new Error("cache"));
+      skip.catch(() => {});
       const [parkings, toilets, works, lines, stops] = await Promise.allSettled([
-        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stationnement_pmr_angers/exports/json", {}, 9000).then(r => r.json()),
-        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/sanitaires-publics-angers/records?limit=100", {}, 7000).then(r => r.json()),
+        cachedMuni ? skip : fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stationnement_pmr_angers/exports/json", {}, 9000).then(r => r.json()),
+        cachedMuni ? skip : fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/sanitaires-publics-angers/records?limit=100", {}, 7000).then(r => r.json()),
         fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/info-travaux/records?where=endat%20%3E%20now()&limit=50", {}, 7000).then(r => r.json()),
-        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/irigo_gtfs_lines/exports/json", {}, 12000).then(r => r.json()),
-        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stop_route_irigo_gtfs/exports/json", {}, 14000).then(r => r.json())
+        cachedIrigo ? skip : fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/irigo_gtfs_lines/exports/json", {}, 12000).then(r => r.json()),
+        cachedIrigo ? skip : fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stop_route_irigo_gtfs/exports/json", {}, 14000).then(r => r.json())
       ]);
 
       const muniList = [];
@@ -3555,7 +3653,7 @@
         }));
       }
 
-      if (irigoTramStops.length > 0) {
+      if (!cachedIrigo && irigoTramStops.length > 0) {
         saveCache("gps_pmr_irigo_v2", {
           tramFeatures: irigoTramFeatures, tramColors, tramStops: irigoTramStops,
           busFeatures: irigoBusFeatures, busLinesMeta: irigoBusLinesMeta, busColors, busStops: irigoBusStops
@@ -3564,51 +3662,72 @@
       rebuildMergedPlacesAndRefreshUI();
     }
 
+    // Interroge deux miroirs Overpass EN PARALLÈLE (le plus rapide gagne), puis un 3e en secours
     async function queryOverpass(ql, signal, timeoutMs = 10000) {
       const endpoints = [
         "https://overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
       ];
-      for (const ep of endpoints) {
-        if (signal?.aborted) return null;
+      if (signal?.aborted) return null;
+      const body = "data=" + encodeURIComponent(ql);
+      const ctrls = [];
+      const attempt = async ep => {
+        const ctrl = new AbortController();
+        ctrls.push(ctrl);
+        const timer = setTimeout(() => ctrl.abort(), timeoutMs);
         try {
-          const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-          if (signal) signal.addEventListener("abort", () => ctrl.abort(), { once: true });
-
           const res = await fetch(ep, {
-            method: "POST",
-            signal: ctrl.signal,
-            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=utf-8" },
-            body: "data=" + encodeURIComponent(ql)
+            method: "POST", signal: ctrl.signal, body,
+            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=utf-8" }
           });
-          clearTimeout(timer);
-          if (res.ok) return await res.json();
-        } catch {}
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const json = await res.json();
+          if (!json || !Array.isArray(json.elements)) throw new Error("réponse invalide");
+          return json;
+        } finally { clearTimeout(timer); }
+      };
+      const onAbort = () => ctrls.forEach(c => c.abort());
+      if (signal) signal.addEventListener("abort", onAbort, { once: true });
+      try {
+        return await Promise.any([attempt(endpoints[0]), attempt(endpoints[1])]);
+      } catch {
+        if (signal?.aborted) return null;
+        try { return await attempt(endpoints[2]); } catch { return null; }
+      } finally {
+        ctrls.forEach(c => c.abort());                      // coupe la requête perdante
+        if (signal) signal.removeEventListener("abort", onAbort);
       }
-      return null;
     }
 
-    async function fetchOverpassZoneSplit(lat, lon, signal) {
+    async function fetchOverpassZoneSplit(lat, lon, signal, onUpdate) {
       const bboxMed = `${(lat - 0.022).toFixed(4)},${(lon - 0.032).toFixed(4)},${(lat + 0.022).toFixed(4)},${(lon + 0.032).toFixed(4)}`;
       const bboxLarge = `${(lat - 0.045).toFixed(4)},${(lon - 0.065).toFixed(4)},${(lat + 0.045).toFixed(4)},${(lon + 0.065).toFixed(4)}`;
       const bboxSmall = `${(lat - 0.015).toFixed(4)},${(lon - 0.022).toFixed(4)},${(lat + 0.015).toFixed(4)},${(lon + 0.022).toFixed(4)}`;
 
-      const qlPOIs = `
-        [out:json][timeout:14];
+      // 1) L'essentiel PMR (petite requête, répond vite) : parkings, toilettes, santé, commerces, administrations
+      const qlEssential = `
+        [out:json][timeout:12];
         (
-          nwr["amenity"~"^(toilets|restaurant|pharmacy|doctors|clinic|hospital|dentist|townhall|public_building|courthouse|post_office|parking_space)$"](${bboxMed});
+          nwr["amenity"~"^(toilets|pharmacy|doctors|clinic|hospital|dentist|townhall|public_building|courthouse|post_office|parking_space)$"](${bboxMed});
           nwr["amenity"="parking"]["capacity:disabled"](${bboxMed});
           nwr["shop"~"^(supermarket|hypermarket|convenience)$"](${bboxMed});
           nwr["office"="government"](${bboxMed});
+        );
+        out center qt;
+      `;
+      // 2) Sorties : restaurants, bars, salles, musées
+      const qlLeisure = `
+        [out:json][timeout:14];
+        (
+          nwr["amenity"="restaurant"](${bboxMed});
           nwr["amenity"~"^(bar|pub|biergarten|nightclub)$"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
           nwr["amenity"~"^(theatre|concert_hall|music_venue|cinema|arts_centre|events_venue|community_centre)$"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
           nwr["tourism"="museum"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
         );
         out center qt;
       `;
-
+      // 3) Transports
       const qlTransit = `
         [out:json][timeout:10];
         (
@@ -3618,11 +3737,27 @@
         out center qt 350;
       `;
 
-      const [poiData, transitData] = await Promise.all([
-        queryOverpass(qlPOIs, signal, 11000),
-        queryOverpass(qlTransit, signal, 9000)
+      // Les 3 requêtes partent ensemble ; chaque réponse met la carte à jour dès son arrivée
+      let poiEls = [], trEls = [], okCount = 0, failed = 0;
+      const run = (ql, ms, sink) => queryOverpass(ql, signal, ms).then(json => {
+        if (signal?.aborted) return;
+        if (json && Array.isArray(json.elements)) {
+          sink(json.elements); okCount++;
+          if (onUpdate) onUpdate(parseOverpassPayload({ elements: poiEls }, { elements: trEls }));
+        } else failed++;
+      });
+      await Promise.all([
+        run(qlEssential, 11000, els => { poiEls = poiEls.concat(els); }),
+        run(qlLeisure, 12000, els => { poiEls = poiEls.concat(els); }),
+        run(qlTransit, 9000, els => { trEls = trEls.concat(els); })
       ]);
+      if (signal?.aborted || okCount === 0) return null;
+      const parsed = parseOverpassPayload({ elements: poiEls }, { elements: trEls });
+      parsed.complete = failed === 0;
+      return parsed;
+    }
 
+    function parseOverpassPayload(poiData, transitData) {
       const places = [], tStops = [], bStops = [];
 
       if (poiData?.elements) {
@@ -3645,7 +3780,7 @@
           if ((am === "parking_space" && t.disabled === "yes") || (am === "parking" && t["capacity:disabled"])) {
             const cap = t["capacity:disabled"] ? `${t["capacity:disabled"]} place(s) PMR` : "Place réservée PMR";
             places.push({
-              id: "osm_pk_" + el.id, cat: "parking",
+              id: "osm_pk_" + el.type[0] + el.id, cat: "parking",
               name: t.name || t["addr:street"] || "Stationnement PMR",
               address: addr, lat: elat, lon: elon,
               access: "yes", accessLabel: "Stationnement PMR",
@@ -3676,7 +3811,7 @@
           if (!cat) continue;
 
           places.push({
-            id: "osm_" + el.id, cat, name: t.name || fallbackName, address: addr,
+            id: "osm_" + el.type[0] + el.id, cat, name: t.name || fallbackName, address: addr,
             lat: elat, lon: elon, access, accessLabel,
             details: [typeLabel, toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • "),
             toiletsPMR: cat === "toilet" ? "yes" : toiletsPMR,
@@ -3740,6 +3875,16 @@
       allPlaces.forEach(p => { if (counts[p.cat] != null) counts[p.cat]++; });
       document.getElementById("globalStats").textContent =
         `${counts.parking} parkings • ${counts.restaurant} restos • ${counts.bar} bars • ${counts.venue} salles • ${tramStops.length} gares/tram`;
+    }
+
+    // Propriétés strictement utiles à la carte (le GeoJSON est recopié à chaque mise à jour : on évite _search, dist, features…)
+    function slimPlaceProps(p, color, strokeColor) {
+      return {
+        id: p.id, cat: p.cat, name: p.name, address: p.address || "", lat: p.lat, lon: p.lon,
+        access: p.access, accessLabel: p.accessLabel, details: p.details || "",
+        isAcceslibre: !!p.isAcceslibre, isCommunityVerified: !!p.isCommunityVerified, webUrl: p.webUrl || "",
+        featuresJSON: JSON.stringify(p.features || []), color, strokeColor
+      };
     }
 
     function colorForPlace(p) {
@@ -3846,7 +3991,7 @@
         type: "FeatureCollection",
         features: allPlaces.filter(p => p.cat === "parking").map(p => ({
           type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] },
-          properties: { ...p, featuresJSON: JSON.stringify(p.features || []), color: "#007aff", strokeColor: "#ffffff" }
+          properties: slimPlaceProps(p, "#007aff", "#ffffff")
         }))
       };
       if (map.getSource("parkings")) map.getSource("parkings").setData(parkingGeoJSON);
@@ -3874,14 +4019,10 @@
         features: allPlaces.filter(p => p.cat !== "parking" && visibleLayers[p.cat]).map(p => ({
           type: "Feature",
           geometry: { type: "Point", coordinates: [p.lon, p.lat] },
-          properties: {
-            ...p,
-            featuresJSON: JSON.stringify(p.features || []),
-            color: colorForPlace(p),
-            strokeColor: ["pharmacy", "medical", "market", "admin"].includes(p.cat)
-              ? strokeColorForAccess(p.access)
-              : "#ffffff"
-          }
+          properties: slimPlaceProps(
+            p, colorForPlace(p),
+            ["pharmacy", "medical", "market", "admin"].includes(p.cat) ? strokeColorForAccess(p.access) : "#ffffff"
+          )
         }))
       };
       if (map.getSource("pois")) map.getSource("pois").setData(poisGeoJSON);
@@ -4552,6 +4693,7 @@
     }
 
     map.on("load", () => {
+      initSettingsInputsOnce();
       updateProfileUI();
       updateNetworkBadge();
       refreshLastRouteBox();
