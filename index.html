@@ -615,8 +615,10 @@
       <button class="chip active" data-layer="market" onclick="toggleMapLayer('market', this)">🛒 Supermarchés</button>
       <button class="chip active" data-layer="admin" onclick="toggleMapLayer('admin', this)">🏛️ Admin</button>
       <button class="chip active" data-layer="works" onclick="toggleMapLayer('works', this)">🚧 Travaux</button>
-      <button class="chip" data-layer="bus" onclick="toggleMapLayer('bus', this)">🚌 Bus</button>
+      <button class="chip active" data-layer="bus" onclick="toggleMapLayer('bus', this)">🚌 Bus</button>
       <button class="chip active" data-layer="tram" onclick="toggleMapLayer('tram', this)">🚊 Tram / Métro</button>
+      <button class="chip active" data-layer="rt" onclick="toggleMapLayer('rt', this)">🔴 Temps réel</button>
+      <div id="rtInfo" class="sub" style="display:none; flex-basis:100%;"></div>
     </div>
   </div>
 
@@ -1161,7 +1163,7 @@
     let visibleLayers = {
       parking: true, toilet: true, restaurant: true, bar: true, venue: true,
       pharmacy: true, medical: true, market: true, admin: true,
-      works: true, bus: false, tram: true
+      works: true, bus: true, tram: true, rt: true
     };
     let dirCategory = "all";
     let dirAccess = "all";
@@ -2652,6 +2654,7 @@
       if (mode !== "car") clearParkingProposal();
       else renderCarParkingsNearTarget();
 
+      if (mode === "bus" && !isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon)) loadOsmLines("bus", currentZoneCenter.lat, currentZoneCenter.lon);
       if (mode === "bus") {
         if (!visibleLayers.bus) {
           const busChip = document.querySelector('[data-layer="bus"]');
@@ -3219,11 +3222,14 @@
       wrap.innerHTML = "";
       const titleEl = document.getElementById("selectedBusLineTitle");
 
-      if (!isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon) || irigoBusLinesMeta.length === 0) {
+      const nearAngers = isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon) && irigoBusLinesMeta.length > 0;
+      const linesMeta = nearAngers ? irigoBusLinesMeta : osmBusLinesMeta();
+      if (!nearAngers && linesMeta.length === 0) {
         busLineFilter = "all";
-        titleEl.textContent = `Arrêts de bus OpenStreetMap (${currentCommune || "France"})`;
+        titleEl.textContent = visibleLayers.bus || activeTransportTab === "bus" ? `Arrêts de bus OpenStreetMap (${currentCommune || "France"}) • recherche des lignes…` : `Arrêts de bus OpenStreetMap (${currentCommune || "France"})`;
         return;
       }
+      if (!linesMeta.some(l => l.shortName === busLineFilter)) busLineFilter = "all";
 
       const allBtn = document.createElement("button");
       allBtn.className = "line-filter-btn" + (busLineFilter === "all" ? " selected" : "");
@@ -3232,7 +3238,7 @@
       allBtn.onclick = () => selectBusLine("all");
       wrap.appendChild(allBtn);
 
-      irigoBusLinesMeta.forEach(line => {
+      linesMeta.forEach(line => {
         const btn = document.createElement("button");
         const isSel = busLineFilter === line.shortName;
         btn.className = "line-filter-btn" + (isSel ? " selected" : "");
@@ -3244,10 +3250,11 @@
       });
 
       if (busLineFilter === "all") {
-        titleEl.textContent = `${irigoBusLinesMeta.length} lignes de bus Irigo`;
+        titleEl.textContent = nearAngers ? `${linesMeta.length} lignes de bus Irigo` : `${linesMeta.length} ligne${linesMeta.length > 1 ? "s" : ""} de bus (${currentCommune || "zone"}, OpenStreetMap)`;
       } else {
-        const meta = irigoBusLinesMeta.find(l => l.shortName === busLineFilter);
-        titleEl.textContent = meta ? `Ligne ${meta.shortName} : ${meta.longName}` : `Ligne ${busLineFilter}`;
+        const meta = linesMeta.find(l => l.shortName === busLineFilter);
+        const accTxt = meta && meta.acc && ACC_UI[meta.acc] ? ` • ${ACC_UI[meta.acc].label}` : "";
+        titleEl.textContent = (meta ? `Ligne ${meta.shortName} : ${meta.longName}` : `Ligne ${busLineFilter}`) + accTxt;
       }
     }
 
@@ -3266,7 +3273,7 @@
     function renderBusStops() {
       const q = (document.getElementById("busSearchInput").value || "").trim().toLowerCase();
       const filtered = busStops.filter(s => {
-        if (busLineFilter !== "all" && !s.lines.includes(busLineFilter)) return false;
+        if (busLineFilter !== "all" && stopsKnowLines() && !(s.lines || []).includes(busLineFilter)) return false;
         if (q && !(s._search || s.name.toLowerCase()).includes(q)) return false;
         return true;
       });
@@ -4000,8 +4007,9 @@
       const commPromise = loadCommunityData(lat, lon).then(() => { if (!signal.aborted) scheduleRebuild(); });
       const angersPromise = isNearAngers(lat, lon) ? loadAngersExtrasOnce() : Promise.resolve();
       if (!isNearAngers(lat, lon)) {                          // ailleurs en France : lignes de tram/métro (et bus si la couche est active) depuis OpenStreetMap
-        setTimeout(() => { if (!signal.aborted) { loadOsmLines("tram", lat, lon); if (visibleLayers.bus) loadOsmLines("bus", lat, lon); } }, 600);
+        setTimeout(() => { if (!signal.aborted) { loadOsmLines("tram", lat, lon); if (visibleLayers.bus && map.getZoom() >= 12) loadOsmLines("bus", lat, lon); } }, 600);
       }
+      communePromise.then(city => { if (!signal.aborted) rtSetCity(city || currentCommune); });
       const alPromise = communePromise.then(async city => {
         if (!city || signal.aborted) return;
         const items = await fetchAcceslibreForCommune(city);
@@ -4411,6 +4419,7 @@
       return "#ffffff";
     }
 
+    const stopsKnowLines = () => isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon) && irigoBusStops.length > 0;
     function getFilteredBusLinesGeo() {
       const all = isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon) ? irigoBusFeatures : osmBusFeatures;
       const feats = busLineFilter === "all" ? all : all.filter(f => f.properties.shortName === busLineFilter);
@@ -4418,7 +4427,7 @@
     }
 
     function getFilteredBusStopsGeo() {
-      const stops = busLineFilter === "all" ? busStops : busStops.filter(s => (s.lines || []).includes(busLineFilter));
+      const stops = (busLineFilter === "all" || !stopsKnowLines()) ? busStops : busStops.filter(s => (s.lines || []).includes(busLineFilter));
       return {
         type: "FeatureCollection",
         features: stops.map(s => ({
@@ -4461,7 +4470,7 @@
       if (!map.getSource("bus-lines")) {
         map.addSource("bus-lines", { type: "geojson", data: getFilteredBusLinesGeo() });
         map.addLayer({
-          id: "bus-lines-layer", type: "line", source: "bus-lines",
+          id: "bus-lines-layer", type: "line", source: "bus-lines", minzoom: 12,
           layout: { visibility: visibleLayers.bus ? "visible" : "none" },
           paint: { "line-color": ["get", "color"], "line-width": busLineFilter === "all" ? 2.4 : 4.5, "line-opacity": busLineFilter === "all" ? 0.55 : 0.92 }
         });
@@ -4472,7 +4481,7 @@
       if (!map.getSource("bus-stops")) {
         map.addSource("bus-stops", { type: "geojson", data: getFilteredBusStopsGeo() });
         map.addLayer({
-          id: "bus-stops-layer", type: "circle", source: "bus-stops",
+          id: "bus-stops-layer", type: "circle", source: "bus-stops", minzoom: 14,
           layout: { visibility: visibleLayers.bus ? "visible" : "none" },
           paint: { "circle-color": "#ff9500", "circle-radius": 5.5, "circle-stroke-width": 1.8, "circle-stroke-color": "#ffffff" }
         });
@@ -4740,6 +4749,10 @@
         if (visibleLayers.bus) loadOsmLines("bus", currentZoneCenter.lat, currentZoneCenter.lon);
         if (map.getLayer("bus-lines-layer")) map.setLayoutProperty("bus-lines-layer", "visibility", vis);
         if (map.getLayer("bus-stops-layer")) map.setLayoutProperty("bus-stops-layer", "visibility", vis);
+      }
+      if (layerKey === "rt") {
+        if (map.getLayer("rt-vehicles-layer")) map.setLayoutProperty("rt-vehicles-layer", "visibility", vis);
+        if (visibleLayers.rt) { RT.on = true; RT.fails = 0; if (RT.net) rtPoll(); else rtSetCity(RT.city || currentCommune); } else { rtStop(false); rtInfo(""); }
       }
       if (layerKey === "works" && map.getLayer("works-layer")) map.setLayoutProperty("works-layer", "visibility", vis);
       if (layerKey === "parking") {
@@ -6481,8 +6494,8 @@
         const f = Math.floor(t / 8), w = t % 8;
         if (w === 0) { let v; [v, i] = pbVarint(b, i); out.push({ f, w, v }); }
         else if (w === 2) { let l; [l, i] = pbVarint(b, i); if (i + l > e) throw new Error("pb"); out.push({ f, w, s: i, e: i + l }); i += l; }
-        else if (w === 1) i += 8;
-        else if (w === 5) i += 4;
+        else if (w === 1) { out.push({ f, w, s: i, e: i + 8 }); i += 8; }
+        else if (w === 5) { out.push({ f, w, s: i, e: i + 4 }); i += 4; }
         else throw new Error("pb");
         if (i > e) throw new Error("pb");
       }
@@ -6870,17 +6883,29 @@
       const r = accFromCounts(c, t.wheelchair);
       return { type: "Feature", properties: { color: col, shortName: t.ref || "", name: t.name || "", acc: r.acc, accTxt: r.txt, osm: 1 }, geometry: { type: "MultiLineString", coordinates: lines } };
     }
-    async function loadOsmLines(kind, lat, lon) {
-      if (isNearAngers(lat, lon)) return;                           // Angers : données Irigo, plus précises
-      const key = kind + "|" + lat.toFixed(2) + "_" + lon.toFixed(2);
-      const apply = f => { if (kind === "tram") osmTramFeatures = f; else osmBusFeatures = f; renderMapSourcesAndLayers(); updateBusMapLayerSafe(); };
+    const osmLinesInflight = new Set();
+    async function loadOsmLines(kind, lat0, lon0) {
+      if (isNearAngers(lat0, lon0)) return;                         // Angers : données Irigo, plus précises
+      // tuiles larges (≈3 km bus / 11 km tram) : on ne relance pas une grosse requête à chaque petit déplacement
+      const q = kind === "tram" ? 0.1 : 0.03;
+      const lat = (Math.floor(lat0 / q) + 0.5) * q, lon = (Math.floor(lon0 / (q * 1.5)) + 0.5) * q * 1.5;
+      const key = kind + "|" + lat.toFixed(3) + "_" + lon.toFixed(3);
+      if (osmLinesInflight.has(key)) return;
+      const apply = f => {
+        if (kind === "tram") osmTramFeatures = f; else { osmBusFeatures = f; try { renderBusLineFilters(); renderBusStops(); } catch {} }
+        renderMapSourcesAndLayers(); updateBusMapLayerSafe();
+      };
       if (osmLinesCache.has(key)) { apply(osmLinesCache.get(key)); return; }
       if (osmLinesAbort[kind]) osmLinesAbort[kind].abort();
       const ctrl = osmLinesAbort[kind] = new AbortController();
+      osmLinesInflight.add(key);
+      try { await _loadOsmLinesNet(kind, lat, lon, key, ctrl, apply); } finally { osmLinesInflight.delete(key); }
+    }
+    async function _loadOsmLinesNet(kind, lat, lon, key, ctrl, apply) {
       const bb = (dl, dn) => `${(lat - dl).toFixed(4)},${(lon - dn).toFixed(4)},${(lat + dl).toFixed(4)},${(lon + dn).toFixed(4)}`;
       const ql = kind === "tram"
-        ? `[out:json][timeout:20];rel["route"~"^(tram|subway|light_rail)$"](${bb(0.06, 0.09)});out geom qt 80;nw["railway"~"^(tram_stop|station|halt)$"]["wheelchair"](${bb(0.06, 0.09)});out center qt 700;`
-        : `[out:json][timeout:25];rel["route"="bus"](${bb(0.025, 0.036)});out geom qt 140;node["highway"="bus_stop"]["wheelchair"](${bb(0.025, 0.036)});out qt 1200;`;
+        ? `[out:json][timeout:20];rel["route"~"^(tram|subway|light_rail)$"](${bb(0.07, 0.105)});out geom qt 80;nw["railway"~"^(tram_stop|station|halt)$"]["wheelchair"](${bb(0.07, 0.105)});out center qt 700;`
+        : `[out:json][timeout:25];rel["route"="bus"](${bb(0.032, 0.048)});out geom qt 200;node["highway"="bus_stop"]["wheelchair"](${bb(0.032, 0.048)});out qt 1500;`;
       const json = await queryOverpass(ql, ctrl.signal, kind === "tram" ? 16000 : 20000);
       if (!json || ctrl.signal.aborted) return;
       const grid = new Map();
@@ -6903,8 +6928,17 @@
       const feats = [...seen.values()];
       if (osmLinesCache.size > 12) osmLinesCache.clear();
       osmLinesCache.set(key, feats);
-      if (kind === "tram") { if (!isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon)) apply(feats); }
+      if (kind === "tram") { const c = map.getCenter(); if (!isNearAngers(c.lat, c.lng)) apply(feats); }
       else apply(feats);
+    }
+    // Liste des lignes de bus OSM de la zone (pour le panneau Bus hors Angers)
+    function osmBusLinesMeta() {
+      const m = new Map();
+      for (const f of osmBusFeatures) {
+        const p = f.properties, k = p.shortName || p.name; if (!k || m.has(k)) continue;
+        m.set(k, { shortName: k, longName: p.name || ("Ligne " + k), color: p.color, acc: p.acc });
+      }
+      return [...m.values()].sort((a, b) => a.shortName.localeCompare(b.shortName, "fr", { numeric: true }));
     }
     function updateBusMapLayerSafe() { try { if (map.getSource("bus-lines")) updateBusMapLayer(); } catch {} }
 
@@ -6927,15 +6961,160 @@
         <div class="sub">Vérifiez toujours auprès du réseau : une rampe ou un véhicule peut être indisponible.</div></div>`;
       new maplibregl.Popup({ closeButton: true }).setLngLat(lngLat).setDOMContent(box).addTo(map);
     }
+    let _linesMoveT = null;
+    map.on("moveend", () => {
+      clearTimeout(_linesMoveT);
+      _linesMoveT = setTimeout(() => {
+        if (isNavigating || VIEWER_ID || map.getZoom() < 12) return;
+        const c = map.getCenter();
+        loadOsmLines("tram", c.lat, c.lng);
+        if (visibleLayers.bus) loadOsmLines("bus", c.lat, c.lng);
+      }, 700);
+    });
     map.on("click", e => {
       const lay = ["tram-lines", "bus-lines-layer"].filter(id => map.getLayer(id));
       if (!lay.length) return;
-      const blockers = ["pois-layer", "parkings-unclustered", "parkings-clusters", "tram-stops-layer", "bus-stops-layer", "works-layer"].filter(id => map.getLayer(id));
+      const blockers = ["pois-layer", "parkings-unclustered", "parkings-clusters", "tram-stops-layer", "bus-stops-layer", "works-layer", "rt-vehicles-layer"].filter(id => map.getLayer(id));
       const r = 7, bbox = [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
       if (blockers.length && map.queryRenderedFeatures(bbox, { layers: blockers }).length) return;
       const f = map.queryRenderedFeatures(bbox, { layers: lay })[0];
       if (f) openLinePopup(e.lngLat, f.properties, f.layer.id === "tram-lines");
     });
+
+
+    // =====================================================================================
+    // TEMPS RÉEL PARTOUT EN FRANCE : positions des véhicules (GTFS-RT) du réseau de la ville affichée
+    // Le réseau est retrouvé dans le catalogue officiel transport.data.gouv.fr (Point d'Accès National)
+    // =====================================================================================
+    const PAN_URL = "https://transport.data.gouv.fr/api/datasets";
+    const PAN_KEY = "gps_pmr_pan_v1";
+    let panIndex = null, panLoading = null, panRetryAt = 0;
+    const RT = { net: null, city: "", timer: null, fails: 0, vehicles: 0, ts: 0, on: true, abort: null };
+    function panNorm(s) { return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+    function reducePan(list) {
+      const out = [];
+      for (const d of list || []) {
+        if (!d || d.type !== "public-transit") continue;
+        const rs = [...(d.resources || []), ...(d.community_resources || [])];
+        const v = rs.find(r => r && /gtfs-?rt/i.test(r.format || "") && /vehicle|position/i.test((r.title || "") + " " + (r.url || "") + " " + (r.original_url || "")) && (r.url || r.original_url));
+        if (!v) continue;
+        out.push({ t: d.title || "", a: (d.covered_area || []).map(x => panNorm(x && x.nom)).filter(Boolean).slice(0, 40), v: v.url || v.original_url });
+      }
+      return out;
+    }
+    async function loadPanIndex() {
+      if (panIndex) return panIndex;
+      try { const c = JSON.parse(localStorage.getItem(PAN_KEY) || "null"); if (c && Array.isArray(c.list) && Date.now() - c.ts < 7 * 864e5) return (panIndex = c.list); } catch {}
+      if (Date.now() < panRetryAt) return null;
+      if (!panLoading) panLoading = (async () => {
+        try {
+          const res = await fetchWithTimeout(PAN_URL, {}, 25000);
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const list = reducePan(await res.json());
+          if (!list.length) throw new Error("vide");
+          panIndex = list;
+          try { localStorage.setItem(PAN_KEY, JSON.stringify({ ts: Date.now(), list })); } catch {}
+        } catch { panRetryAt = Date.now() + 10 * 60 * 1000; }
+        panLoading = null; return panIndex;
+      })();
+      return panLoading;
+    }
+    function findPanNetwork(city) {
+      const c = panNorm(city); if (!c || !panIndex) return null;
+      const re = new RegExp("(^| )" + c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "( |$)");
+      let best = null;
+      for (const n of panIndex) {
+        const inArea = n.a.some(x => x === c || re.test(x)), inTitle = re.test(panNorm(n.t));
+        if (!inArea && !inTitle) continue;
+        const score = (inTitle ? 3 : 0) + (inArea ? 2 : 0) + (n.a.some(x => x === c) ? 1 : 0) - Math.min(2, n.a.length / 15);   // les réseaux locaux passent avant les grands regroupements régionaux
+        if (!best || score > best.score) best = { n, score };
+      }
+      return best && best.n;
+    }
+    const pbFloat = (b, f) => new DataView(b.buffer, b.byteOffset + f.s, 4).getFloat32(0, true);
+    function decodeVehiclePositions(buf) {
+      const b = buf instanceof Uint8Array ? buf : new Uint8Array(buf), out = [];
+      for (const ent of pbFields(b, 0, b.length)) {
+        if (ent.f !== 2 || ent.w !== 2) continue;
+        for (const vf of pbFields(b, ent.s, ent.e)) {
+          if (vf.f !== 4 || vf.w !== 2) continue;
+          const v = { lat: null, lon: null, bearing: null, speed: null, route: "", label: "", ts: 0 };
+          for (const f of pbFields(b, vf.s, vf.e)) {
+            if (f.f === 1 && f.w === 2) { for (const t of pbFields(b, f.s, f.e)) if (t.f === 5 && t.w === 2) v.route = pbStr(b, t.s, t.e); }
+            else if (f.f === 2 && f.w === 2) { for (const t of pbFields(b, f.s, f.e)) { if (t.w !== 5) continue; const x = pbFloat(b, t); if (t.f === 1) v.lat = x; else if (t.f === 2) v.lon = x; else if (t.f === 3) v.bearing = x; else if (t.f === 5) v.speed = x; } }
+            else if (f.f === 5 && f.w === 0) v.ts = f.v;
+            else if (f.f === 8 && f.w === 2) { for (const t of pbFields(b, f.s, f.e)) if (t.w === 2 && (t.f === 2 || (t.f === 1 && !v.label))) v.label = pbStr(b, t.s, t.e); }
+          }
+          if (isFinite(v.lat) && isFinite(v.lon) && Math.abs(v.lat) <= 90 && Math.abs(v.lon) <= 180 && (v.lat || v.lon)) out.push(v);
+        }
+      }
+      return out;
+    }
+    function rtGeo(list) {
+      return { type: "FeatureCollection", features: list.map(v => ({ type: "Feature", geometry: { type: "Point", coordinates: [v.lon, v.lat] },
+        properties: { route: v.route, label: v.label, speed: v.speed == null ? -1 : Math.round(v.speed * 3.6), age: v.ts ? Math.max(0, Math.round(Date.now() / 1000 - v.ts)) : -1, bearing: v.bearing == null ? 0 : v.bearing } })) };
+    }
+    function ensureRtLayer() {
+      if (map.getSource("rt-vehicles")) return true;
+      if (!map.isStyleLoaded()) return false;
+      map.addSource("rt-vehicles", { type: "geojson", data: rtGeo([]) });
+      map.addLayer({ id: "rt-vehicles-layer", type: "circle", source: "rt-vehicles", minzoom: 11,
+        layout: { visibility: visibleLayers.rt ? "visible" : "none" },
+        paint: { "circle-color": "#e11d48", "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 3.5, 16, 8], "circle-stroke-width": 1.8, "circle-stroke-color": "#ffffff", "circle-opacity": 0.95 } });
+      map.on("click", "rt-vehicles-layer", e => {
+        const p = e.features && e.features[0] && e.features[0].properties; if (!p) return;
+        const box = document.createElement("div");
+        box.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;"><div style="font-weight:700;">🔴 Véhicule en temps réel</div>
+          <div class="sub">${p.route ? "Ligne (id réseau) : " + escapeHTML(p.route) : ""}${p.label ? " • véhicule " + escapeHTML(p.label) : ""}</div>
+          <div class="sub">${p.speed >= 0 ? "Vitesse ≈ " + p.speed + " km/h • " : ""}${p.age >= 0 ? "position il y a " + p.age + " s" : ""}</div>
+          <div class="sub">L'accessibilité du véhicule n'est pas publiée dans ce flux.</div></div>`;
+        new maplibregl.Popup().setLngLat(e.lngLat).setDOMContent(box).addTo(map);
+      });
+      map.on("mouseenter", "rt-vehicles-layer", () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", "rt-vehicles-layer", () => map.getCanvas().style.cursor = "");
+      return true;
+    }
+    function rtInfo(text) {
+      const el = gid("rtInfo"); if (!el) return;
+      el.style.display = text && visibleLayers.rt ? "block" : "none"; el.textContent = text || "";
+    }
+    function rtStop(clear) {
+      clearTimeout(RT.timer); RT.timer = null; if (RT.abort) RT.abort.abort(); RT.abort = null;
+      if (clear && map.getSource("rt-vehicles")) map.getSource("rt-vehicles").setData(rtGeo([]));
+    }
+    async function rtPoll() {
+      clearTimeout(RT.timer); RT.timer = null;
+      if (!RT.net || !RT.on || !visibleLayers.rt) return;
+      const next = ms => { RT.timer = setTimeout(rtPoll, ms); };
+      if (document.hidden || map.getZoom() < 11 || !navigator.onLine) return next(20000);
+      const ctrl = RT.abort = new AbortController(), net = RT.net;
+      try {
+        const res = await fetchWithTimeout(net.v, { signal: ctrl.signal }, 9000);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const list = decodeVehiclePositions(new Uint8Array(await res.arrayBuffer()));
+        if (RT.net !== net) return;
+        RT.fails = 0; RT.vehicles = list.length; RT.ts = Date.now();
+        if (ensureRtLayer()) map.getSource("rt-vehicles").setData(rtGeo(list));
+        rtInfo(list.length ? `🔴 Temps réel : ${net.t} • ${list.length} véhicule${list.length > 1 ? "s" : ""} (mise à jour ${hhmm(RT.ts)})` : `🔴 ${net.t} : aucun véhicule en circulation signalé pour l'instant.`);
+        next(15000);
+      } catch (e) {
+        if (RT.net !== net || (e && e.name === "AbortError" && ctrl.signal.aborted)) return;
+        RT.fails++;
+        if (RT.fails >= 3) { rtInfo(`ℹ️ Temps réel indisponible pour ${net.t} (flux non accessible depuis le navigateur ou hors service).`); return; }
+        next(8000 * RT.fails);
+      }
+    }
+    async function rtSetCity(city) {
+      if (!RT.on) return;
+      RT.city = city || "";
+      const idx = await loadPanIndex();
+      if (!idx) return;
+      const net = findPanNetwork(city);
+      if (!net) { if (RT.net) { RT.net = null; rtStop(true); } rtInfo(city ? `Pas de flux temps réel trouvé pour ${city} dans le catalogue national.` : ""); return; }
+      if (RT.net && RT.net.v === net.v) return;
+      rtStop(true); RT.net = net; RT.fails = 0; ensureRtLayer(); rtPoll();
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && RT.net && !RT.timer) rtPoll(); });
 
     map.on("load", () => {
       if (VIEWER_ID) { initViewer(); return; }
