@@ -3993,13 +3993,13 @@
     // --- Cache des zones (mémoire + localStorage, 4 zones max) ---
     const ZONE_LS_PREFIX = "gps_pmr_zone_v1_";
     const ZONE_LS_INDEX = "gps_pmr_zone_index_v1";
-    function getZoneCache(key) {
+    function getZoneCache(key, stale) {
       if (zoneMemoryCache.has(key)) return zoneMemoryCache.get(key);
       try {
         const raw = localStorage.getItem(ZONE_LS_PREFIX + key);
         if (!raw) return null;
         const d = JSON.parse(raw);
-        if (!d || Date.now() - d.ts > 6 * 3600 * 1000) return null;
+        if (!d || (!stale && Date.now() - d.ts > 6 * 3600 * 1000)) return null;
         zoneMemoryCache.set(key, d);
         return d;
       } catch { return null; }
@@ -4034,6 +4034,7 @@
     const communeMemo = new Map();
 
     let zoneInFlight = "";
+    let osmRetry = { k: "", n: 0 };
     async function loadZoneData(lat, lon, force = false) {
       const flightKey = `${lat.toFixed(2)}_${lon.toFixed(2)}`;
       if (!force && zoneInFlight === flightKey) return;       // même zone déjà en cours de chargement
@@ -4086,11 +4087,19 @@
         if (signal.aborted) return;
         if (!parsed) {                                      // échec réseau : on pourra réessayer au prochain mouvement
           lastFetchedZoneCenter = null;
-          const usedPack = await packApply(lat, lon, signal).catch(() => false);
-          if (!cached && !usedPack && !signal.aborted) setStatus("⚠️ Données OpenStreetMap indisponibles pour le moment (réessai au prochain déplacement).", "error");
+          let usedPack = await packApply(lat, lon, signal).catch(() => false);
+          if (!cached && !usedPack) {                     // dernier recours : données de cette zone mises en cache il y a plus de 6 h
+            const old = getZoneCache(tileKey, true);
+            if (old) { osmPlaces = old.osmPlaces; osmTramStops = old.osmTramStops; osmBusStops = old.osmBusStops; scheduleRebuild(0); usedPack = true; setStatus("⚠️ OpenStreetMap ne répond pas : données enregistrées précédemment (peuvent être anciennes). Nouvelle tentative automatique…", "info"); }
+          }
+          if (!cached && !usedPack && !signal.aborted) setStatus("⚠️ Les serveurs OpenStreetMap sont surchargés. Nouvelle tentative automatique…", "error");
+          // réessai automatique (jusqu'à 4 fois, de plus en plus espacés) sans attendre que l'utilisateur bouge
+          const n = (osmRetry.k === tileKey ? osmRetry.n : 0) + 1; osmRetry = { k: tileKey, n };
+          if (n <= 4) setTimeout(() => { if (osmRetry.k === tileKey && navigator.onLine && currentZoneCenter.lat === lat && currentZoneCenter.lon === lon) loadZoneData(lat, lon, true); }, 4000 * n);
           return;
         }
         osmPlaces = parsed.places; osmTramStops = parsed.tramStops; osmBusStops = parsed.busStops;
+        osmRetry = { k: "", n: 0 };
         if (parsed.complete) setZoneCache(tileKey, { ts: Date.now(), osmPlaces, osmTramStops, osmBusStops });
         else lastFetchedZoneCenter = null;                  // réponse partielle : on réessaiera
         scheduleRebuild();
@@ -4252,7 +4261,9 @@
       const endpoints = [
         "https://overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
-        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+        "https://overpass.private.coffee/api/interpreter",
+        "https://overpass.openstreetmap.fr/api/interpreter"
       ];
       if (signal?.aborted) return null;
       const body = "data=" + encodeURIComponent(ql);
@@ -4289,7 +4300,11 @@
             if (signal?.aborted) return finish(null);
             failed++;
             if (started === 1) start(1);                          // le 1er a échoué vite : on enchaîne tout de suite
-            else if (failed >= 2 && started === 2) { started++; attempt(endpoints[2]).then(finish, () => finish(null)); }
+            else if (failed >= 2 && started === 2) {
+              started++;
+              attempt(endpoints[2]).then(finish, () =>
+                attempt(endpoints[3]).then(finish, () => attempt(endpoints[4]).then(finish, () => finish(null))));   // miroirs de secours en cascade
+            }
           });
         };
         start(0);
