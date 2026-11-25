@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="GPS PMR" />
+  <meta name="theme-color" content="#ffffff" />
   <title>GPS PMR — France • Navigation & Pratiques PMR</title>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -335,6 +336,22 @@
     body.nav-mode .nav-hud { display: flex; }
     body.nav-mode .nav-side { display: flex; }
     body.nav-mode .nav-eta { display: block; }
+    .offline-badge {
+      display: none; position: fixed; z-index: 45; left: 50%; transform: translateX(-50%);
+      bottom: calc(74px + env(safe-area-inset-bottom)); background: #b45309; color: #fff;
+      font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 999px; box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    }
+    .wc-field { display: flex; flex-direction: column; gap: 3px; }
+    /* ===== Mode nuit : interface sombre + carte assombrie (filtre sur le canevas, marqueurs et popups intacts) ===== */
+    body.night-map .maplibregl-canvas { filter: invert(1) hue-rotate(180deg) brightness(0.88) contrast(0.92) saturate(0.85); }
+    body.night-map { background: #0b0d10; }
+    body.dark .nav-hud { background: #0b0d10; border-color: rgba(255,255,255,0.18); }
+    body.dark .nav-eta { background: #0b0d10; border: 1px solid rgba(255,255,255,0.18); }
+    body.dark .nav-hud.off-route { background: #8a3f05; }
+    body.dark .nav-side button { background: #2d2d35; color: #f5f5f7; border-color: rgba(255,255,255,0.2); }
+    body.dark .nav-side button.attention { background: #007aff; color: #fff; }
+    body.dark .nav-side button.end { background: #ff3b30; color: #fff; }
+    body.dark .hud-dist { color: #f5f5f7; }
     body.large-mode .hud-dist { font-size: 38px; }
     body.large-mode .hud-instr { font-size: 20px; }
     body.large-mode .hud-next { font-size: 16px; }
@@ -357,10 +374,12 @@
   <div id="navSide" class="nav-side">
     <button id="hudRecenter" onclick="enableFollowCamera()" aria-label="Recentrer la carte sur ma position">🎯</button>
     <button id="hudRepeat" onclick="repeatCurrentInstruction()" aria-label="Répéter la consigne vocale">🔁</button>
+    <button id="hudNight" onclick="toggleNightDuringGuidance()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit">🌙</button>
     <button id="hudMute" onclick="toggleMuteGuidance()" aria-pressed="false" aria-label="Couper ou réactiver la voix">🔊</button>
     <button id="hudEnd" class="end" onclick="stopGuidance()" aria-label="Terminer le guidage">Fin</button>
   </div>
   <div id="navEta" class="nav-eta" aria-live="off"></div>
+  <div id="offlineBadge" class="offline-badge" role="status">📴 Hors ligne — le guidage continue sur le tracé enregistré</div>
 
   <div class="floating-right">
     <div class="row" style="flex-wrap:wrap; justify-content:flex-end;">
@@ -487,6 +506,22 @@
           <div id="profileHint" class="sub" style="padding:0 2px;">
             Évite les escaliers, les pavés irréguliers et les côtes &gt; 5%.
           </div>
+          <details class="card" style="padding:8px 10px;">
+            <summary class="sub" style="cursor:pointer; font-weight:700;">⚙️ Mon fauteuil (réglages)</summary>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+              <label class="wc-field sub">Largeur du fauteuil (cm)
+                <input id="wcWidth" type="number" min="40" max="120" inputmode="numeric" placeholder="70" /></label>
+              <label class="wc-field sub">Pente maximale tolérée (%)
+                <input id="wcSlope" type="number" min="2" max="15" step="0.5" inputmode="decimal" placeholder="auto" /></label>
+              <label class="wc-field sub">Hauteur de bordure maximale (cm)
+                <input id="wcCurb" type="number" min="0" max="15" step="0.5" inputmode="decimal" placeholder="2" /></label>
+              <div class="row">
+                <button class="primary" style="flex:1;" onclick="saveWheelchairSettings()">Enregistrer &amp; recalculer</button>
+                <button onclick="resetWheelchairSettings()">Par défaut</button>
+              </div>
+              <div class="sub">La pente et la bordure règlent le calcul d'itinéraire. La largeur et la bordure servent aussi à signaler, sur le trajet, les passages étroits et les bordures trop hautes.</div>
+            </div>
+          </details>
         </div>
 
         <div id="panelCar" style="display:none; flex-direction:column; gap:8px;">
@@ -532,6 +567,13 @@
         </div>
       </div>
 
+      <div id="lastRouteBox" class="card" style="display:none;">
+        <div class="row between">
+          <span class="sub">↩ Dernier itinéraire : <b id="lastRouteName"></b></span>
+          <button class="primary" style="font-size:12.5px;" onclick="restoreLastRoute()">Reprendre</button>
+        </div>
+      </div>
+
       <!-- RÉSUMÉ ITINÉRAIRE + DÉNIVELÉ + MÉTÉO + TOILETTES SUR TRAJET -->
       <div id="routeBox" class="card" style="display:none;">
         <div class="row between">
@@ -542,6 +584,11 @@
         <div id="routeElevationBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
         <div id="routeWeatherBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
         <div id="routeToiletsBar" style="margin-bottom:8px;"></div>
+        <div id="routeHazardsBar" style="margin-bottom:8px;"></div>
+        <div class="row" style="margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+          <button onclick="precacheRouteTiles()" style="font-size:12.5px;" aria-label="Télécharger la carte du trajet pour l'utiliser hors ligne">📥 Carte hors-ligne du trajet</button>
+          <span id="offlineStatus" class="sub"></span>
+        </div>
         <div id="routeSteps" style="max-height:200px; overflow-y:auto;"></div>
       </div>
 
@@ -668,6 +715,9 @@
     let arriveTimer = null;
     let wakeLock = null;
     let lastSpokenText = "";
+    let autoNight = false;          // nuit détectée automatiquement pendant le guidage
+    let nightOverride = null;       // choix manuel pendant le guidage (true/false), null = automatique
+    let nightTimer = null;
 
     let originPinMarker = null;
     let destPinMarker = null;
@@ -1347,6 +1397,7 @@
       if (remaining <= (car ? 25 : 15)) { arriveGuidance(); return; }
 
       const queue = Date.now() - nav.startedAt < 5000;   // juste après le départ : on n'interrompt pas la 1re consigne
+      announceAlerts(queue);                             // pentes / passages difficiles à venir
 
       // 4. Après une manœuvre sur un long tronçon : « Continuez sur 800 mètres »
       if (nav.stepIdx !== prevIdx) {
@@ -1437,6 +1488,8 @@
         const after = steps[next + 1];
         const gap = after ? nav.stepStarts[next + 1] - nav.stepStarts[next] : 999;
         document.getElementById("hudNext").textContent = (after && gap < 80) ? "Puis : " + after.instruction : "";
+        const alertText = upcomingAlertText();
+        if (alertText) document.getElementById("hudNext").textContent = alertText;
       }
 
       const mins = Math.max(1, Math.round((currentRoute.timeSec || 0) * (remaining / Math.max(1, nav.geo.total)) / 60));
@@ -1459,6 +1512,14 @@
     // Recalcul depuis la position actuelle
     async function rerouteFrom(lat, lon) {
       if (!nav || nav.rerouting || Date.now() - nav.lastReroute < 15000) return;
+      if (!navigator.onLine) {
+        nav.lastReroute = Date.now();
+        if (!nav.offlineWarned) {
+          nav.offlineWarned = true;
+          speakFR("Vous vous éloignez de l'itinéraire, mais il n'y a pas de réseau pour recalculer. Revenez sur le tracé affiché.");
+        }
+        return;
+      }
       nav.rerouting = true;
       nav.lastReroute = Date.now();
       speakFR("Vous vous éloignez de l'itinéraire. Recalcul en cours.");
@@ -1801,7 +1862,7 @@
 
       const triggers = [];
       if (distMeters > 1500) triggers.push(`distance importante (${(distMeters / 1000).toFixed(1)} km)`);
-      if (usedFallback) triggers.push("côte raide (> 5%)");
+      if (usedFallback) triggers.push(`côte raide (> ${getWc().maxSlope}%)`);
 
       if (triggers.length > 0) configureTransportCard(triggers);
       else flexBox.style.display = "none";
@@ -2151,16 +2212,504 @@
       }
     }
 
+    // =====================================================================================
+    // PROFIL FAUTEUIL PERSONNALISÉ : largeur, pente maximale, hauteur de bordure maximale
+    // =====================================================================================
+    const WC_KEY = "gps_pmr_wc_settings_v1";
+    let wcSettings = (() => {
+      try { const r = JSON.parse(localStorage.getItem(WC_KEY)); if (r && typeof r === "object") return r; } catch {}
+      return { width: 70, slope: null, curb: 2 };       // slope null = valeur par défaut du profil (5 % manuel / 10 % électrique)
+    })();
+
+    function getWc() {
+      return {
+        width: Number(wcSettings.width) > 0 ? Number(wcSettings.width) : 70,
+        maxSlope: wcSettings.slope != null ? Number(wcSettings.slope) : (profile === "manual" ? 5 : 10),
+        maxCurb: wcSettings.curb != null ? Number(wcSettings.curb) : 2
+      };
+    }
+
+    function updateProfileUI() {
+      const wc = getWc();
+      const manualSlope = wcSettings.slope != null ? wcSettings.slope : 5;
+      const electricSlope = wcSettings.slope != null ? wcSettings.slope : 10;
+      document.getElementById("btnManual").textContent = `♿ Manuel (≤ ${manualSlope}%)`;
+      document.getElementById("btnElectric").textContent = `⚡ Électrique (≤ ${electricSlope}%)`;
+      document.getElementById("btnManual").classList.toggle("active", profile === "manual");
+      document.getElementById("btnElectric").classList.toggle("active", profile === "electric");
+      document.getElementById("profileHint").textContent =
+        `Largeur ${wc.width} cm • pente ≤ ${wc.maxSlope}% • bordure ≤ ${wc.maxCurb} cm. Évite escaliers et revêtements dégradés.`;
+      const w = document.getElementById("wcWidth"), s = document.getElementById("wcSlope"), c = document.getElementById("wcCurb");
+      if (w && document.activeElement !== w) w.value = wcSettings.width ?? "";
+      if (s && document.activeElement !== s) { s.value = wcSettings.slope ?? ""; s.placeholder = `auto (${profile === "manual" ? 5 : 10})`; }
+      if (c && document.activeElement !== c) c.value = wcSettings.curb ?? "";
+    }
+
+    function saveWheelchairSettings() {
+      const num = id => { const v = parseFloat(String(document.getElementById(id).value).replace(",", ".")); return isNaN(v) ? null : v; };
+      const width = num("wcWidth"), slope = num("wcSlope"), curb = num("wcCurb");
+      wcSettings = {
+        width: width != null ? Math.min(120, Math.max(40, width)) : 70,
+        slope: slope != null ? Math.min(15, Math.max(2, slope)) : null,
+        curb: curb != null ? Math.min(15, Math.max(0, curb)) : 2
+      };
+      try { localStorage.setItem(WC_KEY, JSON.stringify(wcSettings)); } catch {}
+      updateProfileUI();
+      setStatus("✅ Réglages du fauteuil enregistrés.", "ok");
+      if (currentRoute && activeTransportTab !== "car") routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName);
+    }
+
+    function resetWheelchairSettings() {
+      wcSettings = { width: 70, slope: null, curb: 2 };
+      try { localStorage.removeItem(WC_KEY); } catch {}
+      updateProfileUI();
+      setStatus("Réglages par défaut rétablis.", "info");
+      if (currentRoute && activeTransportTab !== "car") routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName);
+    }
+
     function setProfile(p) {
       profile = p;
-      document.getElementById("btnManual").classList.toggle("active", p === "manual");
-      document.getElementById("btnElectric").classList.toggle("active", p === "electric");
-      document.getElementById("profileHint").textContent = p === "manual"
-        ? "Évite les escaliers, les pavés irréguliers et les côtes > 5%."
-        : "Abaissés de trottoir privilégiés, pentes tolérées jusqu'à 10%.";
+      updateProfileUI();
       if (currentRoute && activeTransportTab !== "car") {
         routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName);
       }
+    }
+
+    // =====================================================================================
+    // PENTES + PASSAGES DIFFICILES : analyse du tracé, affichage, annonces vocales
+    // =====================================================================================
+
+    // Altitudes (IGN RGE ALTI, sinon Valhalla) pour une liste de points [lon, lat]. null si indisponible.
+    async function fetchElevations(points) {
+      const fill = arr => {
+        if (!Array.isArray(arr) || arr.length !== points.length) return null;
+        const out = arr.map(z => (typeof z === "number" && z > -100 && z < 5000) ? z : null);
+        if (out.every(z => z == null)) return null;
+        for (let i = 0; i < out.length; i++) {
+          if (out[i] == null) {
+            let a = i - 1; while (a >= 0 && out[a] == null) a--;
+            let b = i + 1; while (b < out.length && out[b] == null) b++;
+            out[i] = a >= 0 ? out[a] : out[b];
+          }
+        }
+        return out;
+      };
+      try {
+        const lons = points.map(c => c[0].toFixed(5)).join("|");
+        const lats = points.map(c => c[1].toFixed(5)).join("|");
+        const url = `https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json?lon=${encodeURIComponent(lons)}&lat=${encodeURIComponent(lats)}&resource=ign_rge_alti_wld&zonly=true`;
+        const res = await fetchWithTimeout(url, {}, 8000);
+        if (res.ok) {
+          const json = await res.json();
+          const z = fill(json.elevations);
+          if (z) return z;
+        }
+      } catch {}
+      try {
+        const shape = points.map(c => ({ lon: c[0], lat: c[1] }));
+        const res = await fetchWithTimeout(`https://valhalla1.openstreetmap.de/height?json=${encodeURIComponent(JSON.stringify({ shape }))}`, {}, 8000);
+        if (res.ok) {
+          const json = await res.json();
+          const z = fill(json.height);
+          if (z) return z;
+        }
+      } catch {}
+      return null;
+    }
+
+    // ===== SLOPES-CORE-START =====
+    // Détecte les sections en pente à partir d'un profil d'altitude (ds = distances en m, zs = altitudes en m)
+    function slopesFromProfile(ds, zs, maxSlope) {
+      const n = ds.length;
+      if (n < 5) return [];
+      const sm = zs.map((z, i) => (zs[Math.max(0, i - 1)] + z + zs[Math.min(n - 1, i + 1)]) / 3);
+      const spacing = (ds[n - 1] - ds[0]) / (n - 1);
+      const h = Math.max(1, Math.round(20 / spacing));              // fenêtre centrée d'environ 40 m
+      const thr = Math.max(4, maxSlope * 0.6) / 100;                  // seuil de signalement
+      const g = [];
+      for (let i = 0; i < n; i++) {
+        const a = Math.max(0, i - h), b = Math.min(n - 1, i + h);
+        g.push(b > a ? (sm[b] - sm[a]) / (ds[b] - ds[a]) : 0);
+      }
+      const out = [];
+      let i = 0;
+      while (i < n) {
+        if (Math.abs(g[i]) >= thr) {
+          const sign = Math.sign(g[i]);
+          let k = i, peak = Math.abs(g[i]), sum = Math.abs(g[i]), cnt = 1;
+          while (k + 1 < n && Math.sign(g[k + 1]) === sign && Math.abs(g[k + 1]) >= thr * 0.8) {
+            k++; peak = Math.max(peak, Math.abs(g[k])); sum += Math.abs(g[k]); cnt++;
+          }
+          const startD = ds[i], endD = ds[k];
+          if (endD - startD >= 20) {
+            out.push({
+              startD, endD, up: sign > 0,
+              grade: Math.round((sum / cnt) * 100),
+              peak: Math.round(peak * 100),
+              exceeds: peak * 100 >= maxSlope
+            });
+          }
+          i = k + 1;
+        } else i++;
+      }
+      return out;
+    }
+    // ===== SLOPES-CORE-END =====
+
+    async function computeSlopeAlerts(geo, wc) {
+      if (geo.total < 60) return [];
+      const n = Math.min(160, Math.max(8, Math.ceil(geo.total / 25)));
+      const ds = [], pts = [];
+      for (let i = 0; i < n; i++) {
+        const d = (geo.total * i) / (n - 1);
+        const p = pointAtDistance(geo, d);
+        ds.push(d); pts.push([p.lon, p.lat]);
+      }
+      const zs = await fetchElevations(pts);
+      if (!zs) return null;                                   // altimétrie injoignable
+      return slopesFromProfile(ds, zs, wc.maxSlope).map(s => {
+        const len = Math.round((s.endD - s.startD) / 10) * 10;
+        const p = pointAtDistance(geo, s.startD);
+        const word = s.up ? "Montée" : "Descente";
+        return {
+          kind: "slope", along: s.startD, lat: p.lat, lon: p.lon,
+          severity: s.exceeds ? 3 : 2,
+          short: `${s.up ? "↗️" : "↘️"} ${word} ${s.grade} %${s.peak > s.grade ? ` (jusqu'à ${s.peak} %)` : ""} sur ${len} m${s.exceeds ? " — > votre limite" : ""}`,
+          voice: `${s.exceeds ? "Attention, " : ""}${word.toLowerCase()} à ${s.grade} pour cent${s.peak > s.grade ? `, jusqu'à ${s.peak}` : ""}, sur ${distanceWords(len)}${s.exceeds ? ", au-delà de votre limite" : ""}.`
+        };
+      });
+    }
+
+    function parseMeters(v) {
+      if (v == null) return null;
+      const m = String(v).trim().toLowerCase().replace(",", ".").match(/^([\d.]+)\s*(cm|m)?/);
+      if (!m) return null;
+      let n = parseFloat(m[1]);
+      if (isNaN(n)) return null;
+      if (m[2] === "cm" || n > 10) n /= 100;                  // « 90 » est lu comme 90 cm
+      return n;
+    }
+
+    // ===== HAZARDS-CORE-START =====
+    // Transforme les éléments OSM proches du tracé en alertes (largeur, bordures, escaliers, chicanes)
+    function classifyOsm(elements, geo, wc) {
+      const alerts = [];
+      let unknownKerbs = 0;
+      const need = wc.width / 100 + 0.10;                      // largeur du fauteuil + 10 cm de marge
+      for (const el of elements) {
+        const tags = el.tags || {};
+        const pos = el.type === "node" ? { lat: el.lat, lon: el.lon } : el.center;
+        if (!pos) continue;
+        const pr = projectOnRoute(geo, pos.lat, pos.lon, -1e9);
+        if (pr.off > 14) continue;
+        const base = { along: pr.along, lat: pos.lat, lon: pos.lon };
+
+        if (tags.highway === "steps") {
+          if (tags.ramp === "yes" || tags["ramp:wheelchair"] === "yes") continue;
+          alerts.push({ ...base, kind: "steps", severity: 3, short: "🪜 Escalier sur le tracé", voice: "Attention, escalier devant vous." });
+        } else if (tags.highway && tags.width) {
+          const w = parseMeters(tags.width);
+          if (w != null && w < need) {
+            const cm = Math.round(w * 100);
+            alerts.push({ ...base, kind: "narrow", severity: w < wc.width / 100 ? 3 : 2,
+              short: `↔️ Passage étroit (${cm} cm)${w < wc.width / 100 ? " < votre fauteuil" : ""}`,
+              voice: `Attention, passage étroit d'environ ${cm} centimètres.` });
+          }
+        } else if (tags.barrier === "kerb" || tags.kerb === "raised") {
+          const h = parseMeters(tags.height);
+          if (tags.kerb === "lowered" || tags.kerb === "flush") continue;
+          if (h != null) {
+            const cm = Math.round(h * 100);
+            if (cm > wc.maxCurb + 0.5) {
+              alerts.push({ ...base, kind: "curb", severity: cm > wc.maxCurb * 2 ? 3 : 2,
+                short: `⬆️ Bordure de ${cm} cm (votre limite : ${wc.maxCurb} cm)`,
+                voice: `Attention, bordure de ${cm} centimètres.` });
+            }
+          } else unknownKerbs++;
+        } else if (/^(cycle_barrier|turnstile|chain)$/.test(tags.barrier || "") && tags.wheelchair !== "yes") {
+          alerts.push({ ...base, kind: "barrier", severity: 2, short: "🚧 Barrière / chicane à franchir", voice: "Attention, barrière ou chicane devant vous." });
+        }
+      }
+      // Dédoublonnage : même type à moins de 15 m
+      alerts.sort((a, b) => a.along - b.along);
+      const out = [];
+      for (const a of alerts) {
+        if (out.some(o => o.kind === a.kind && Math.abs(o.along - a.along) < 15)) continue;
+        out.push(a);
+      }
+      return { alerts: out, unknownKerbs };
+    }
+    // ===== HAZARDS-CORE-END =====
+
+    async function fetchHazardAlerts(geo, wc) {
+      if (geo.total > 8000 || !navigator.onLine) return null;          // requête trop lourde ou hors ligne
+      const pts = [];
+      const step = Math.max(40, geo.total / 70);
+      for (let d = 0; d <= geo.total + 1; d += step) {
+        const p = pointAtDistance(geo, Math.min(d, geo.total));
+        pts.push(p.lat.toFixed(5), p.lon.toFixed(5));
+      }
+      const a = pts.join(",");
+      const ql = `[out:json][timeout:20];(
+        way(around:10,${a})["highway"="steps"];
+        way(around:10,${a})["highway"~"^(footway|path|pedestrian|living_street|service|track|cycleway)$"]["width"];
+        node(around:10,${a})["kerb"="raised"];
+        node(around:10,${a})["barrier"="kerb"]["height"];
+        node(around:10,${a})["barrier"~"^(cycle_barrier|turnstile|chain)$"];
+      );out tags center;`;
+      const json = await queryOverpass(ql, null, 14000);
+      if (!json || !Array.isArray(json.elements)) return null;
+      return classifyOsm(json.elements, geo, wc);
+    }
+
+    async function analyzeRouteAhead(route) {
+      route.alerts = [];
+      route.analysis = { slopes: "pending", hazards: "pending", unknownKerbs: 0 };
+      renderAlerts(route);
+      if (activeTransportTab === "car") { route.analysis = null; renderAlerts(route); return; }
+
+      const wc = getWc();
+      const geo = makeRouteGeo(route.coords);
+      const [slopes, haz] = await Promise.all([
+        computeSlopeAlerts(geo, wc).catch(() => null),
+        fetchHazardAlerts(geo, wc).catch(() => null)
+      ]);
+      if (currentRoute !== route) return;                        // un autre itinéraire a pris la place
+
+      route.analysis = {
+        slopes: slopes ? "ok" : "unavailable",
+        hazards: haz ? "ok" : "unavailable",
+        unknownKerbs: haz ? haz.unknownKerbs : 0
+      };
+      route.alerts = [...(slopes || []), ...(haz ? haz.alerts : [])].sort((a, b) => a.along - b.along);
+      renderAlerts(route);
+      drawAlertsOnMap(route);
+      persistLastRoute();
+    }
+
+    function fmtAlong(d) { return d >= 1000 ? (d / 1000).toFixed(1) + " km" : Math.round(d) + " m"; }
+
+    function renderAlerts(route) {
+      const bar = document.getElementById("routeHazardsBar");
+      if (!bar) return;
+      const an = route.analysis;
+      if (!an) { bar.innerHTML = ""; return; }
+      if (an.slopes === "pending" || an.hazards === "pending") {
+        bar.innerHTML = `<span class="badge b-unk">🔎 Analyse des pentes et passages difficiles…</span>`;
+        return;
+      }
+      let html = "";
+      if (route.alerts.length) {
+        html += `<div class="sub" style="font-weight:700; margin-bottom:4px;">⚠️ ${route.alerts.length} point${route.alerts.length > 1 ? "s" : ""} d'attention sur le trajet</div>`;
+        html += route.alerts.map(a =>
+          `<div class="step-item">${escapeHTML(a.short)} <span class="sub">— à ${fmtAlong(a.along)}</span></div>`).join("");
+      } else if (an.slopes === "ok" && an.hazards === "ok") {
+        html += `<span class="badge b-yes">✅ Aucune pente notable ni passage difficile repéré</span>`;
+      }
+      const notes = [];
+      if (an.slopes === "unavailable") notes.push("pentes non analysées (altimétrie injoignable)");
+      if (an.hazards === "unavailable") notes.push("passages difficiles non vérifiés (réseau ou trajet trop long)");
+      if (an.unknownKerbs > 0) notes.push(`${an.unknownKerbs} bordure${an.unknownKerbs > 1 ? "s" : ""} de hauteur inconnue`);
+      if (notes.length) html += `<div class="sub" style="margin-top:4px;">ℹ️ ${escapeHTML(notes.join(" • "))}. Données OpenStreetMap/IGN : à vérifier sur place.</div>`;
+      else html += `<div class="sub" style="margin-top:4px;">Données OpenStreetMap/IGN : à vérifier sur place.</div>`;
+      bar.innerHTML = html;
+    }
+
+    function drawAlertsOnMap(route) {
+      if (!map.isStyleLoaded()) return;
+      const fc = {
+        type: "FeatureCollection",
+        features: (route.alerts || []).map(a => ({
+          type: "Feature", properties: { sev: a.severity || 1 }, geometry: { type: "Point", coordinates: [a.lon, a.lat] }
+        }))
+      };
+      if (map.getSource("route-alerts")) { map.getSource("route-alerts").setData(fc); return; }
+      map.addSource("route-alerts", { type: "geojson", data: fc });
+      map.addLayer({
+        id: "route-alerts-layer", type: "circle", source: "route-alerts",
+        paint: {
+          "circle-radius": 7,
+          "circle-color": ["match", ["get", "sev"], 3, "#ef4444", 2, "#f59e0b", "#3b82f6"],
+          "circle-stroke-width": 2, "circle-stroke-color": "#ffffff"
+        }
+      });
+    }
+
+    // Annonce vocale des alertes ~45 m avant (une seule fois par alerte)
+    function announceAlerts(queue) {
+      const list = currentRoute && currentRoute.alerts;
+      if (!list || !list.length || !nav) return;
+      for (let i = 0; i < list.length; i++) {
+        const key = "al:" + i;
+        if (nav.spoken.has(key)) continue;
+        const ahead = list[i].along - nav.progress;
+        if (ahead <= 45 && ahead > -10) {
+          nav.spoken.add(key);
+          speakFR(list[i].voice, true);
+          if (list[i].severity >= 3 && navigator.vibrate) navigator.vibrate([120, 80, 120]);
+          break;                                                  // une alerte à la fois
+        } else if (ahead <= -10) nav.spoken.add(key);            // déjà dépassée
+      }
+    }
+
+    // Alerte à afficher dans le bandeau pendant le guidage (80 m avant, ou en cours)
+    function upcomingAlertText() {
+      const list = currentRoute && currentRoute.alerts;
+      if (!list || !nav) return "";
+      for (const a of list) {
+        const ahead = a.along - nav.progress;
+        if (ahead > 80) return "";
+        if (ahead > 0) return `⚠️ ${a.short} • dans ${Math.max(5, Math.round(ahead / 5) * 5)} m`;
+        if (ahead > -25) return `⚠️ ${a.short} • maintenant`;
+      }
+      return "";
+    }
+
+    // =====================================================================================
+    // HORS-LIGNE : dernier itinéraire, cartes téléchargées (service worker), badge réseau
+    // =====================================================================================
+    const LAST_ROUTE_KEY = "pmr_last_route_v1";
+
+    function persistLastRoute() {
+      const r = currentRoute;
+      if (!r) return;
+      try {
+        localStorage.setItem(LAST_ROUTE_KEY, JSON.stringify({ ts: Date.now(), data: {
+          coords: r.coords.map(c => [Math.round(c[0] * 1e6) / 1e6, Math.round(c[1] * 1e6) / 1e6]),
+          steps: r.steps, destLat: r.destLat, destLon: r.destLon, destName: r.destName,
+          timeSec: r.timeSec, alerts: r.alerts || [], analysis: r.analysis && r.analysis.slopes !== "pending" ? r.analysis : null,
+          mode: r.mode || activeTransportTab, profile,
+          title: document.getElementById("routeTitle").textContent,
+          meta: document.getElementById("routeMeta").textContent
+        }}));
+      } catch {}
+      refreshLastRouteBox();
+    }
+
+    function readLastRoute() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(LAST_ROUTE_KEY));
+        if (!raw || Date.now() - raw.ts > 24 * 3600 * 1000) return null;
+        return raw.data;
+      } catch { return null; }
+    }
+
+    function refreshLastRouteBox() {
+      const box = document.getElementById("lastRouteBox");
+      if (!box) return;
+      const d = readLastRoute();
+      const routeVisible = document.getElementById("routeBox").style.display !== "none";
+      if (!d || routeVisible || isNavigating) { box.style.display = "none"; return; }
+      document.getElementById("lastRouteName").textContent = d.destName;
+      box.style.display = "block";
+    }
+
+    // Reprend le dernier itinéraire SANS réseau (le guidage fonctionne ensuite entièrement en local)
+    function restoreLastRoute() {
+      const d = readLastRoute();
+      if (!d) return;
+      stopGuidance();
+      const savedDest = { name: d.destName, lat: d.destLat, lon: d.destLon };
+      selectedDest = null;                                           // évite un recalcul lors du changement de mode
+      if (d.mode !== activeTransportTab) switchModeTab(d.mode);
+      if (d.profile && d.profile !== profile) { profile = d.profile; updateProfileUI(); }
+      selectedDest = savedDest;
+      document.getElementById("destInput").value = d.destName;
+      placePin("dest", d.destLat, d.destLon, d.destName);
+
+      const geojson = { type: "Feature", geometry: { type: "LineString", coordinates: d.coords } };
+      currentRoute = {
+        geojson, coords: d.coords, steps: d.steps, destLat: d.destLat, destLon: d.destLon, destName: d.destName,
+        options: {}, timeSec: d.timeSec, alerts: d.alerts || [], analysis: d.analysis, mode: d.mode
+      };
+      if (map.getSource("route")) map.getSource("route").setData(geojson); else renderMapSourcesAndLayers();
+      drawAlertsOnMap(currentRoute);
+
+      document.getElementById("routeTitle").textContent = d.title;
+      document.getElementById("routeMeta").textContent = (d.meta || "") + " • itinéraire enregistré";
+      document.getElementById("routeSteps").innerHTML = d.steps.map(s => `<div class="step-item">${escapeHTML(s.instruction)} (${s.distance} m)</div>`).join("");
+      document.getElementById("routeElevationBar").innerHTML = "";
+      document.getElementById("routeBox").style.display = "block";
+      document.getElementById("lastRouteBox").style.display = "none";
+      if (currentRoute.analysis) renderAlerts(currentRoute); else document.getElementById("routeHazardsBar").innerHTML = "";
+
+      const bounds = d.coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(d.coords[0], d.coords[0]));
+      const isMobile = window.innerWidth <= 768;
+      map.fitBounds(bounds, {
+        padding: isMobile ? { top: 110, bottom: Math.round(window.innerHeight * 0.54), left: 36, right: 36 }
+                          : { top: 80, bottom: 70, left: 435, right: 80 }
+      });
+      setStatus("✅ Dernier itinéraire rechargé (sans réseau).", "ok");
+    }
+
+    function updateOfflineStatus() {
+      const el = document.getElementById("offlineStatus");
+      if (!el) return;
+      const sw = "serviceWorker" in navigator && navigator.serviceWorker.controller;
+      el.textContent = sw ? "Cache hors-ligne actif" : "Cache hors-ligne inactif (HTTPS + sw.js requis)";
+    }
+
+    function updateNetworkBadge() {
+      const b = document.getElementById("offlineBadge");
+      if (b) b.style.display = navigator.onLine ? "none" : "block";
+    }
+    window.addEventListener("online", updateNetworkBadge);
+    window.addEventListener("offline", updateNetworkBadge);
+
+    // Télécharge les tuiles de la carte autour du trajet : le service worker les garde en cache
+    async function precacheRouteTiles() {
+      const st = document.getElementById("offlineStatus");
+      if (!currentRoute) return;
+      if (!navigator.onLine) { st.textContent = "Hors ligne : téléchargement impossible."; return; }
+      const style = map.getStyle();
+      const templates = [];
+      for (const [id, src] of Object.entries((style && style.sources) || {})) {
+        if (src.type !== "vector") continue;
+        const s = map.getSource(id);
+        const tpl = (s && s.tiles && s.tiles[0]) || (src.tiles && src.tiles[0]);
+        if (tpl) templates.push({ tpl, max: Math.min(14, (s && s.maxzoom) || src.maxzoom || 14) });
+      }
+      if (!templates.length) { st.textContent = "Source de tuiles introuvable, réessayez dans un instant."; return; }
+
+      const geo = makeRouteGeo(currentRoute.coords);
+      const urls = new Set();
+      for (let d = 0; d <= geo.total + 40; d += 80) {
+        const p = pointAtDistance(geo, Math.min(d, geo.total));
+        const latr = p.lat * Math.PI / 180;
+        for (const { tpl, max } of templates) {
+          for (let z = 11; z <= max; z++) {
+            const n = 2 ** z;
+            const x = Math.floor((p.lon + 180) / 360 * n);
+            const y = Math.floor((1 - Math.log(Math.tan(latr) + 1 / Math.cos(latr)) / Math.PI) / 2 * n);
+            const r = z >= 13 ? 1 : 0;                              // anneau de tuiles voisines en zoom serré
+            for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+              urls.add(tpl.split("{z}").join(z).split("{x}").join(x + dx).split("{y}").join(y + dy));
+            }
+          }
+        }
+        if (urls.size > 1500) break;
+      }
+      const list = [...urls];
+      let done = 0, ok = 0, idx = 0;
+      st.textContent = `📥 Téléchargement : 0 / ${list.length} tuiles…`;
+      const worker = async () => {
+        while (idx < list.length) {
+          const u = list[idx++];
+          try { const r = await fetch(u); if (r.ok) ok++; } catch {}
+          done++;
+          if (done % 10 === 0 || done === list.length) st.textContent = `📥 ${done} / ${list.length} tuiles…`;
+        }
+      };
+      await Promise.all(Array.from({ length: 6 }, worker));
+      const sw = "serviceWorker" in navigator && navigator.serviceWorker.controller;
+      st.textContent = sw
+        ? `✅ ${ok} tuiles enregistrées pour le mode hors-ligne.`
+        : `⚠️ ${ok} tuiles reçues, mais le cache hors-ligne est inactif (ouvrez l'appli en HTTPS avec sw.js à côté).`;
+    }
+
+    if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+      navigator.serviceWorker.register("sw.js").then(() => setTimeout(updateOfflineStatus, 1500)).catch(() => {});
+      navigator.serviceWorker.addEventListener("controllerchange", updateOfflineStatus);
     }
 
     function renderCarParkingsNearTarget() {
@@ -2746,8 +3295,19 @@
 
     function toggleDarkMode() {
       isDark = !isDark;
-      document.body.classList.toggle("dark", isDark);
       document.getElementById("darkModeBtn").setAttribute("aria-pressed", String(isDark));
+      refreshTheme();
+    }
+
+    // Thème effectif = choix manuel (🌓) OU nuit automatique pendant le guidage (modifiable par le bouton 🌙)
+    function refreshTheme() {
+      const night = (isNavigating && nightOverride !== null) ? nightOverride : (isDark || (isNavigating && autoNight));
+      document.body.classList.toggle("dark", night);
+      document.body.classList.toggle("night-map", night);
+      const b = document.getElementById("hudNight");
+      if (b) { b.textContent = night ? "☀️" : "🌙"; b.setAttribute("aria-pressed", String(night)); }
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", night ? "#0b0d10" : "#ffffff");
     }
 
     // MARK: - Fusion rapide avec pré-indexation de recherche
@@ -3690,6 +4250,9 @@
 
     async function callValhalla(origin, lat, lon, maxGrade) {
       const isCar = activeTransportTab === "car";
+      const curb = getWc().maxCurb;
+      // Valhalla n'a pas de réglage de hauteur de bordure : on la traduit en pénalité de marche/bordure
+      const stepPenalty = curb <= 2 ? 10000 : (curb <= 5 ? 3000 : 400);
       const payload = isCar
         ? {
             locations: [{ lat: origin[1], lon: origin[0], type: "break" }, { lat, lon, type: "break" }],
@@ -3702,8 +4265,8 @@
             costing: "pedestrian",
             costing_options: {
               pedestrian: {
-                type: "wheelchair", step_penalty: 10000, max_grade: maxGrade,
-                use_hills: profile === "manual" ? 0.1 : 0.5,
+                type: "wheelchair", step_penalty: stepPenalty, max_grade: maxGrade,
+                use_hills: maxGrade <= 5 ? 0.1 : (maxGrade <= 8 ? 0.3 : 0.5),
                 avoid_bad_surfaces: profile === "manual" ? 1.0 : 0.4,
                 walking_speed: profile === "manual" ? 4.0 : 5.5
               }
@@ -3745,8 +4308,8 @@
         if (isCar) {
           data = await callValhalla(origin, lat, lon, 0);
         } else {
-          try { data = await callValhalla(origin, lat, lon, profile === "manual" ? 5 : 10); }
-          catch { data = await callValhalla(origin, lat, lon, 12); usedFallback = true; }
+          try { data = await callValhalla(origin, lat, lon, getWc().maxSlope); }
+          catch { data = await callValhalla(origin, lat, lon, Math.max(12, getWc().maxSlope + 5)); usedFallback = true; }
         }
 
         const leg = data.trip.legs[0];
@@ -3761,7 +4324,7 @@
           endIdx: m.end_shape_index ?? (coords.length - 1)
         }));
 
-        currentRoute = { geojson, coords, steps, destLat: lat, destLon: lon, destName: name, options, timeSec: data.trip.summary.time };
+        currentRoute = { geojson, coords, steps, destLat: lat, destLon: lon, destName: name, options, timeSec: data.trip.summary.time, alerts: [], mode: activeTransportTab };
         if (map.getSource("route")) map.getSource("route").setData(geojson);
         else renderMapSourcesAndLayers();
 
@@ -3786,12 +4349,13 @@
           document.getElementById("routeMeta").textContent = "🚗 Profil : Voiture • Place PMR proposée ci-dessus";
         } else {
           document.getElementById("routeMeta").textContent = usedFallback
-            ? "⚠️ Côte > 5% détectée : itinéraire adapté"
-            : `♿ Profil : Fauteuil ${profile === "manual" ? "Manuel" : "Électrique"}`;
+            ? `⚠️ Côte > ${getWc().maxSlope}% détectée : itinéraire adapté`
+            : `♿ Fauteuil ${profile === "manual" ? "manuel" : "électrique"} • ${getWc().width} cm • pente ≤ ${getWc().maxSlope}% • bordure ≤ ${getWc().maxCurb} cm`;
         }
 
         document.getElementById("routeSteps").innerHTML = steps.map(s => `<div class="step-item">${escapeHTML(s.instruction)} (${s.distance} m)</div>`).join("");
         document.getElementById("routeBox").style.display = "block";
+        document.getElementById("lastRouteBox").style.display = "none";
 
         // Dénivelé + Batterie + IrigoFlex + Météo sol glissant + Toilettes PMR sur le tracé
         if (!options.isReroute) {
@@ -3799,13 +4363,70 @@
           updateRouteWeatherAlert(lat, lon);
           findToiletsAlongRoute(coords);
         }
+        analyzeRouteAhead(currentRoute);       // pentes + passages difficiles (largeur, bordures, escaliers)
 
-        setStatus(usedFallback ? "⚠️ Côte importante sur ce trajet (pente > 5%)." : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
+        setStatus(usedFallback ? `⚠️ Côte importante sur ce trajet (pente > ${getWc().maxSlope}%).` : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
+        persistLastRoute();
         return true;
       } catch (err) {
-        setStatus("❌ " + err.message, "error");
+        setStatus(navigator.onLine ? "❌ " + err.message : "📴 Hors ligne : calcul impossible. Utilisez « Dernier itinéraire » s'il est disponible.", "error");
         return false;
       }
+    }
+
+
+    // =====================================================================================
+    // MODE NUIT AUTOMATIQUE : élévation du soleil calculée à la position réelle (aucun réseau requis)
+    // =====================================================================================
+    function sunElevation(lat, lon, date = new Date()) {
+      const rad = Math.PI / 180;
+      const d = date.getTime() / 86400000 + 2440587.5 - 2451545.0;          // jours depuis J2000
+      const g = (357.529 + 0.98560028 * d) * rad;
+      const q = 280.459 + 0.98564736 * d;
+      const L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * rad;
+      const e = (23.439 - 0.00000036 * d) * rad;
+      const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L));
+      const dec = Math.asin(Math.sin(e) * Math.sin(L));
+      const gmst = ((18.697374558 + 24.06570982441908 * d) % 24 + 24) % 24;
+      const ha = (gmst * 15 + lon) * rad - ra;
+      const la = lat * rad;
+      return Math.asin(Math.sin(la) * Math.sin(dec) + Math.cos(la) * Math.cos(dec) * Math.cos(ha)) / rad;
+    }
+
+    // Hystérésis : nuit quand le soleil passe sous -1°, jour quand il remonte au-dessus de +1° (évite le clignotement au crépuscule)
+    function updateAutoNight() {
+      if (!isNavigating) return;
+      const pos = currentPosition() || (() => { const c = map.getCenter(); return { lat: c.lat, lon: c.lng }; })();
+      const el = sunElevation(pos.lat, pos.lon);
+      const was = autoNight;
+      if (!autoNight && el < -1) autoNight = true;
+      else if (autoNight && el > 1) autoNight = false;
+      if (autoNight !== was) nightOverride = null;      // le soleil a changé : on reprend la main automatique
+      refreshTheme();
+    }
+
+    function startAutoNight() {
+      nightOverride = null;
+      autoNight = false;
+      updateAutoNight();
+      // Si le premier calcul est à la limite, on initialise sans hystérésis
+      const pos = currentPosition() || (() => { const c = map.getCenter(); return { lat: c.lat, lon: c.lng }; })();
+      autoNight = sunElevation(pos.lat, pos.lon) < 0;
+      refreshTheme();
+      clearInterval(nightTimer);
+      nightTimer = setInterval(updateAutoNight, 60000);
+    }
+
+    function stopAutoNight() {
+      clearInterval(nightTimer); nightTimer = null;
+      autoNight = false; nightOverride = null;
+      refreshTheme();
+    }
+
+    function toggleNightDuringGuidance() {
+      const night = document.body.classList.contains("dark");
+      nightOverride = !night;
+      refreshTheme();
     }
 
     // « Y aller » : plein écran carte + guidage vocal en temps réel. simulated = true → parcours simulé (test).
@@ -3825,6 +4446,7 @@
       // Doivent être lancés depuis ce clic (autorisations iOS : boussole, synthèse vocale)
       startCompass();
       requestWakeLock();
+      startAutoNight();
 
       beginGuidanceState();
       const steps = currentRoute.steps;
@@ -3862,9 +4484,11 @@
       clearTimeout(arriveTimer);
       isNavigating = false;
       nav = null;
+      stopAutoNight();
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
       releaseWakeLock();
       document.body.classList.remove("nav-mode");   // réaffiche les menus
+      refreshLastRouteBox();
       if (!wasNavigating) return;
 
       // La flèche retourne sur la vraie position (ou disparaît s'il n'y a pas de GPS)
@@ -3928,6 +4552,10 @@
     }
 
     map.on("load", () => {
+      updateProfileUI();
+      updateNetworkBadge();
+      refreshLastRouteBox();
+      updateOfflineStatus();
       initGeolocation();
     });
   </script>
