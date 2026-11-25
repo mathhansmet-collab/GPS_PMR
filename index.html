@@ -1,0 +1,1951 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Angers PMR" />
+  <title>Angers PMR — GPS & Pratiques PMR</title>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <style>
+    :root {
+      --bg: rgba(255, 255, 255, 0.92);
+      --card: #f2f2f7;
+      --card2: #ffffff;
+      --text: #111111;
+      --sub: #555555;
+      --border: rgba(0, 0, 0, 0.12);
+    }
+    body.dark {
+      --bg: rgba(22, 22, 26, 0.93);
+      --card: #232329;
+      --card2: #2c2c34;
+      --text: #f5f5f7;
+      --sub: #a1a1aa;
+      --border: rgba(255, 255, 255, 0.15);
+    }
+    * { box-sizing: border-box; font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+    html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; color: var(--text); }
+
+    .sidebar {
+      position: absolute; top: 14px; left: 14px; bottom: 14px; width: 410px; z-index: 10;
+      background: var(--bg); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border); border-radius: 22px;
+      padding: 16px; display: flex; flex-direction: column; gap: 11px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.22); overflow: hidden;
+    }
+    .scroll-area {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 11px; padding-right: 2px;
+    }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .between { justify-content: space-between; }
+    h1 { font-size: 19px; margin: 0; }
+    .sub { font-size: 12px; color: var(--sub); }
+
+    input, button { font-size: 13.5px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.15s ease; }
+    input { padding: 10px 12px; background: var(--card); color: var(--text); width: 100%; outline: none; }
+    input:focus { border-color: #007aff; }
+    button { padding: 9px 12px; font-weight: 600; cursor: pointer; background: var(--card); color: var(--text); }
+    button:hover { filter: brightness(0.96); }
+    button.primary { background: #007aff; color: #fff; border: none; }
+    button.go { background: #34c759; color: #fff; border: none; }
+    button.warn { background: #ffd60a; color: #000; border: 2px solid #000; }
+    button.danger { background: #ff3b30; color: #fff; border: none; }
+
+    /* Onglets principaux */
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      background: var(--card); padding: 4px; border-radius: 14px; border: 1px solid var(--border);
+    }
+    .tabs button { border: none; background: transparent; padding: 8px; border-radius: 10px; }
+    .tabs button.active { background: var(--card2); box-shadow: 0 2px 6px rgba(0,0,0,0.12); color: #007aff; }
+
+    /* Carte Départ / Arrivée */
+    .route-planner {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 11px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .planner-inputs-wrap { display: flex; gap: 8px; align-items: center; }
+    .planner-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .field-box {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 4px 8px 4px 10px;
+    }
+    .field-box:focus-within { border-color: #007aff; box-shadow: 0 0 0 2px rgba(0,122,255,0.16); }
+    .field-box input { border: none; background: transparent; padding: 6px 0; font-size: 13.5px; font-weight: 500; }
+    .pin-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .pin-start { background: #007aff; box-shadow: 0 0 0 3px rgba(0,122,255,0.22); }
+    .pin-end { background: #ff3b30; box-shadow: 0 0 0 3px rgba(255,59,48,0.22); }
+    .clear-btn {
+      border: none; background: rgba(120,120,128,0.18); color: var(--sub);
+      width: 22px; height: 22px; border-radius: 50%; padding: 0; font-size: 11px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .swap-btn {
+      width: 34px; height: 58px; padding: 0; border-radius: 12px;
+      background: var(--card2); font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    .suggestions-list {
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 13px; overflow: hidden; max-height: 230px; overflow-y: auto;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+    }
+    .sug-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 11px;
+      cursor: pointer; border-bottom: 1px solid var(--border); text-align: left;
+      width: 100%; border-radius: 0; border-left: none; border-right: none; border-top: none;
+      background: transparent;
+    }
+    .sug-item:last-child { border-bottom: none; }
+    .sug-item:hover { background: rgba(0,122,255,0.10); }
+    .sug-icon {
+      width: 30px; height: 30px; border-radius: 50%; background: var(--card);
+      display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+    }
+    .sug-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .sug-sub { font-size: 11.5px; color: var(--sub); }
+
+    /* Barre à 4 onglets : Fauteuil / Voiture / Bus / Tramway */
+    .mode-shell {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 10px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .mode-tabs-4 {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+      background: rgba(120, 120, 128, 0.14); padding: 4px; border-radius: 13px;
+    }
+    .mode-tabs-4 button {
+      border: none; background: transparent; padding: 7px 4px; border-radius: 9px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      font-size: 11.5px; font-weight: 700; line-height: 1.15;
+    }
+    .mode-tabs-4 button .m-ico { font-size: 16px; }
+    .mode-tabs-4 button.active-wc   { background: var(--card2); color: #007aff; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+    .mode-tabs-4 button.active-car  { background: var(--card2); color: #34c759; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+    .mode-tabs-4 button.active-bus  { background: var(--card2); color: #ff9500; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+    .mode-tabs-4 button.active-tram { background: var(--card2); color: #5856d6; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+
+    /* Proposition automatique de Parking PMR */
+    .parking-proposal {
+      background: rgba(0, 122, 255, 0.10);
+      border: 2px solid #007aff;
+      border-radius: 16px; padding: 12px;
+      display: none; flex-direction: column; gap: 8px;
+    }
+    body.dark .parking-proposal { background: rgba(0, 122, 255, 0.18); }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; }
+    .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .segmented button { background: var(--card2); }
+    .segmented button.active { background: #007aff; color: #fff; border-color: #007aff; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+    }
+    .b-yes { background: rgba(52,199,89,0.18); color: #1f8a3c; }
+    .b-lim { background: rgba(255,149,0,0.20); color: #c96a00; }
+    .b-no  { background: rgba(255,59,48,0.18); color: #d62820; }
+    .b-unk { background: rgba(142,142,147,0.20); color: var(--sub); }
+    body.dark .b-yes { color: #5ce07d; }
+    body.dark .b-lim { color: #ffb340; }
+    body.dark .b-no  { color: #ff6961; }
+
+    .line-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px;
+      color: #fff; font-size: 11px; font-weight: 800;
+    }
+    .line-filter-btn {
+      padding: 5px 10px; border-radius: 999px; font-size: 11.5px;
+      border: 1.5px solid var(--border); background: var(--card2); flex-shrink: 0;
+    }
+    .line-filter-btn.selected { color: #fff; border-color: transparent; }
+
+    .horiz-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      font-size: 12px; padding: 6px 10px; border-radius: 999px;
+      background: var(--card); border: 1px solid var(--border); cursor: pointer; font-weight: 600;
+      flex-shrink: 0;
+    }
+    .chip.active { background: #007aff; color: #fff; border-color: #007aff; }
+
+    .dir-item {
+      background: var(--card2); border: 1px solid var(--border); border-radius: 14px;
+      padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .dir-title { font-weight: 700; font-size: 14px; }
+
+    .status-box { padding: 9px 12px; border-radius: 12px; font-size: 12.5px; font-weight: 600; display: none; }
+    .status-info { background: rgba(0,122,255,0.14); color: #007aff; }
+    .status-error { background: rgba(255,59,48,0.15); color: #ff3b30; }
+    .status-ok { background: rgba(52,199,89,0.16); color: #248a3d; }
+
+    .nav-banner { background: #141c17; color: #fff; border-radius: 16px; padding: 14px; border: 1px solid rgba(255,255,255,0.18); }
+    .step-item { padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .step-item:last-child { border-bottom: none; }
+
+    .floating-right {
+      position: absolute; top: 14px; right: 14px; z-index: 10;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 360px;
+    }
+    .pill-bar {
+      background: var(--bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border); border-radius: 16px;
+      padding: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+      display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end;
+    }
+    .legend {
+      position: absolute; bottom: 26px; right: 14px; z-index: 10;
+      background: var(--bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 9px 12px; font-size: 11.5px; display: flex; gap: 10px; flex-wrap: wrap;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+    .gps-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #007aff; border: 3px solid #ffffff;
+      box-shadow: 0 0 0 6px rgba(0, 122, 255, 0.28), 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .route-pin {
+      width: 26px; height: 26px; border-radius: 50%;
+      color: #fff; font-weight: 800; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      border: 2.5px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+    }
+    .parking-pin {
+      width: 30px; height: 30px; border-radius: 9px;
+      background: #007aff; color: #fff; font-weight: 900; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      border: 2.5px solid #34c759; box-shadow: 0 4px 12px rgba(0,122,255,0.45);
+    }
+
+    .maplibregl-popup-content {
+      background: var(--card2) !important; color: var(--text) !important;
+      border-radius: 14px !important; padding: 12px 14px !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important; min-width: 220px;
+    }
+    .maplibregl-popup-close-button { color: var(--sub) !important; font-size: 18px; padding: 4px 8px; }
+
+    /* Adaptation automatique pour smartphones (iPhone / Android) */
+    @media (max-width: 768px) {
+      .sidebar {
+        top: auto; left: 8px; right: 8px; bottom: 8px;
+        width: auto; height: 52vh; border-radius: 22px; padding: 12px; gap: 9px;
+      }
+      .floating-right {
+        top: 8px; right: 8px; left: 8px; max-width: none;
+        align-items: stretch; gap: 6px;
+      }
+      .floating-right > .row {
+        justify-content: flex-end;
+      }
+      #layerToggles {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding: 7px 8px;
+        border-radius: 14px;
+        -webkit-overflow-scrolling: touch;
+      }
+      input, .field-box input { font-size: 16px; }
+      .legend { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="floating-right">
+    <div class="row">
+      <button class="pill-bar" style="padding:8px 14px; border-radius:999px;" onclick="toggleDarkMode()">🌓 Mode Clair / Sombre</button>
+      <button class="pill-bar" style="padding:8px 14px; border-radius:999px;" onclick="recenterOnStart()">🎯 Ma position</button>
+    </div>
+
+    <div class="pill-bar" id="layerToggles">
+      <button class="chip active" data-layer="parking" onclick="toggleMapLayer('parking', this)">🅿️ Parkings</button>
+      <button class="chip active" data-layer="toilet" onclick="toggleMapLayer('toilet', this)">🚻 Toilettes PMR</button>
+      <button class="chip active" data-layer="restaurant" onclick="toggleMapLayer('restaurant', this)">🍽️ Restos</button>
+      <button class="chip active" data-layer="bar" onclick="toggleMapLayer('bar', this)">🍻 Bars adaptés</button>
+      <button class="chip active" data-layer="venue" onclick="toggleMapLayer('venue', this)">🎭 Spectacles</button>
+      <button class="chip active" data-layer="works" onclick="toggleMapLayer('works', this)">🚧 Travaux</button>
+      <button class="chip" data-layer="bus" onclick="toggleMapLayer('bus', this)">🚌 Bus Irigo</button>
+      <button class="chip active" data-layer="tram" onclick="toggleMapLayer('tram', this)">🚊 Tram</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:#007aff;"></i>Parking PMR</span>
+    <span><i class="dot" style="background:#06b6d4;"></i>Toilettes PMR</span>
+    <span><i class="dot" style="background:#22c55e;"></i>Accessible</span>
+    <span><i class="dot" style="background:#f59e0b;"></i>Partiel</span>
+    <span><i class="dot" style="background:#ef4444;"></i>Non accessible / Travaux</span>
+    <span><i class="dot" style="background:#9ca3af;"></i>À vérifier</span>
+    <span><i class="dot" style="background:#a855f7;"></i>Bar adapté</span>
+    <span><i class="dot" style="background:#ec4899;"></i>Spectacle</span>
+    <span><i class="dot" style="background:#ff9500;"></i>Arrêt Bus</span>
+    <span><i class="dot" style="background:#5856d6;"></i>Station Tram</span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="row between">
+      <div>
+        <h1>Angers PMR</h1>
+        <div id="globalStats" class="sub">Chargement des lieux d'Angers…</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tabMapBtn" class="active" onclick="switchTab('map')">🗺️ GPS & Trajets</button>
+      <button id="tabDirBtn" onclick="switchTab('directory')">📋 Pratiques PMR</button>
+    </div>
+
+    <div id="statusBox" class="status-box"></div>
+
+    <!-- ONGLET 1 : GPS & TRAJETS -->
+    <div id="tabMap" class="scroll-area">
+
+      <!-- PLANIFICATEUR DÉPART / ARRIVÉE -->
+      <div class="route-planner" id="plannerCard">
+        <div class="row between">
+          <span class="sub" style="font-weight:700;">ITINÉRAIRE LIBRE</span>
+          <span id="gpsStatusLabel" class="sub">Recherche GPS…</span>
+        </div>
+
+        <div class="planner-inputs-wrap">
+          <div class="planner-fields">
+            <div class="field-box">
+              <span class="pin-dot pin-start"></span>
+              <input
+                id="originInput"
+                value="📍 Ma position actuelle"
+                placeholder="Point de départ (rue, lieu…)"
+                autocomplete="off"
+                onfocus="onAddressFocus('origin')"
+                oninput="onAddressInput('origin')"
+              />
+              <button class="clear-btn" title="Effacer le départ" onclick="clearAddressField('origin')">✕</button>
+            </div>
+
+            <div class="field-box">
+              <span class="pin-dot pin-end"></span>
+              <input
+                id="destInput"
+                placeholder="Destination à Angers (adresse, resto, arrêt…)"
+                autocomplete="off"
+                onfocus="onAddressFocus('dest')"
+                oninput="onAddressInput('dest')"
+              />
+              <button class="clear-btn" title="Effacer la destination" onclick="clearAddressField('dest')">✕</button>
+            </div>
+          </div>
+
+          <button class="swap-btn" title="Inverser départ et arrivée" onclick="swapOriginAndDest()">⇅</button>
+        </div>
+
+        <div id="suggestionsBox" class="suggestions-list" style="display:none;"></div>
+      </div>
+
+      <!-- 4 ONGLETS : FAUTEUIL | VOITURE | BUS | TRAMWAY -->
+      <div class="mode-shell">
+        <div class="mode-tabs-4">
+          <button id="modeTabWheelchair" class="active-wc" onclick="switchModeTab('wheelchair')">
+            <span class="m-ico">♿</span><span>Fauteuil</span>
+          </button>
+          <button id="modeTabCar" onclick="switchModeTab('car')">
+            <span class="m-ico">🚗</span><span>Voiture</span>
+          </button>
+          <button id="modeTabBus" onclick="switchModeTab('bus')">
+            <span class="m-ico">🚌</span><span>Bus</span>
+          </button>
+          <button id="modeTabTram" onclick="switchModeTab('tram')">
+            <span class="m-ico">🚊</span><span>Tramway</span>
+          </button>
+        </div>
+
+        <!-- PANNEAU 1 : FAUTEUIL -->
+        <div id="panelWheelchair" style="display:flex; flex-direction:column; gap:8px;">
+          <div class="segmented">
+            <button id="btnManual" class="active" onclick="setProfile('manual')">♿ Manuel (≤ 5%)</button>
+            <button id="btnElectric" onclick="setProfile('electric')">⚡ Électrique (Abaissés)</button>
+          </div>
+          <div id="profileHint" class="sub" style="padding:0 2px;">
+            Évite les escaliers, les pavés irréguliers et les côtes &gt; 5%.
+          </div>
+        </div>
+
+        <!-- PANNEAU 2 : VOITURE -->
+        <div id="panelCar" style="display:none; flex-direction:column; gap:8px;">
+          <div class="sub" style="font-weight:700;">ITINÉRAIRE AUTO + STATIONNEMENT PMR</div>
+          <div class="sub">Dès que vous choisissez une destination, la place PMR la plus proche est proposée automatiquement ci-dessous.</div>
+          <div id="carParkingsList" style="display:flex; flex-direction:column; gap:7px; max-height:190px; overflow-y:auto;"></div>
+        </div>
+
+        <!-- PANNEAU 3 : BUS IRIGO -->
+        <div id="panelBus" style="display:none; flex-direction:column; gap:8px;">
+          <div class="row between">
+            <span class="sub" style="font-weight:700;">LIGNES DE BUS IRIGO</span>
+            <span id="busCountLabel" class="sub">Chargement…</span>
+          </div>
+          <div class="horiz-scroll" id="busLineFilters"></div>
+          <div id="selectedBusLineTitle" class="sub" style="font-weight:600;"></div>
+          <input id="busSearchInput" placeholder="🔍 Chercher un arrêt de bus (ex: Lorraine, Foch…)" oninput="renderBusStops()" style="background:var(--card2); padding:8px 10px;" />
+          <div id="busStopsList" style="display:flex; flex-direction:column; gap:7px; max-height:220px; overflow-y:auto;"></div>
+        </div>
+
+        <!-- PANNEAU 4 : TRAMWAY IRIGO -->
+        <div id="panelTram" style="display:none; flex-direction:column; gap:8px;">
+          <div class="row between">
+            <span class="sub" style="font-weight:700;">LIGNES TRAM IRIGO ACCESSIBLES</span>
+            <span id="tramCountLabel" class="sub">Chargement…</span>
+          </div>
+          <div class="chip-wrap" id="tramLineFilters">
+            <button class="line-filter-btn selected" style="background:#5856d6;" onclick="setTramLineFilter('all', this)">Toutes</button>
+            <button class="line-filter-btn" onclick="setTramLineFilter('A', this)">Ligne A</button>
+            <button class="line-filter-btn" onclick="setTramLineFilter('B', this)">Ligne B</button>
+            <button class="line-filter-btn" onclick="setTramLineFilter('C', this)">Ligne C</button>
+          </div>
+          <input id="tramSearchInput" placeholder="🔍 Chercher une station (ex: Foch, Ralliement…)" oninput="renderTramStations()" style="background:var(--card2); padding:8px 10px;" />
+          <div id="tramStationsList" style="display:flex; flex-direction:column; gap:7px; max-height:220px; overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <!-- PROPOSITION AUTOMATIQUE & TEMPS RÉEL DU PARKING PMR EN MODE VOITURE -->
+      <div id="carParkingProposal" class="parking-proposal">
+        <div class="row between">
+          <span class="badge b-yes">🅿️ PLACE PMR LA PLUS PROCHE</span>
+          <span id="proposalSourceBadge" class="sub" style="font-weight:700;">Temps réel</span>
+        </div>
+        <div id="proposalTitle" style="font-weight:800; font-size:14px;"></div>
+        <div id="proposalMeta" class="sub"></div>
+        <div class="row" style="margin-top:2px;">
+          <button id="proposalGoBtn" class="go" style="flex:1; font-size:13px;">🚗 M'y garer</button>
+          <button id="proposalSeeBtn" style="padding:8px 12px; font-size:13px;">📍 Voir</button>
+          <button onclick="clearParkingProposal()" style="padding:8px 10px; font-size:12px;" title="Masquer">✕</button>
+        </div>
+      </div>
+
+      <!-- Guidage vocal -->
+      <div id="navBox" class="nav-banner" style="display:none;">
+        <div class="sub" style="color:#a1a1aa;">GUIDAGE VOCAL EN COURS</div>
+        <div id="navDist" style="font-size:26px; font-weight:800;">0 m</div>
+        <div id="navInstruction" style="font-size:15px; font-weight:600; margin-top:4px;"></div>
+        <div class="row" style="margin-top:10px;">
+          <button class="primary" style="flex:1;" onclick="nextStep()">⏭️ Suivant</button>
+          <button class="danger" onclick="stopGuidance()">Fin</button>
+        </div>
+      </div>
+
+      <!-- Résumé itinéraire -->
+      <div id="routeBox" class="card" style="display:none;">
+        <div class="row between">
+          <b id="routeTitle">Itinéraire</b>
+          <button class="go" onclick="startGuidance()">Y aller</button>
+        </div>
+        <div id="routeMeta" class="sub" style="margin:6px 0;"></div>
+        <div id="routeSteps" style="max-height:210px; overflow-y:auto;"></div>
+      </div>
+
+      <button class="warn" onclick="reportObstacleAtCenter()">⚠️ Signaler un obstacle au centre de la carte</button>
+    </div>
+
+    <!-- ONGLET 2 : PRATIQUES PMR -->
+    <div id="tabDirectory" class="scroll-area" style="display:none;">
+      <input id="dirSearch" placeholder="🔍 Chercher resto, rue, parking, salle…" oninput="renderDirectory()" />
+
+      <div class="chip-wrap" id="dirCatChips">
+        <button class="chip active" onclick="setDirCategory('all', this)">Tout</button>
+        <button class="chip" onclick="setDirCategory('parking', this)">🅿️ Parkings</button>
+        <button class="chip" onclick="setDirCategory('toilet', this)">🚻 Toilettes PMR</button>
+        <button class="chip" onclick="setDirCategory('restaurant', this)">🍽️ Restos</button>
+        <button class="chip" onclick="setDirCategory('bar', this)">🍻 Bars</button>
+        <button class="chip" onclick="setDirCategory('venue', this)">🎭 Spectacles</button>
+      </div>
+
+      <div class="chip-wrap" id="dirAccessChips">
+        <button class="chip active" onclick="setDirAccess('all', this)">Tous statuts</button>
+        <button class="chip" onclick="setDirAccess('yes', this)">🟢 Accessibles</button>
+        <button class="chip" onclick="setDirAccess('limited', this)">🟠 Partiels</button>
+        <button class="chip" onclick="setDirAccess('no', this)">🔴 Non accessibles</button>
+      </div>
+
+      <div id="dirSummary" class="sub"></div>
+      <div id="dirList" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+  </aside>
+
+  <script>
+    const ANGERS = [-0.5632, 47.4784];
+    const TRAM_IDS = new Set(["A", "B", "C"]);
+
+    const lightStyle = "https://tiles.openfreemap.org/styles/liberty";
+    const darkStyle = "https://tiles.openfreemap.org/styles/dark";
+
+    let activeTransportTab = "wheelchair"; // "wheelchair" | "car" | "bus" | "tram"
+    let profile = "manual";
+    let isDark = false;
+    let currentRoute = null;
+    let navIndex = 0;
+
+    let userPos = null;
+    let userMarker = null;
+    let originPinMarker = null;
+    let destPinMarker = null;
+    let proposedParkingMarker = null;
+    let proposedWalkGeoJSON = null;
+    let parkingSearchAbort = null;
+
+    let selectedOrigin = { name: "📍 Ma position actuelle", lat: null, lon: null, isGPS: true };
+    let selectedDest = null;
+
+    let activeField = null;
+    let autocompleteTimer = null;
+    let autocompleteAbort = null;
+
+    let allPlaces = [];
+    let tramFeatures = [];
+    let tramColors = { A: "#E30613", B: "#009FE3", C: "#78BE20" };
+    let tramStops = [];
+    let tramLineFilter = "all";
+
+    let busFeatures = [];
+    let busLinesMeta = [];
+    let busColors = {};
+    let busStops = [];
+    let busLineFilter = "all";
+
+    let worksFeatures = [];
+    let blockedPoints = [];
+
+    let visibleLayers = { parking: true, toilet: true, restaurant: true, bar: true, venue: true, works: true, bus: false, tram: true };
+    let dirCategory = "all";
+    let dirAccess = "all";
+    let mapEventsBound = false;
+
+    const map = new maplibregl.Map({
+      container: "map",
+      style: lightStyle,
+      center: ANGERS,
+      zoom: 14
+    });
+
+    function escapeHTML(str) {
+      return String(str || "").replace(/[&<>"']/g, s => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]));
+    }
+
+    function distanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+      return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    }
+
+    function setStatus(message, type = "info") {
+      const box = document.getElementById("statusBox");
+      if (!message) { box.style.display = "none"; return; }
+      box.className = "status-box status-" + type;
+      box.textContent = message;
+      box.style.display = "block";
+    }
+
+    // MARK: - Proposition automatique & temps réel de Parking PMR en mode Voiture
+
+    async function findAndProposeNearestParking(destLat, destLon, destName) {
+      if (parkingSearchAbort) parkingSearchAbort.abort();
+      parkingSearchAbort = new AbortController();
+      const signal = parkingSearchAbort.signal;
+
+      const localCandidates = allPlaces
+        .filter(p => p.cat === "parking")
+        .map(p => ({ ...p, distToDest: distanceMeters(destLat, destLon, p.lat, p.lon), source: "Open Data Angers" }))
+        .sort((a, b) => a.distToDest - b.distToDest);
+
+      let best = localCandidates[0] || null;
+      if (best) {
+        displayParkingProposal(best, destLat, destLon, destName, "Open Data Angers • Vérif. temps réel…");
+      } else {
+        document.getElementById("carParkingProposal").style.display = "flex";
+        document.getElementById("proposalTitle").textContent = "Recherche d'une place PMR proche…";
+        document.getElementById("proposalMeta").textContent = "";
+      }
+
+      const [angersLive, osmLive] = await Promise.allSettled([
+        fetch(`https://data.angers.fr/api/explore/v2.1/catalog/datasets/stationnement_pmr_angers/records?where=within_distance(geo_point_2d%2Cgeom'POINT(${destLon}%20${destLat})'%2C800m)&limit=10`, { signal })
+          .then(r => r.json()),
+        fetch("https://overpass-api.de/api/interpreter", {
+          method: "POST", signal,
+          headers: { "Content-Type": "application/x-www-form-urlencoded; charset=utf-8" },
+          body: "data=" + encodeURIComponent(`[out:json][timeout:8];(nwr["amenity"="parking_space"]["disabled"="yes"](around:700,${destLat},${destLon});nwr["amenity"="parking"]["capacity:disabled"](around:700,${destLat},${destLon}););out center qt;`)
+        }).then(r => r.json())
+      ]);
+
+      if (signal.aborted) return;
+
+      const liveCandidates = [...localCandidates.slice(0, 5)];
+
+      if (angersLive.status === "fulfilled" && angersLive.value?.results) {
+        for (const r of angersLive.value.results) {
+          const pt = r.geo_point_2d;
+          if (!pt) continue;
+          const nb = r.nombre ? `${r.nombre} place(s) CMI` : "Place réservée PMR";
+          liveCandidates.push({
+            name: r.adresse_1 || "Stationnement PMR",
+            lat: pt.lat, lon: pt.lon,
+            details: [nb, r.commentaire].filter(Boolean).join(" • "),
+            distToDest: distanceMeters(destLat, destLon, pt.lat, pt.lon),
+            source: "Live data.angers.fr"
+          });
+        }
+      }
+
+      if (osmLive.status === "fulfilled" && osmLive.value?.elements) {
+        for (const el of osmLive.value.elements) {
+          const lat = el.lat ?? el.center?.lat;
+          const lon = el.lon ?? el.center?.lon;
+          if (lat == null || lon == null) continue;
+          const t = el.tags || {};
+          const cap = t["capacity:disabled"] ? `${t["capacity:disabled"]} place(s) PMR` : "Place PMR";
+          liveCandidates.push({
+            name: t.name || t["addr:street"] || "Parking PMR (OSM)",
+            lat, lon,
+            details: `${cap} • OpenStreetMap`,
+            distToDest: distanceMeters(destLat, destLon, lat, lon),
+            source: "Live OpenStreetMap"
+          });
+        }
+      }
+
+      liveCandidates.sort((a, b) => a.distToDest - b.distToDest);
+      const winner = liveCandidates[0];
+      if (winner) {
+        displayParkingProposal(winner, destLat, destLon, destName, `Temps réel • ${winner.source}`);
+      } else {
+        document.getElementById("proposalTitle").textContent = "Aucune place PMR recensée à < 800 m";
+        document.getElementById("proposalMeta").textContent = "Vous pouvez néanmoins vous garer au plus près de la destination.";
+      }
+    }
+
+    function displayParkingProposal(parking, destLat, destLon, destName, sourceLabel) {
+      const box = document.getElementById("carParkingProposal");
+      box.style.display = "flex";
+
+      const walkMins = Math.max(1, Math.round(parking.distToDest / 65));
+      document.getElementById("proposalSourceBadge").textContent = sourceLabel;
+      document.getElementById("proposalTitle").textContent = `🅿️ ${parking.name}`;
+      document.getElementById("proposalMeta").textContent =
+        `À ${parking.distToDest} m de « ${destName} » (~${walkMins} min en fauteuil)${parking.details ? " • " + parking.details : ""}`;
+
+      document.getElementById("proposalGoBtn").onclick = () => {
+        routeTo(parking.lat, parking.lon, `Parking PMR (${parking.name})`, {
+          isParkingRoute: true,
+          finalDestName: destName,
+          finalDestLat: destLat,
+          finalDestLon: destLon,
+          parkingDist: parking.distToDest
+        });
+      };
+
+      document.getElementById("proposalSeeBtn").onclick = () => {
+        map.flyTo({ center: [parking.lon, parking.lat], zoom: 17 });
+      };
+
+      if (proposedParkingMarker) proposedParkingMarker.remove();
+      const el = document.createElement("div");
+      el.className = "parking-pin";
+      el.textContent = "P";
+      proposedParkingMarker = new maplibregl.Marker({ element: el })
+        .setLngLat([parking.lon, parking.lat])
+        .setPopup(new maplibregl.Popup().setHTML(`<b>🅿️ Place PMR conseillée</b><br>${escapeHTML(parking.name)}<br><span class="sub">À ${parking.distToDest} m de ${escapeHTML(destName)}</span>`))
+        .addTo(map);
+
+      proposedWalkGeoJSON = {
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: [[parking.lon, parking.lat], [destLon, destLat]] }
+      };
+      if (map.getSource("proposed-walk")) {
+        map.getSource("proposed-walk").setData(proposedWalkGeoJSON);
+      } else if (map.isStyleLoaded()) {
+        map.addSource("proposed-walk", { type: "geojson", data: proposedWalkGeoJSON });
+        map.addLayer({
+          id: "proposed-walk-layer", type: "line", source: "proposed-walk",
+          paint: { "line-color": "#34c759", "line-width": 4, "line-dasharray": [2, 2] }
+        });
+      }
+    }
+
+    function clearParkingProposal() {
+      if (parkingSearchAbort) parkingSearchAbort.abort();
+      document.getElementById("carParkingProposal").style.display = "none";
+      if (proposedParkingMarker) { proposedParkingMarker.remove(); proposedParkingMarker = null; }
+      proposedWalkGeoJSON = null;
+      if (map.getSource("proposed-walk")) {
+        map.getSource("proposed-walk").setData({ type: "FeatureCollection", features: [] });
+      }
+    }
+
+    // MARK: - Gestion des 4 Onglets (Fauteuil / Voiture / Bus / Tramway)
+
+    function switchModeTab(mode) {
+      const prevMode = activeTransportTab;
+      activeTransportTab = mode;
+
+      document.getElementById("panelWheelchair").style.display = mode === "wheelchair" ? "flex" : "none";
+      document.getElementById("panelCar").style.display        = mode === "car" ? "flex" : "none";
+      document.getElementById("panelBus").style.display        = mode === "bus" ? "flex" : "none";
+      document.getElementById("panelTram").style.display       = mode === "tram" ? "flex" : "none";
+
+      document.getElementById("modeTabWheelchair").className = mode === "wheelchair" ? "active-wc" : "";
+      document.getElementById("modeTabCar").className        = mode === "car" ? "active-car" : "";
+      document.getElementById("modeTabBus").className        = mode === "bus" ? "active-bus" : "";
+      document.getElementById("modeTabTram").className       = mode === "tram" ? "active-tram" : "";
+
+      if (mode !== "car") {
+        clearParkingProposal();
+      } else {
+        renderCarParkingsNearTarget();
+      }
+
+      if (mode === "bus") {
+        if (!visibleLayers.bus) {
+          const busChip = document.querySelector('[data-layer="bus"]');
+          if (busChip) toggleMapLayer("bus", busChip);
+        }
+        renderBusStops();
+      }
+      if (mode === "tram") {
+        if (!visibleLayers.tram) {
+          const tramChip = document.querySelector('[data-layer="tram"]');
+          if (tramChip) toggleMapLayer("tram", tramChip);
+        }
+        renderTramStations();
+      }
+
+      if (selectedDest && ((prevMode === "car" && mode !== "car") || (prevMode !== "car" && mode === "car"))) {
+        routeTo(selectedDest.lat, selectedDest.lon, selectedDest.name);
+      }
+    }
+
+    function setProfile(p) {
+      profile = p;
+      document.getElementById("btnManual").classList.toggle("active", p === "manual");
+      document.getElementById("btnElectric").classList.toggle("active", p === "electric");
+      document.getElementById("profileHint").textContent = p === "manual"
+        ? "Évite les escaliers, les pavés irréguliers et les côtes > 5%."
+        : "Abaissés de trottoir privilégiés, pentes tolérées jusqu'à 10%.";
+      if (currentRoute && activeTransportTab !== "car") {
+        routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName);
+      }
+    }
+
+    function renderCarParkingsNearTarget() {
+      const list = document.getElementById("carParkingsList");
+      list.innerHTML = "";
+      const refLat = selectedDest ? selectedDest.lat : getOriginCoordinate()[1];
+      const refLon = selectedDest ? selectedDest.lon : getOriginCoordinate()[0];
+
+      const parkings = allPlaces
+        .filter(p => p.cat === "parking")
+        .map(p => ({ ...p, refDist: distanceMeters(refLat, refLon, p.lat, p.lon) }))
+        .sort((a, b) => a.refDist - b.refDist)
+        .slice(0, 6);
+
+      if (parkings.length === 0) {
+        list.innerHTML = `<div class="sub">Chargement des places PMR…</div>`;
+        return;
+      }
+
+      parkings.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "dir-item";
+        card.innerHTML = `
+          <div class="row between">
+            <div class="dir-title">🅿️ ${escapeHTML(p.name)}</div>
+            <span class="sub">${p.refDist} m</span>
+          </div>
+          <div class="sub">${escapeHTML(p.details)}</div>
+          <div class="row">
+            <button style="flex:1;padding:6px;font-size:12.5px;" class="see-pk">📍 Voir</button>
+            <button style="flex:1;padding:6px;font-size:12.5px;" class="primary go-pk">🚗 Y aller</button>
+          </div>
+        `;
+        card.querySelector(".see-pk").addEventListener("click", () => { map.flyTo({ center: [p.lon, p.lat], zoom: 17 }); openPlacePopup(p); });
+        card.querySelector(".go-pk").addEventListener("click", () => {
+          routeTo(p.lat, p.lon, "Parking PMR " + p.name, { isParkingRoute: true });
+        });
+        list.appendChild(card);
+      });
+    }
+
+    function renderBusLineFilters() {
+      const wrap = document.getElementById("busLineFilters");
+      wrap.innerHTML = "";
+
+      const allBtn = document.createElement("button");
+      allBtn.className = "line-filter-btn" + (busLineFilter === "all" ? " selected" : "");
+      if (busLineFilter === "all") allBtn.style.background = "#ff9500";
+      allBtn.textContent = "Toutes";
+      allBtn.onclick = () => selectBusLine("all");
+      wrap.appendChild(allBtn);
+
+      busLinesMeta.forEach(line => {
+        const btn = document.createElement("button");
+        const isSel = busLineFilter === line.shortName;
+        btn.className = "line-filter-btn" + (isSel ? " selected" : "");
+        if (isSel) btn.style.background = line.color;
+        btn.textContent = line.shortName;
+        btn.title = line.longName;
+        btn.onclick = () => selectBusLine(line.shortName);
+        wrap.appendChild(btn);
+      });
+
+      const titleEl = document.getElementById("selectedBusLineTitle");
+      if (busLineFilter === "all") {
+        titleEl.textContent = `${busLinesMeta.length} lignes de bus Irigo disponibles`;
+      } else {
+        const meta = busLinesMeta.find(l => l.shortName === busLineFilter);
+        titleEl.textContent = meta ? `Ligne ${meta.shortName} : ${meta.longName}` : `Ligne ${busLineFilter}`;
+      }
+    }
+
+    function selectBusLine(lineName) {
+      busLineFilter = lineName;
+      renderBusLineFilters();
+      renderBusStops();
+      updateBusMapLayer();
+    }
+
+    function renderBusStops() {
+      const q = (document.getElementById("busSearchInput").value || "").trim().toLowerCase();
+      const filtered = busStops.filter(s => {
+        if (busLineFilter !== "all" && !s.lines.includes(busLineFilter)) return false;
+        if (q && !s.name.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      document.getElementById("busCountLabel").textContent = `${filtered.length} arrêt(s)`;
+      const list = document.getElementById("busStopsList");
+      list.innerHTML = "";
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="sub" style="padding:8px;">Aucun arrêt de bus trouvé.</div>`;
+        return;
+      }
+
+      filtered.slice(0, 40).forEach(s => {
+        const distLabel = s.dist >= 1000 ? (s.dist / 1000).toFixed(1) + " km" : s.dist + " m";
+        const pillsHTML = s.lines.slice(0, 6).map(l =>
+          `<span class="line-pill" style="background:${busColors[l] || '#ff9500'};">${escapeHTML(l)}</span>`
+        ).join("");
+
+        const card = document.createElement("div");
+        card.className = "dir-item";
+        card.innerHTML = `
+          <div class="row between">
+            <div class="dir-title">🚌 ${escapeHTML(s.name)}</div>
+            <span class="sub">${distLabel}</span>
+          </div>
+          <div class="row between" style="flex-wrap:wrap;">
+            <div class="row" style="gap:4px;flex-wrap:wrap;">${pillsHTML}</div>
+            <span class="badge ${s.accessible ? 'b-yes' : 'b-lim'}">${s.accessible ? '♿ Accessible' : '⚠️ À vérifier'}</span>
+          </div>
+          <div class="row" style="margin-top:2px;">
+            <button style="flex:1;padding:6px;font-size:12.5px;" class="see-bus-btn">📍 Voir</button>
+            <button style="flex:1;padding:6px;font-size:12.5px;" class="primary go-bus-btn">♿ Y aller</button>
+          </div>
+        `;
+        card.querySelector(".see-bus-btn").addEventListener("click", () => {
+          map.flyTo({ center: [s.lon, s.lat], zoom: 16.5 });
+          openBusStopPopup(s);
+        });
+        card.querySelector(".go-bus-btn").addEventListener("click", () => {
+          routeTo(s.lat, s.lon, "Arrêt Bus " + s.name);
+        });
+        list.appendChild(card);
+      });
+    }
+
+    function openBusStopPopup(s) {
+      const pillsHTML = s.lines.map(l =>
+        `<span class="line-pill" style="background:${busColors[l] || '#ff9500'};">${escapeHTML(l)}</span>`
+      ).join(" ");
+      const container = document.createElement("div");
+      container.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-weight:700;font-size:14px;">🚌 Arrêt ${escapeHTML(s.name)}</div>
+          <div class="row" style="gap:4px;flex-wrap:wrap;">${pillsHTML}</div>
+          <div><span class="badge ${s.accessible ? 'b-yes' : 'b-lim'}">${s.accessible ? '♿ Arrêt accessible PMR' : '⚠️ Accessibilité à vérifier'}</span></div>
+          ${s.precision ? `<div class="sub">${escapeHTML(s.precision)}</div>` : ""}
+          <button class="primary" style="margin-top:4px;width:100%;">♿ Définir comme arrivée</button>
+        </div>
+      `;
+      container.querySelector("button").addEventListener("click", () => {
+        routeTo(Number(s.lat), Number(s.lon), "Arrêt Bus " + s.name);
+      });
+      new maplibregl.Popup().setLngLat([Number(s.lon), Number(s.lat)]).setDOMContent(container).addTo(map);
+    }
+
+    function setTramLineFilter(line, btn) {
+      tramLineFilter = line;
+      document.querySelectorAll("#tramLineFilters .line-filter-btn").forEach(b => {
+        b.classList.remove("selected");
+        b.style.background = "";
+      });
+      btn.classList.add("selected");
+      btn.style.background = line === "all" ? "#5856d6" : (tramColors[line] || "#5856d6");
+      renderTramStations();
+    }
+
+    function renderTramStations() {
+      const q = (document.getElementById("tramSearchInput").value || "").trim().toLowerCase();
+      const filtered = tramStops.filter(s => {
+        if (tramLineFilter !== "all" && !s.lines.includes(tramLineFilter)) return false;
+        if (q && !s.name.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      document.getElementById("tramCountLabel").textContent = `${filtered.length} station(s)`;
+      const list = document.getElementById("tramStationsList");
+      list.innerHTML = "";
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="sub" style="padding:8px;">Aucune station trouvée.</div>`;
+        return;
+      }
+
+      filtered.forEach(s => {
+        const distLabel = s.dist >= 1000 ? (s.dist / 1000).toFixed(1) + " km" : s.dist + " m";
+        const pillsHTML = s.lines.map(l =>
+          `<span class="line-pill" style="background:${tramColors[l] || '#5856d6'};">${escapeHTML(l)}</span>`
+        ).join("");
+
+        const card = document.createElement("div");
+        card.className = "dir-item";
+        card.innerHTML = `
+          <div class="row between">
+            <div class="dir-title">🚊 ${escapeHTML(s.name)}</div>
+            <span class="sub">${distLabel}</span>
+          </div>
+          <div class="row between" style="flex-wrap:wrap;">
+            <div class="row" style="gap:4px;">${pillsHTML}</div>
+            <span class="badge ${s.accessible ? 'b-yes' : 'b-lim'}">${s.accessible ? '♿ Quai à niveau' : '⚠️ Vérifier quai'}</span>
+          </div>
+          <div class="row" style="margin-top:2px;">
+            <button style="flex:1;padding:6px;font-size:12.5px;" class="see-tram-btn">📍 Voir</button>
+            <button style="flex:1;padding:6px;font-size:12.5px;" class="primary go-tram-btn">♿ Y aller</button>
+          </div>
+        `;
+        card.querySelector(".see-tram-btn").addEventListener("click", () => {
+          map.flyTo({ center: [s.lon, s.lat], zoom: 16.5 });
+          openTramStopPopup(s);
+        });
+        card.querySelector(".go-tram-btn").addEventListener("click", () => {
+          routeTo(s.lat, s.lon, "Tram " + s.name);
+        });
+        list.appendChild(card);
+      });
+    }
+
+    function openTramStopPopup(s) {
+      const pillsHTML = s.lines.map(l =>
+        `<span class="line-pill" style="background:${tramColors[l] || '#5856d6'};">${escapeHTML(l)}</span>`
+      ).join(" ");
+      const container = document.createElement("div");
+      container.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-weight:700;font-size:14px;">🚊 Tram ${escapeHTML(s.name)}</div>
+          <div class="row" style="gap:4px;">${pillsHTML}</div>
+          <div><span class="badge ${s.accessible ? 'b-yes' : 'b-lim'}">${s.accessible ? '♿ Quai plain-pied' : '⚠️ Accessibilité partielle'}</span></div>
+          ${s.precision ? `<div class="sub">${escapeHTML(s.precision)}</div>` : ""}
+          <button class="primary" style="margin-top:4px;width:100%;">♿ Définir comme arrivée</button>
+        </div>
+      `;
+      container.querySelector("button").addEventListener("click", () => {
+        routeTo(Number(s.lat), Number(s.lon), "Tram " + s.name);
+      });
+      new maplibregl.Popup().setLngLat([Number(s.lon), Number(s.lat)]).setDOMContent(container).addTo(map);
+    }
+
+    // MARK: - Autocomplétion Départ & Arrivée
+
+    function onAddressFocus(field) {
+      activeField = field;
+      const input = document.getElementById(field === "origin" ? "originInput" : "destInput");
+      if (field === "origin" && selectedOrigin.isGPS) input.select();
+      const q = input.value.trim();
+      if (q.length < 2 || (field === "origin" && selectedOrigin.isGPS)) showQuickSuggestions(field);
+      else fetchAutocompleteSuggestions(q, field);
+    }
+
+    function onAddressInput(field) {
+      activeField = field;
+      const input = document.getElementById(field === "origin" ? "originInput" : "destInput");
+      const q = input.value.trim();
+      if (field === "origin") selectedOrigin.isGPS = false;
+
+      clearTimeout(autocompleteTimer);
+      if (q.length < 2) { showQuickSuggestions(field); return; }
+
+      renderSuggestions(searchLocalPlaces(q), field, true);
+      autocompleteTimer = setTimeout(() => fetchAutocompleteSuggestions(q, field), 220);
+    }
+
+    function clearAddressField(field) {
+      const input = document.getElementById(field === "origin" ? "originInput" : "destInput");
+      input.value = "";
+      input.focus();
+      if (field === "origin") {
+        selectedOrigin = { name: "", lat: null, lon: null, isGPS: false };
+        if (originPinMarker) { originPinMarker.remove(); originPinMarker = null; }
+      } else {
+        selectedDest = null;
+        if (destPinMarker) { destPinMarker.remove(); destPinMarker = null; }
+        clearParkingProposal();
+      }
+      showQuickSuggestions(field);
+    }
+
+    function showQuickSuggestions(field) {
+      const items = [];
+      if (field === "origin") {
+        items.push({
+          icon: "📍", title: "Ma position actuelle (GPS)",
+          subtitle: userPos ? "Position GPS détectée" : "Centre d'Angers si GPS indisponible",
+          isGPS: true, lat: userPos?.lat ?? ANGERS[1], lon: userPos?.lon ?? ANGERS[0]
+        });
+      }
+      items.push(
+        { icon: "🏰", title: "Château d'Angers", subtitle: "Promenade du Bout du Monde, Angers", lat: 47.4702, lon: -0.5600 },
+        { icon: "🚊", title: "Gare Angers Saint-Laud", subtitle: "Esplanade de la Gare, Angers", lat: 47.4647, lon: -0.5568 },
+        { icon: "📍", title: "Place du Ralliement", subtitle: "Centre-ville, Angers", lat: 47.4712, lon: -0.5518 }
+      );
+      renderSuggestions(items, field, false);
+    }
+
+    function searchLocalPlaces(query) {
+      const q = query.toLowerCase();
+      const hits = [];
+      for (const s of tramStops) {
+        if (s.name.toLowerCase().includes(q)) {
+          hits.push({ icon: "🚊", title: "Tram " + s.name, subtitle: `Lignes ${s.lines.join(", ")} • Station tram`, lat: s.lat, lon: s.lon });
+        }
+        if (hits.length >= 2) break;
+      }
+      for (const s of busStops) {
+        if (s.name.toLowerCase().includes(q)) {
+          hits.push({ icon: "🚌", title: "Bus " + s.name, subtitle: `Lignes ${s.lines.slice(0, 5).join(", ")} • Arrêt Irigo`, lat: s.lat, lon: s.lon });
+        }
+        if (hits.length >= 4) break;
+      }
+      const icons = { parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭" };
+      for (const p of allPlaces) {
+        if (`${p.name} ${p.address}`.toLowerCase().includes(q)) {
+          hits.push({ icon: icons[p.cat] || "📍", title: p.name, subtitle: `${p.accessLabel} • ${p.address}`, lat: p.lat, lon: p.lon });
+        }
+        if (hits.length >= 7) break;
+      }
+      return hits;
+    }
+
+    async function fetchAutocompleteSuggestions(query, field) {
+      if (autocompleteAbort) autocompleteAbort.abort();
+      autocompleteAbort = new AbortController();
+      const signal = autocompleteAbort.signal;
+
+      const localHits = searchLocalPlaces(query);
+      const ignURL = `https://data.geopf.fr/geocodage/search?q=${encodeURIComponent(query)}&lat=47.4784&lon=-0.5632&limit=5&autocomplete=1`;
+      const photonURL = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=47.4784&lon=-0.5632&limit=5`;
+
+      const [ignRes, photonRes] = await Promise.allSettled([
+        fetch(ignURL, { signal }).then(r => r.json()),
+        fetch(photonURL, { signal }).then(r => r.json())
+      ]);
+      if (signal.aborted) return;
+
+      const remoteHits = [];
+      if (ignRes.status === "fulfilled" && ignRes.value?.features) {
+        for (const f of ignRes.value.features) {
+          const [lon, lat] = f.geometry.coordinates;
+          const props = f.properties || {};
+          remoteHits.push({
+            icon: "📍", title: props.name || props.label || query,
+            subtitle: props.label || [props.postcode, props.city].filter(Boolean).join(" "), lat, lon
+          });
+        }
+      }
+      if (photonRes.status === "fulfilled" && photonRes.value?.features) {
+        for (const f of photonRes.value.features) {
+          const [lon, lat] = f.geometry.coordinates;
+          const p = f.properties || {};
+          const title = p.name || [p.housenumber, p.street].filter(Boolean).join(" ");
+          if (!title) continue;
+          const sub = [p.street !== title ? p.street : null, p.postcode, p.city || p.state].filter(Boolean).join(" ");
+          remoteHits.push({ icon: "🧭", title, subtitle: sub || "OpenStreetMap", lat, lon });
+        }
+      }
+
+      const combined = [...localHits];
+      for (const item of remoteHits) {
+        const dup = combined.some(e =>
+          distanceMeters(e.lat, e.lon, item.lat, item.lon) < 25 &&
+          e.title.toLowerCase().slice(0, 10) === item.title.toLowerCase().slice(0, 10)
+        );
+        if (!dup) combined.push(item);
+      }
+
+      combined.sort((a, b) => {
+        const nearA = distanceMeters(ANGERS[1], ANGERS[0], a.lat, a.lon) < 35000 ? 0 : 1;
+        const nearB = distanceMeters(ANGERS[1], ANGERS[0], b.lat, b.lon) < 35000 ? 0 : 1;
+        return nearA - nearB;
+      });
+
+      renderSuggestions(combined.slice(0, 8), field, false);
+    }
+
+    function renderSuggestions(items, field, isLoadingMore) {
+      const box = document.getElementById("suggestionsBox");
+      box.innerHTML = "";
+      if (items.length === 0) {
+        box.innerHTML = `<div class="sub" style="padding:10px;">${isLoadingMore ? "Recherche en cours…" : "Aucun lieu trouvé."}</div>`;
+        box.style.display = "block";
+        return;
+      }
+      items.forEach(item => {
+        const btn = document.createElement("button");
+        btn.className = "sug-item";
+        btn.type = "button";
+        btn.innerHTML = `
+          <div class="sug-icon">${item.icon}</div>
+          <div style="min-width:0; flex:1;">
+            <div class="sug-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(item.title)}</div>
+            <div class="sug-sub" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(item.subtitle || "")}</div>
+          </div>
+        `;
+        btn.addEventListener("mousedown", e => { e.preventDefault(); applyPickedSuggestion(field, item); });
+        box.appendChild(btn);
+      });
+      box.style.display = "block";
+    }
+
+    function applyPickedSuggestion(field, item) {
+      document.getElementById("suggestionsBox").style.display = "none";
+      if (field === "origin") {
+        if (item.isGPS) {
+          selectedOrigin = { name: "📍 Ma position actuelle", lat: null, lon: null, isGPS: true };
+          document.getElementById("originInput").value = "📍 Ma position actuelle";
+          if (originPinMarker) { originPinMarker.remove(); originPinMarker = null; }
+        } else {
+          selectedOrigin = { name: item.title, lat: item.lat, lon: item.lon, isGPS: false };
+          document.getElementById("originInput").value = item.title;
+          placePin("origin", item.lat, item.lon, item.title);
+          map.flyTo({ center: [item.lon, item.lat], zoom: 15.5 });
+        }
+        refreshPlaceDistances();
+        if (selectedDest) routeTo(selectedDest.lat, selectedDest.lon, selectedDest.name);
+      } else {
+        selectedDest = { name: item.title, lat: item.lat, lon: item.lon };
+        document.getElementById("destInput").value = item.title;
+        placePin("dest", item.lat, item.lon, item.title);
+        routeTo(item.lat, item.lon, item.title);
+      }
+    }
+
+    function placePin(type, lat, lon, label) {
+      if (type === "origin") {
+        if (originPinMarker) originPinMarker.remove();
+        const el = document.createElement("div");
+        el.className = "route-pin"; el.style.background = "#007aff"; el.textContent = "A";
+        originPinMarker = new maplibregl.Marker({ element: el })
+          .setLngLat([lon, lat]).setPopup(new maplibregl.Popup().setHTML(`<b>Départ :</b> ${escapeHTML(label)}`)).addTo(map);
+      } else {
+        if (destPinMarker) destPinMarker.remove();
+        const el = document.createElement("div");
+        el.className = "route-pin"; el.style.background = "#ff3b30"; el.textContent = "B";
+        destPinMarker = new maplibregl.Marker({ element: el })
+          .setLngLat([lon, lat]).setPopup(new maplibregl.Popup().setHTML(`<b>Arrivée :</b> ${escapeHTML(label)}`)).addTo(map);
+      }
+    }
+
+    function swapOriginAndDest() {
+      if (!selectedDest) { setStatus("Choisis d'abord une destination pour inverser le trajet.", "info"); return; }
+      const prevOrigin = selectedOrigin.isGPS
+        ? { name: "Ma position actuelle", lat: getOriginCoordinate()[1], lon: getOriginCoordinate()[0] }
+        : { name: selectedOrigin.name, lat: selectedOrigin.lat, lon: selectedOrigin.lon };
+      const prevDest = { ...selectedDest };
+
+      selectedOrigin = { name: prevDest.name, lat: prevDest.lat, lon: prevDest.lon, isGPS: false };
+      selectedDest = { name: prevOrigin.name, lat: prevOrigin.lat, lon: prevOrigin.lon };
+
+      document.getElementById("originInput").value = selectedOrigin.name;
+      document.getElementById("destInput").value = selectedDest.name;
+
+      placePin("origin", selectedOrigin.lat, selectedOrigin.lon, selectedOrigin.name);
+      placePin("dest", selectedDest.lat, selectedDest.lon, selectedDest.name);
+      refreshPlaceDistances();
+      routeTo(selectedDest.lat, selectedDest.lon, selectedDest.name);
+    }
+
+    document.addEventListener("click", e => {
+      const card = document.getElementById("plannerCard");
+      if (card && !card.contains(e.target)) document.getElementById("suggestionsBox").style.display = "none";
+    });
+
+    // MARK: - Géolocalisation GPS
+
+    function initGeolocation() {
+      if (!navigator.geolocation) { document.getElementById("gpsStatusLabel").textContent = "GPS non supporté"; return; }
+      navigator.geolocation.watchPosition(
+        pos => {
+          const lat = pos.coords.latitude, lon = pos.coords.longitude;
+          const isFirstFix = userPos === null;
+          userPos = { lat, lon };
+
+          if (!userMarker) {
+            const el = document.createElement("div");
+            el.className = "gps-dot";
+            userMarker = new maplibregl.Marker({ element: el })
+              .setLngLat([lon, lat]).setPopup(new maplibregl.Popup().setHTML("<b>📍 Votre position actuelle</b>")).addTo(map);
+          } else {
+            userMarker.setLngLat([lon, lat]);
+          }
+
+          const distFromAngers = distanceMeters(ANGERS[1], ANGERS[0], lat, lon);
+          if (distFromAngers > 25000) {
+            document.getElementById("gpsStatusLabel").textContent = `Hors Angers (${Math.round(distFromAngers/1000)} km)`;
+          } else {
+            document.getElementById("gpsStatusLabel").textContent = "📍 GPS actif";
+            if (isFirstFix && selectedOrigin.isGPS) {
+              map.flyTo({ center: [lon, lat], zoom: 15 });
+              refreshPlaceDistances();
+            }
+          }
+        },
+        () => { document.getElementById("gpsStatusLabel").textContent = "GPS indisponible"; },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 8000 }
+      );
+    }
+
+    function getOriginCoordinate() {
+      if (!selectedOrigin.isGPS && selectedOrigin.lat != null && selectedOrigin.lon != null) {
+        return [selectedOrigin.lon, selectedOrigin.lat];
+      }
+      if (userPos && distanceMeters(ANGERS[1], ANGERS[0], userPos.lat, userPos.lon) <= 25000) {
+        return [userPos.lon, userPos.lat];
+      }
+      return ANGERS;
+    }
+
+    function recenterOnStart() { map.flyTo({ center: getOriginCoordinate(), zoom: 15 }); }
+
+    function refreshPlaceDistances() {
+      const [oLon, oLat] = getOriginCoordinate();
+      allPlaces.forEach(p => { p.dist = distanceMeters(oLat, oLon, p.lat, p.lon); });
+      allPlaces.sort((a, b) => a.dist - b.dist);
+
+      tramStops.forEach(s => { s.dist = distanceMeters(oLat, oLon, s.lat, s.lon); });
+      tramStops.sort((a, b) => a.dist - b.dist);
+
+      busStops.forEach(s => { s.dist = distanceMeters(oLat, oLon, s.lat, s.lon); });
+      busStops.sort((a, b) => a.dist - b.dist);
+
+      if (document.getElementById("tabDirectory").style.display !== "none") renderDirectory();
+      if (activeTransportTab === "tram") renderTramStations();
+      if (activeTransportTab === "bus") renderBusStops();
+      if (activeTransportTab === "car") renderCarParkingsNearTarget();
+    }
+
+    function switchTab(tab) {
+      const isMap = tab === "map";
+      document.getElementById("tabMap").style.display = isMap ? "flex" : "none";
+      document.getElementById("tabDirectory").style.display = isMap ? "none" : "flex";
+      document.getElementById("tabMapBtn").classList.toggle("active", isMap);
+      document.getElementById("tabDirBtn").classList.toggle("active", !isMap);
+      if (!isMap) renderDirectory();
+    }
+
+    function toggleDarkMode() {
+      isDark = !isDark;
+      document.body.classList.toggle("dark", isDark);
+      map.setStyle(isDark ? darkStyle : lightStyle);
+      map.once("style.load", () => { renderMapSourcesAndLayers(); });
+    }
+
+    // MARK: - Chargement des données d'Angers + Lignes Bus & Tram Irigo
+
+    async function loadAllData() {
+      setStatus("⏳ Chargement des parkings, toilettes, restos, bars, bus et tramway Irigo…", "info");
+      allPlaces = [];
+      worksFeatures = [];
+      tramFeatures = [];
+      tramStops = [];
+      busFeatures = [];
+      busLinesMeta = [];
+      busStops = [];
+
+      const linesPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/irigo_gtfs_lines/exports/json")
+        .then(r => r.json())
+        .then(rows => {
+          const seenBus = new Set();
+          (rows || []).forEach(r => {
+            const shortName = r.route_short_name || r.route_id || "";
+            const color = "#" + (r.route_color || (r.route_type === "Tram" ? "5856d6" : "ff9500"));
+            if (r.route_type === "Tram") {
+              if (shortName) tramColors[shortName] = color;
+              if (r.shape) {
+                tramFeatures.push({
+                  type: "Feature", properties: { color, shortName }, geometry: r.shape.geometry || r.shape
+                });
+              }
+            } else {
+              if (shortName) busColors[shortName] = color;
+              if (shortName && !seenBus.has(shortName)) {
+                seenBus.add(shortName);
+                busLinesMeta.push({ shortName, longName: r.route_long_name || `Ligne ${shortName}`, color });
+              }
+              if (r.shape) {
+                busFeatures.push({
+                  type: "Feature", properties: { color, shortName }, geometry: r.shape.geometry || r.shape
+                });
+              }
+            }
+          });
+          busLinesMeta.sort((a, b) => a.shortName.localeCompare(b.shortName, "fr", { numeric: true }));
+        }).catch(() => {});
+
+      const stopsPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stop_route_irigo_gtfs/exports/json")
+        .then(r => r.json())
+        .then(records => {
+          const tramMap = new Map();
+          const busMap = new Map();
+
+          (records || []).forEach(r => {
+            if (!r.arret_nom || !r.arret_coordonnees || !r.ligne_id) return;
+            const isTram = TRAM_IDS.has(r.ligne_id);
+            const targetMap = isTram ? tramMap : busMap;
+
+            const existing = targetMap.get(r.arret_nom) || {
+              name: r.arret_nom, lat: r.arret_coordonnees.lat, lon: r.arret_coordonnees.lon,
+              lines: new Set(), accessible: false, precision: r.arret_accessibilite_precision || ""
+            };
+            existing.lines.add(r.ligne_id);
+            if (r.arret_accessibilite === 1) existing.accessible = true;
+            targetMap.set(r.arret_nom, existing);
+          });
+
+          tramStops = Array.from(tramMap.values()).map(s => ({ ...s, lines: Array.from(s.lines).sort(), dist: 0 }));
+          busStops = Array.from(busMap.values()).map(s => ({
+            ...s, lines: Array.from(s.lines).sort((a, b) => a.localeCompare(b, "fr", { numeric: true })), dist: 0
+          }));
+        }).catch(() => {});
+
+      const parkingPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stationnement_pmr_angers/exports/json")
+        .then(r => r.json())
+        .then(rows => {
+          (rows || []).forEach((r, idx) => {
+            const pt = r.geo_point_2d;
+            if (!pt) return;
+            const nb = r.nombre ? `${r.nombre} place(s) CMI` : "Place réservée PMR";
+            const details = [nb, r.commentaire].filter(Boolean).join(" • ");
+            allPlaces.push({
+              id: "pk_" + (r.id || idx), cat: "parking",
+              name: r.adresse_1 || "Stationnement PMR", address: r.adresse_1 || "Angers",
+              lat: pt.lat, lon: pt.lon, access: "yes", accessLabel: "Stationnement PMR", details, toiletsPMR: null
+            });
+          });
+        }).catch(() => {});
+
+      const toiletsPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/sanitaires-publics-angers/records?limit=100")
+        .then(r => r.json())
+        .then(json => {
+          (json.results || []).forEach((r, idx) => {
+            const pt = r.geo_point_2d;
+            if (!pt) return;
+            const nom = r.nom || "Sanitaire public";
+            if (nom.toLowerCase().includes("urinoir")) return;
+            const modele = (r.modele || "").toUpperCase();
+            const isAutoPMR = ["SAGELEC", "ENTRETIEN DECAUX", "MDO", "ALTER"].includes(modele);
+            allPlaces.push({
+              id: "to_" + (r.gid || idx), cat: "toilet",
+              name: "Toilettes : " + nom, address: nom, lat: pt.lat, lon: pt.lon,
+              access: isAutoPMR ? "yes" : "limited",
+              accessLabel: isAutoPMR ? "Toilettes PMR" : "Accès à vérifier",
+              details: modele ? `Modèle ${modele} • Ville d'Angers` : "Sanitaire public Ville d'Angers", toiletsPMR: "yes"
+            });
+          });
+        }).catch(() => {});
+
+      const worksPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/info-travaux/records?where=endat%20%3E%20now()&limit=50")
+        .then(r => r.json())
+        .then(json => {
+          worksFeatures = (json.results || []).filter(r => r.geo_point_2d).map(r => ({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [r.geo_point_2d.lon, r.geo_point_2d.lat] },
+            properties: {
+              name: r.title || "Travaux en cours", address: r.address || "",
+              details: r.description || "", lat: r.geo_point_2d.lat, lon: r.geo_point_2d.lon
+            }
+          }));
+        }).catch(() => {});
+
+      await Promise.all([linesPromise, stopsPromise, parkingPromise, toiletsPromise, worksPromise, fetchOverpassPlaces()]);
+
+      refreshPlaceDistances();
+      updateGlobalStats();
+      renderBusLineFilters();
+      renderMapSourcesAndLayers();
+      renderDirectory();
+      renderTramStations();
+      renderBusStops();
+      renderCarParkingsNearTarget();
+      setStatus("✅ Données d'Angers et réseau Irigo (Bus + Tram) chargés.", "ok");
+    }
+
+    async function fetchOverpassPlaces() {
+      const ql = `
+        [out:json][timeout:25];
+        (
+          nwr["amenity"="toilets"]["wheelchair"~"^(yes|designated|limited)$"](around:3200,47.4784,-0.5632);
+          nwr["amenity"="restaurant"](around:2600,47.4784,-0.5632);
+          nwr["amenity"~"^(bar|pub|biergarten|nightclub)$"]["wheelchair"~"^(yes|designated|limited)$"](around:3200,47.4784,-0.5632);
+          nwr["amenity"~"^(theatre|concert_hall|music_venue|cinema|arts_centre|events_venue)$"]["wheelchair"~"^(yes|designated|limited)$"](around:4500,47.4784,-0.5632);
+        );
+        out center qt;
+      `;
+      const endpoints = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+      let data = null;
+      for (const ep of endpoints) {
+        try {
+          const res = await fetch(ep, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=utf-8" },
+            body: "data=" + encodeURIComponent(ql)
+          });
+          if (res.ok) { data = await res.json(); break; }
+        } catch {}
+      }
+      if (!data || !data.elements) return;
+
+      for (const el of data.elements) {
+        const lat = el.lat ?? el.center?.lat;
+        const lon = el.lon ?? el.center?.lon;
+        if (lat == null || lon == null) continue;
+        const t = el.tags || {};
+        const am = t.amenity;
+        const wc = (t.wheelchair || "").toLowerCase();
+        const addr = [t["addr:housenumber"], t["addr:street"]].filter(Boolean).join(" ") || t["addr:city"] || "Angers";
+
+        let access = "unknown", accessLabel = "Non renseigné";
+        if (wc === "yes" || wc === "designated") { access = "yes"; accessLabel = "Accessible fauteuil"; }
+        else if (wc === "limited") { access = "limited"; accessLabel = "Accès partiel"; }
+        else if (wc === "no") { access = "no"; accessLabel = "Non accessible"; }
+
+        const toiletsPMR = t["toilets:wheelchair"] || null;
+        const toiletNote = toiletsPMR === "yes" ? "Toilettes PMR : Oui" : (toiletsPMR === "no" ? "Toilettes PMR : Non" : null);
+
+        if (am === "toilets") {
+          if (allPlaces.some(p => p.cat === "toilet" && distanceMeters(p.lat, p.lon, lat, lon) < 25)) continue;
+          allPlaces.push({
+            id: "osm_" + el.id, cat: "toilet", name: t.name || "Toilettes PMR (OSM)", address: addr,
+            lat, lon, access, accessLabel,
+            details: t.fee === "yes" ? "Payant • " + accessLabel : "Gratuit / Public • " + accessLabel, toiletsPMR: "yes"
+          });
+        } else if (am === "restaurant") {
+          allPlaces.push({
+            id: "osm_" + el.id, cat: "restaurant", name: t.name || "Restaurant", address: addr,
+            lat, lon, access, accessLabel,
+            details: [t.cuisine ? "Cuisine : " + t.cuisine : null, toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • ") || "Restaurant (OpenStreetMap)",
+            toiletsPMR
+          });
+        } else if (["bar", "pub", "biergarten", "nightclub"].includes(am)) {
+          allPlaces.push({
+            id: "osm_" + el.id, cat: "bar", name: t.name || "Bar adapté", address: addr,
+            lat, lon, access, accessLabel,
+            details: [am.toUpperCase(), toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • "), toiletsPMR
+          });
+        } else {
+          allPlaces.push({
+            id: "osm_" + el.id, cat: "venue", name: t.name || "Salle / Spectacle", address: addr,
+            lat, lon, access, accessLabel,
+            details: [translateVenueType(am), toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • "), toiletsPMR
+          });
+        }
+      }
+    }
+
+    function translateVenueType(am) {
+      return {
+        theatre: "Théâtre", concert_hall: "Salle de concert", music_venue: "Salle de musique",
+        cinema: "Cinéma", arts_centre: "Centre culturel", events_venue: "Salle de spectacles"
+      }[am] || "Spectacle / Culture";
+    }
+
+    function updateGlobalStats() {
+      const counts = { parking: 0, toilet: 0, restaurant: 0, bar: 0 };
+      allPlaces.forEach(p => { if (counts[p.cat] != null) counts[p.cat]++; });
+      document.getElementById("globalStats").textContent =
+        `${counts.parking} parkings • ${counts.toilet} toilettes • ${counts.restaurant} restos • ${busLinesMeta.length} lignes bus • ${tramStops.length} tram`;
+    }
+
+    function colorForPlace(p) {
+      if (p.cat === "parking") return "#007aff";
+      if (p.cat === "toilet") return "#06b6d4";
+      if (p.cat === "bar") return "#a855f7";
+      if (p.cat === "venue") return "#ec4899";
+      if (p.access === "yes") return "#22c55e";
+      if (p.access === "limited") return "#f59e0b";
+      if (p.access === "no") return "#ef4444";
+      return "#9ca3af";
+    }
+
+    function getFilteredBusLinesGeo() {
+      const feats = busLineFilter === "all"
+        ? busFeatures
+        : busFeatures.filter(f => f.properties.shortName === busLineFilter);
+      return { type: "FeatureCollection", features: feats };
+    }
+
+    function getFilteredBusStopsGeo() {
+      const stops = busLineFilter === "all"
+        ? busStops
+        : busStops.filter(s => s.lines.includes(busLineFilter));
+      return {
+        type: "FeatureCollection",
+        features: stops.map(s => ({
+          type: "Feature", geometry: { type: "Point", coordinates: [s.lon, s.lat] },
+          properties: { name: s.name, lat: s.lat, lon: s.lon, linesJSON: JSON.stringify(s.lines), accessible: s.accessible, precision: s.precision || "" }
+        }))
+      };
+    }
+
+    function updateBusMapLayer() {
+      if (map.getSource("bus-lines")) map.getSource("bus-lines").setData(getFilteredBusLinesGeo());
+      if (map.getSource("bus-stops")) map.getSource("bus-stops").setData(getFilteredBusStopsGeo());
+      if (map.getLayer("bus-lines-layer")) {
+        map.setPaintProperty("bus-lines-layer", "line-width", busLineFilter === "all" ? 2.4 : 4.5);
+        map.setPaintProperty("bus-lines-layer", "line-opacity", busLineFilter === "all" ? 0.55 : 0.92);
+      }
+    }
+
+    function renderMapSourcesAndLayers() {
+      if (!map.getSource("bus-lines")) {
+        map.addSource("bus-lines", { type: "geojson", data: getFilteredBusLinesGeo() });
+        map.addLayer({
+          id: "bus-lines-layer", type: "line", source: "bus-lines",
+          layout: { visibility: visibleLayers.bus ? "visible" : "none" },
+          paint: {
+            "line-color": ["get", "color"],
+            "line-width": busLineFilter === "all" ? 2.4 : 4.5,
+            "line-opacity": busLineFilter === "all" ? 0.55 : 0.92
+          }
+        });
+      }
+      if (!map.getSource("bus-stops")) {
+        map.addSource("bus-stops", { type: "geojson", data: getFilteredBusStopsGeo() });
+        map.addLayer({
+          id: "bus-stops-layer", type: "circle", source: "bus-stops",
+          layout: { visibility: visibleLayers.bus ? "visible" : "none" },
+          paint: { "circle-color": "#ff9500", "circle-radius": 5.5, "circle-stroke-width": 1.8, "circle-stroke-color": "#ffffff" }
+        });
+      }
+
+      if (tramFeatures.length && !map.getSource("tram")) {
+        map.addSource("tram", { type: "geojson", data: { type: "FeatureCollection", features: tramFeatures } });
+        map.addLayer({
+          id: "tram-lines", type: "line", source: "tram",
+          layout: { visibility: visibleLayers.tram ? "visible" : "none" },
+          paint: { "line-color": ["get", "color"], "line-width": 4, "line-opacity": 0.85 }
+        });
+      }
+      if (tramStops.length && !map.getSource("tram-stops")) {
+        const stopsGeo = {
+          type: "FeatureCollection",
+          features: tramStops.map(s => ({
+            type: "Feature", geometry: { type: "Point", coordinates: [s.lon, s.lat] },
+            properties: { name: s.name, lat: s.lat, lon: s.lon, linesJSON: JSON.stringify(s.lines), accessible: s.accessible, precision: s.precision || "" }
+          }))
+        };
+        map.addSource("tram-stops", { type: "geojson", data: stopsGeo });
+        map.addLayer({
+          id: "tram-stops-layer", type: "circle", source: "tram-stops",
+          layout: { visibility: visibleLayers.tram ? "visible" : "none" },
+          paint: { "circle-color": "#5856d6", "circle-radius": 6.5, "circle-stroke-width": 2, "circle-stroke-color": "#ffffff" }
+        });
+      }
+
+      const parkingGeoJSON = {
+        type: "FeatureCollection",
+        features: allPlaces.filter(p => p.cat === "parking").map(p => ({
+          type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] }, properties: { ...p, color: "#007aff" }
+        }))
+      };
+      if (!map.getSource("parkings")) {
+        map.addSource("parkings", { type: "geojson", data: parkingGeoJSON, cluster: true, clusterMaxZoom: 15, clusterRadius: 42 });
+        map.addLayer({
+          id: "parkings-clusters", type: "circle", source: "parkings", filter: ["has", "point_count"],
+          layout: { visibility: visibleLayers.parking ? "visible" : "none" },
+          paint: { "circle-color": "#007aff", "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 80, 25], "circle-stroke-width": 2.5, "circle-stroke-color": "#ffffff" }
+        });
+        map.addLayer({
+          id: "parkings-cluster-count", type: "symbol", source: "parkings", filter: ["has", "point_count"],
+          layout: { "visibility": visibleLayers.parking ? "visible" : "none", "text-field": "{point_count_abbreviated}", "text-size": 12 },
+          paint: { "text-color": "#ffffff" }
+        });
+        map.addLayer({
+          id: "parkings-unclustered", type: "circle", source: "parkings", filter: ["!", ["has", "point_count"]],
+          layout: { visibility: visibleLayers.parking ? "visible" : "none" },
+          paint: { "circle-color": "#007aff", "circle-radius": 7, "circle-stroke-width": 2, "circle-stroke-color": "#ffffff" }
+        });
+      }
+
+      const poisGeoJSON = {
+        type: "FeatureCollection",
+        features: allPlaces.filter(p => p.cat !== "parking" && visibleLayers[p.cat]).map(p => ({
+          type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] }, properties: { ...p, color: colorForPlace(p) }
+        }))
+      };
+      if (map.getSource("pois")) map.getSource("pois").setData(poisGeoJSON);
+      else {
+        map.addSource("pois", { type: "geojson", data: poisGeoJSON });
+        map.addLayer({
+          id: "pois-layer", type: "circle", source: "pois",
+          paint: {
+            "circle-color": ["get", "color"],
+            "circle-radius": ["match", ["get", "cat"], "venue", 9, "bar", 8, "toilet", 8, 6.5],
+            "circle-stroke-width": 2, "circle-stroke-color": "#ffffff"
+          }
+        });
+      }
+
+      if (!map.getSource("works")) {
+        map.addSource("works", { type: "geojson", data: { type: "FeatureCollection", features: worksFeatures } });
+        map.addLayer({
+          id: "works-layer", type: "circle", source: "works",
+          layout: { visibility: visibleLayers.works ? "visible" : "none" },
+          paint: { "circle-color": "#ff3b30", "circle-radius": 7.5, "circle-stroke-width": 2, "circle-stroke-color": "#ffd60a" }
+        });
+      }
+
+      if (proposedWalkGeoJSON && !map.getSource("proposed-walk")) {
+        map.addSource("proposed-walk", { type: "geojson", data: proposedWalkGeoJSON });
+        map.addLayer({
+          id: "proposed-walk-layer", type: "line", source: "proposed-walk",
+          paint: { "line-color": "#34c759", "line-width": 4, "line-dasharray": [2, 2] }
+        });
+      }
+
+      if (currentRoute && !map.getSource("route")) {
+        map.addSource("route", { type: "geojson", data: currentRoute.geojson });
+        map.addLayer({ id: "route-line", type: "line", source: "route", paint: { "line-color": "#007aff", "line-width": 7 } });
+      }
+
+      bindMapClickEventsOnce();
+    }
+
+    function bindMapClickEventsOnce() {
+      if (mapEventsBound) return;
+      mapEventsBound = true;
+
+      map.on("click", "parkings-clusters", e => {
+        const f = map.queryRenderedFeatures(e.point, { layers: ["parkings-clusters"] })[0];
+        if (f) map.easeTo({ center: f.geometry.coordinates, zoom: map.getZoom() + 2 });
+      });
+
+      ["parkings-unclustered", "pois-layer"].forEach(layerId => {
+        map.on("click", layerId, e => {
+          const f = e.features?.[0];
+          if (f) openPlacePopup(f.properties);
+        });
+        map.on("mouseenter", layerId, () => map.getCanvas().style.cursor = "pointer");
+        map.on("mouseleave", layerId, () => map.getCanvas().style.cursor = "");
+      });
+
+      map.on("click", "tram-stops-layer", e => {
+        const p = e.features?.[0]?.properties;
+        if (!p) return;
+        openTramStopPopup({
+          name: p.name, lat: Number(p.lat), lon: Number(p.lon),
+          lines: JSON.parse(p.linesJSON || "[]"),
+          accessible: p.accessible === true || p.accessible === "true", precision: p.precision
+        });
+      });
+      map.on("mouseenter", "tram-stops-layer", () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", "tram-stops-layer", () => map.getCanvas().style.cursor = "");
+
+      map.on("click", "bus-stops-layer", e => {
+        const p = e.features?.[0]?.properties;
+        if (!p) return;
+        openBusStopPopup({
+          name: p.name, lat: Number(p.lat), lon: Number(p.lon),
+          lines: JSON.parse(p.linesJSON || "[]"),
+          accessible: p.accessible === true || p.accessible === "true", precision: p.precision
+        });
+      });
+      map.on("mouseenter", "bus-stops-layer", () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", "bus-stops-layer", () => map.getCanvas().style.cursor = "");
+
+      map.on("click", "works-layer", e => {
+        const p = e.features?.[0]?.properties;
+        if (!p) return;
+        new maplibregl.Popup()
+          .setLngLat([Number(p.lon), Number(p.lat)])
+          .setHTML(`<b>🚧 ${escapeHTML(p.name)}</b><br><span class="sub">${escapeHTML(p.address)}</span><br><div style="margin-top:4px;font-size:12px;">${escapeHTML(p.details)}</div>`)
+          .addTo(map);
+      });
+    }
+
+    function openPlacePopup(p) {
+      const badgeClass = { yes: "b-yes", limited: "b-lim", no: "b-no", unknown: "b-unk" }[p.access] || "b-unk";
+      const icon = { parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭" }[p.cat] || "📍";
+
+      const container = document.createElement("div");
+      container.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-weight:700;font-size:14px;">${icon} ${escapeHTML(p.name)}</div>
+          <div><span class="badge ${badgeClass}">${escapeHTML(p.accessLabel)}</span></div>
+          <div class="sub">${escapeHTML(p.address)}</div>
+          ${p.details ? `<div style="font-size:12px;">${escapeHTML(p.details)}</div>` : ""}
+          <button class="primary" style="margin-top:4px;width:100%;">♿ Calculer l'itinéraire</button>
+        </div>
+      `;
+      container.querySelector("button").addEventListener("click", () => {
+        routeTo(Number(p.lat), Number(p.lon), p.name, { isParkingRoute: p.cat === "parking" });
+      });
+      new maplibregl.Popup().setLngLat([Number(p.lon), Number(p.lat)]).setDOMContent(container).addTo(map);
+    }
+
+    function toggleMapLayer(layerKey, btn) {
+      visibleLayers[layerKey] = !visibleLayers[layerKey];
+      btn.classList.toggle("active", visibleLayers[layerKey]);
+      const vis = visibleLayers[layerKey] ? "visible" : "none";
+      if (layerKey === "tram") {
+        if (map.getLayer("tram-lines")) map.setLayoutProperty("tram-lines", "visibility", vis);
+        if (map.getLayer("tram-stops-layer")) map.setLayoutProperty("tram-stops-layer", "visibility", vis);
+      }
+      if (layerKey === "bus") {
+        if (map.getLayer("bus-lines-layer")) map.setLayoutProperty("bus-lines-layer", "visibility", vis);
+        if (map.getLayer("bus-stops-layer")) map.setLayoutProperty("bus-stops-layer", "visibility", vis);
+      }
+      if (layerKey === "works" && map.getLayer("works-layer")) map.setLayoutProperty("works-layer", "visibility", vis);
+      if (layerKey === "parking") {
+        ["parkings-clusters", "parkings-cluster-count", "parkings-unclustered"].forEach(id => {
+          if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
+        });
+      }
+      if (["toilet", "restaurant", "bar", "venue"].includes(layerKey)) renderMapSourcesAndLayers();
+    }
+
+    function setDirCategory(cat, btn) {
+      dirCategory = cat;
+      document.querySelectorAll("#dirCatChips .chip").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      renderDirectory();
+    }
+
+    function setDirAccess(acc, btn) {
+      dirAccess = acc;
+      document.querySelectorAll("#dirAccessChips .chip").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      renderDirectory();
+    }
+
+    function renderDirectory() {
+      const q = (document.getElementById("dirSearch").value || "").trim().toLowerCase();
+      const filtered = allPlaces.filter(p => {
+        if (dirCategory !== "all" && p.cat !== dirCategory) return false;
+        if (dirAccess !== "all" && p.access !== dirAccess) return false;
+        if (q && !`${p.name} ${p.address} ${p.details}`.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      const shown = filtered.slice(0, 80);
+      document.getElementById("dirSummary").textContent =
+        filtered.length > 80
+          ? `${filtered.length} résultats (80 plus proches affichés — affinez la recherche)`
+          : `${filtered.length} lieu(x) répertorié(s)`;
+
+      const listEl = document.getElementById("dirList");
+      listEl.innerHTML = "";
+      shown.forEach(p => {
+        const badgeClass = { yes: "b-yes", limited: "b-lim", no: "b-no", unknown: "b-unk" }[p.access] || "b-unk";
+        const icon = { parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭" }[p.cat] || "📍";
+        const distLabel = p.dist >= 1000 ? (p.dist / 1000).toFixed(1) + " km" : p.dist + " m";
+
+        const card = document.createElement("div");
+        card.className = "dir-item";
+        card.innerHTML = `
+          <div class="row between">
+            <div class="dir-title">${icon} ${escapeHTML(p.name)}</div>
+            <span class="sub">${distLabel}</span>
+          </div>
+          <div class="row" style="flex-wrap:wrap;">
+            <span class="badge ${badgeClass}">${escapeHTML(p.accessLabel)}</span>
+            ${p.toiletsPMR === "yes" && p.cat !== "toilet" ? `<span class="badge b-yes">🚻 WC PMR</span>` : ""}
+          </div>
+          <div class="sub">${escapeHTML(p.address)}${p.details ? " • " + escapeHTML(p.details) : ""}</div>
+          <div class="row" style="margin-top:2px;">
+            <button style="flex:1;padding:6px;" class="see-btn">📍 Voir</button>
+            <button style="flex:1;padding:6px;" class="primary go-btn">♿ Y aller</button>
+          </div>
+        `;
+        card.querySelector(".see-btn").addEventListener("click", () => { map.flyTo({ center: [p.lon, p.lat], zoom: 16.5 }); openPlacePopup(p); });
+        card.querySelector(".go-btn").addEventListener("click", () => {
+          switchTab("map");
+          routeTo(p.lat, p.lon, p.name, { isParkingRoute: p.cat === "parking" });
+        });
+        listEl.appendChild(card);
+      });
+    }
+
+    function decodePolyline6(str) {
+      let index = 0, lat = 0, lon = 0, coordinates = [];
+      while (index < str.length) {
+        let shift = 0, result = 0, byte;
+        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
+        lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+        shift = 0; result = 0;
+        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
+        lon += (result & 1) ? ~(result >> 1) : (result >> 1);
+        coordinates.push([lon / 1e6, lat / 1e6]);
+      }
+      return coordinates;
+    }
+
+    async function callValhalla(origin, lat, lon, maxGrade) {
+      const isCar = activeTransportTab === "car";
+      const payload = isCar
+        ? {
+            locations: [{ lat: origin[1], lon: origin[0], type: "break" }, { lat, lon, type: "break" }],
+            costing: "auto",
+            exclude_locations: blockedPoints.slice(0, 8),
+            directions_options: { units: "kilometers", language: "fr-FR" }
+          }
+        : {
+            locations: [{ lat: origin[1], lon: origin[0], type: "break" }, { lat, lon, type: "break" }],
+            costing: "pedestrian",
+            costing_options: {
+              pedestrian: {
+                type: "wheelchair", step_penalty: 10000, max_grade: maxGrade,
+                use_hills: profile === "manual" ? 0.1 : 0.5,
+                avoid_bad_surfaces: profile === "manual" ? 1.0 : 0.4,
+                walking_speed: profile === "manual" ? 4.0 : 5.5
+              }
+            },
+            exclude_locations: blockedPoints.slice(0, 8),
+            directions_options: { units: "kilometers", language: "fr-FR" }
+          };
+
+      const res = await fetch("https://valhalla1.openstreetmap.de/route?json=" + encodeURIComponent(JSON.stringify(payload)));
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || `Erreur Valhalla (${res.status})`);
+      return data;
+    }
+
+    async function routeTo(lat, lon, name, options = {}) {
+      const isCar = activeTransportTab === "car";
+
+      if (!options.isParkingRoute) {
+        selectedDest = { name, lat, lon };
+        document.getElementById("destInput").value = name;
+        placePin("dest", lat, lon, name);
+      }
+
+      if (isCar) {
+        renderCarParkingsNearTarget();
+        if (!options.isParkingRoute) {
+          findAndProposeNearestParking(lat, lon, name);
+        }
+      } else {
+        clearParkingProposal();
+      }
+
+      const origin = getOriginCoordinate();
+      setStatus(`⏳ Calcul de l'itinéraire ${isCar ? "voiture" : "PMR"} vers ${name}…`, "info");
+
+      try {
+        let data, usedFallback = false;
+        if (isCar) {
+          data = await callValhalla(origin, lat, lon, 0);
+        } else {
+          try { data = await callValhalla(origin, lat, lon, profile === "manual" ? 5 : 10); }
+          catch { data = await callValhalla(origin, lat, lon, 12); usedFallback = true; }
+        }
+
+        const leg = data.trip.legs[0];
+        const coords = decodePolyline6(leg.shape);
+        const geojson = { type: "Feature", geometry: { type: "LineString", coordinates: coords } };
+        const steps = leg.maneuvers.map(m => ({ instruction: m.instruction, distance: Math.round(m.length * 1000) }));
+
+        currentRoute = { geojson, steps, destLat: lat, destLon: lon, destName: name };
+        if (map.getSource("route")) map.getSource("route").setData(geojson);
+        else renderMapSourcesAndLayers();
+
+        const bounds = coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]));
+        const isMobile = window.innerWidth <= 768;
+        map.fitBounds(bounds, {
+          padding: isMobile
+            ? { top: 110, bottom: Math.round(window.innerHeight * 0.54), left: 36, right: 36 }
+            : { top: 80, bottom: 70, left: 435, right: 80 }
+        });
+
+        const mins = Math.max(1, Math.round(data.trip.summary.time / 60));
+        const dist = Math.round(data.trip.summary.length * 1000);
+        document.getElementById("routeTitle").textContent = `${name} (${mins} min • ${dist} m)`;
+
+        if (isCar && options.finalDestName) {
+          document.getElementById("routeMeta").textContent =
+            `🚗 Arrivée au parking PMR, puis ${options.parkingDist} m jusqu'à « ${options.finalDestName} »`;
+        } else if (isCar) {
+          document.getElementById("routeMeta").textContent = "🚗 Profil : Voiture • Place PMR proposée ci-dessus";
+        } else {
+          document.getElementById("routeMeta").textContent = usedFallback
+            ? "⚠️ Côte > 5% détectée : itinéraire adapté"
+            : `♿ Profil : Fauteuil ${profile === "manual" ? "Manuel" : "Électrique"}`;
+        }
+
+        document.getElementById("routeSteps").innerHTML = steps.map(s => `<div class="step-item">${escapeHTML(s.instruction)} (${s.distance} m)</div>`).join("");
+        document.getElementById("routeBox").style.display = "block";
+        setStatus(usedFallback ? "⚠️ Côte importante sur ce trajet (pente > 5%)." : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
+      } catch (err) {
+        setStatus("❌ " + err.message, "error");
+      }
+    }
+
+    function speakFR(text) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "fr-FR";
+      window.speechSynthesis.speak(u);
+    }
+    function startGuidance() { if (!currentRoute) return; navIndex = 0; document.getElementById("navBox").style.display = "block"; showCurrentStep(); }
+    function showCurrentStep() {
+      const step = currentRoute.steps[navIndex];
+      if (!step) { document.getElementById("navInstruction").textContent = "Arrivé : " + currentRoute.destName; speakFR("Vous êtes arrivé à destination."); return; }
+      document.getElementById("navDist").textContent = `${step.distance} m`;
+      document.getElementById("navInstruction").textContent = step.instruction;
+      speakFR(step.instruction);
+    }
+    function nextStep() { navIndex++; showCurrentStep(); }
+    function stopGuidance() { window.speechSynthesis.cancel(); document.getElementById("navBox").style.display = "none"; }
+
+    async function reportObstacleAtCenter() {
+      const c = map.getCenter();
+      const desc = prompt("Quel obstacle signalez-vous ?", "Véhicule garé sur le trottoir");
+      if (!desc) return;
+      blockedPoints.push({ lat: c.lat, lon: c.lng });
+      new maplibregl.Marker({ color: "#ff9500" }).setLngLat([c.lng, c.lat]).setPopup(new maplibregl.Popup().setHTML(`<b>⚠️ Signalement</b><br>${escapeHTML(desc)}`)).addTo(map);
+      setStatus("✅ Obstacle ajouté (contourné au prochain calcul).", "ok");
+      if (currentRoute) routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName);
+    }
+
+    map.on("load", () => {
+      initGeolocation();
+      loadAllData();
+    });
+  </script>
+</body>
+</html>
