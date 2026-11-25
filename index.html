@@ -1,11 +1,14 @@
-﻿<!DOCTYPE html>
+﻿Voici le code complet prêt à copier-coller directement dans ton fichier
+index.html :
+
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Angers PMR" />
-  <title>Angers PMR — GPS & Pratiques PMR</title>
+  <meta name="apple-mobile-web-app-title" content="GPS PMR" />
+  <title>GPS PMR — Navigation & Accessibilité</title>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <style>
@@ -18,18 +21,18 @@
       --border: rgba(0, 0, 0, 0.12);
     }
     body.dark {
-      --bg: rgba(22, 22, 26, 0.93);
+      --bg: rgba(20, 20, 24, 0.94);
       --card: #232329;
-      --card2: #2c2c34;
+      --card2: #2d2d35;
       --text: #f5f5f7;
-      --sub: #a1a1aa;
-      --border: rgba(255, 255, 255, 0.15);
+      --sub: #b0b0ba;
+      --border: rgba(255, 255, 255, 0.16);
     }
     * { box-sizing: border-box; font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
     html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; color: var(--text); }
 
     .sidebar {
-      position: absolute; top: 14px; left: 14px; bottom: 14px; width: 410px; z-index: 10;
+      position: absolute; top: 14px; left: 14px; bottom: 14px; width: 415px; z-index: 10;
       background: var(--bg); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
       border: 1px solid var(--border); border-radius: 22px;
       padding: 16px; display: flex; flex-direction: column; gap: 11px;
@@ -53,7 +56,6 @@
     button.warn { background: #ffd60a; color: #000; border: 2px solid #000; }
     button.danger { background: #ff3b30; color: #fff; border: none; }
 
-    /* Onglets principaux */
     .tabs {
       display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
       background: var(--card); padding: 4px; border-radius: 14px; border: 1px solid var(--border);
@@ -61,7 +63,6 @@
     .tabs button { border: none; background: transparent; padding: 8px; border-radius: 10px; }
     .tabs button.active { background: var(--card2); box-shadow: 0 2px 6px rgba(0,0,0,0.12); color: #007aff; }
 
-    /* Carte Départ / Arrivée */
     .route-planner {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 16px; padding: 11px; display: flex; flex-direction: column; gap: 8px;
@@ -108,7 +109,6 @@
     .sug-title { font-size: 13px; font-weight: 700; color: var(--text); }
     .sug-sub { font-size: 11.5px; color: var(--sub); }
 
-    /* Barre à 4 onglets : Fauteuil / Voiture / Bus / Tramway */
     .mode-shell {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 16px; padding: 10px; display: flex; flex-direction: column; gap: 10px;
@@ -128,14 +128,17 @@
     .mode-tabs-4 button.active-bus  { background: var(--card2); color: #ff9500; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
     .mode-tabs-4 button.active-tram { background: var(--card2); color: #5856d6; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
 
-    /* Proposition automatique de Parking PMR */
     .parking-proposal {
-      background: rgba(0, 122, 255, 0.10);
-      border: 2px solid #007aff;
-      border-radius: 16px; padding: 12px;
-      display: none; flex-direction: column; gap: 8px;
+      background: rgba(0, 122, 255, 0.10); border: 2px solid #007aff;
+      border-radius: 16px; padding: 12px; display: none; flex-direction: column; gap: 8px;
     }
     body.dark .parking-proposal { background: rgba(0, 122, 255, 0.18); }
+
+    .irigoflex-box {
+      background: rgba(88, 86, 214, 0.11); border: 1.5px solid #5856d6;
+      border-radius: 15px; padding: 11px; display: none; flex-direction: column; gap: 7px;
+    }
+    body.dark .irigoflex-box { background: rgba(88, 86, 214, 0.22); }
 
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; }
     .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -150,9 +153,12 @@
     .b-lim { background: rgba(255,149,0,0.20); color: #c96a00; }
     .b-no  { background: rgba(255,59,48,0.18); color: #d62820; }
     .b-unk { background: rgba(142,142,147,0.20); color: var(--sub); }
+    .b-gov { background: rgba(0,122,255,0.15); color: #0066d6; }
+    .b-feat { background: var(--card); border: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 10.5px; padding: 2px 7px; border-radius: 8px; }
     body.dark .b-yes { color: #5ce07d; }
     body.dark .b-lim { color: #ffb340; }
     body.dark .b-no  { color: #ff6961; }
+    body.dark .b-gov { color: #66b2ff; }
 
     .line-pill {
       display: inline-flex; align-items: center; justify-content: center;
@@ -180,6 +186,18 @@
     }
     .dir-title { font-weight: 700; font-size: 14px; }
 
+    .vote-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 3px; }
+    .vote-btn {
+      padding: 5px 4px; font-size: 11px; border-radius: 8px; text-align: center;
+      background: var(--card); border: 1px solid var(--border);
+    }
+
+    .live-passage-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      font-size: 12px; padding: 4px 0; border-bottom: 1px dashed var(--border);
+    }
+    .live-passage-row:last-child { border-bottom: none; }
+
     .status-box { padding: 9px 12px; border-radius: 12px; font-size: 12.5px; font-weight: 600; display: none; }
     .status-info { background: rgba(0,122,255,0.14); color: #007aff; }
     .status-error { background: rgba(255,59,48,0.15); color: #ff3b30; }
@@ -191,7 +209,7 @@
 
     .floating-right {
       position: absolute; top: 14px; right: 14px; z-index: 10;
-      display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 360px;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 440px;
     }
     .pill-bar {
       background: var(--bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
@@ -203,7 +221,7 @@
       position: absolute; bottom: 26px; right: 14px; z-index: 10;
       background: var(--bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--border); border-radius: 14px;
-      padding: 9px 12px; font-size: 11.5px; display: flex; gap: 10px; flex-wrap: wrap;
+      padding: 9px 12px; font-size: 11.5px; display: flex; gap: 10px; flex-wrap: wrap; max-width: 580px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.16);
     }
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
@@ -229,11 +247,10 @@
     .maplibregl-popup-content {
       background: var(--card2) !important; color: var(--text) !important;
       border-radius: 14px !important; padding: 12px 14px !important;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important; min-width: 220px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important; min-width: 250px; max-width: 320px;
     }
     .maplibregl-popup-close-button { color: var(--sub) !important; font-size: 18px; padding: 4px 8px; }
 
-    /* Adaptation automatique pour smartphones (iPhone / Android) */
     @media (max-width: 768px) {
       .sidebar {
         top: auto; left: 8px; right: 8px; bottom: 8px;
@@ -243,16 +260,10 @@
         top: 8px; right: 8px; left: 8px; max-width: none;
         align-items: stretch; gap: 6px;
       }
-      .floating-right > .row {
-        justify-content: flex-end;
-      }
+      .floating-right > .row { justify-content: flex-end; }
       #layerToggles {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        justify-content: flex-start;
-        padding: 7px 8px;
-        border-radius: 14px;
-        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+        padding: 7px 8px; border-radius: 14px; -webkit-overflow-scrolling: touch;
       }
       input, .field-box input { font-size: 16px; }
       .legend { display: none; }
@@ -264,7 +275,7 @@
 
   <div class="floating-right">
     <div class="row">
-      <button class="pill-bar" style="padding:8px 14px; border-radius:999px;" onclick="toggleDarkMode()">🌓 Mode Clair / Sombre</button>
+      <button class="pill-bar" style="padding:8px 14px; border-radius:999px;" onclick="toggleDarkMode()">🌓 Mode Jour / Nuit</button>
       <button class="pill-bar" style="padding:8px 14px; border-radius:999px;" onclick="recenterOnStart()">🎯 Ma position</button>
     </div>
 
@@ -272,8 +283,12 @@
       <button class="chip active" data-layer="parking" onclick="toggleMapLayer('parking', this)">🅿️ Parkings</button>
       <button class="chip active" data-layer="toilet" onclick="toggleMapLayer('toilet', this)">🚻 Toilettes PMR</button>
       <button class="chip active" data-layer="restaurant" onclick="toggleMapLayer('restaurant', this)">🍽️ Restos</button>
-      <button class="chip active" data-layer="bar" onclick="toggleMapLayer('bar', this)">🍻 Bars adaptés</button>
+      <button class="chip active" data-layer="bar" onclick="toggleMapLayer('bar', this)">🍻 Bars</button>
       <button class="chip active" data-layer="venue" onclick="toggleMapLayer('venue', this)">🎭 Spectacles</button>
+      <button class="chip active" data-layer="pharmacy" onclick="toggleMapLayer('pharmacy', this)">💊 Pharmacies</button>
+      <button class="chip active" data-layer="medical" onclick="toggleMapLayer('medical', this)">🩺 Médecins</button>
+      <button class="chip active" data-layer="market" onclick="toggleMapLayer('market', this)">🛒 Supermarchés</button>
+      <button class="chip active" data-layer="admin" onclick="toggleMapLayer('admin', this)">🏛️ Admin</button>
       <button class="chip active" data-layer="works" onclick="toggleMapLayer('works', this)">🚧 Travaux</button>
       <button class="chip" data-layer="bus" onclick="toggleMapLayer('bus', this)">🚌 Bus Irigo</button>
       <button class="chip active" data-layer="tram" onclick="toggleMapLayer('tram', this)">🚊 Tram</button>
@@ -283,21 +298,22 @@
   <div class="legend">
     <span><i class="dot" style="background:#007aff;"></i>Parking PMR</span>
     <span><i class="dot" style="background:#06b6d4;"></i>Toilettes PMR</span>
+    <span><i class="dot" style="background:#10b981;"></i>Pharmacie</span>
+    <span><i class="dot" style="background:#e11d48;"></i>Médecin / Santé</span>
+    <span><i class="dot" style="background:#d97706;"></i>Supermarché</span>
+    <span><i class="dot" style="background:#2563eb;"></i>Administration</span>
     <span><i class="dot" style="background:#22c55e;"></i>Accessible</span>
     <span><i class="dot" style="background:#f59e0b;"></i>Partiel</span>
-    <span><i class="dot" style="background:#ef4444;"></i>Non accessible / Travaux</span>
-    <span><i class="dot" style="background:#9ca3af;"></i>À vérifier</span>
-    <span><i class="dot" style="background:#a855f7;"></i>Bar adapté</span>
+    <span><i class="dot" style="background:#ef4444;"></i>Non accessible</span>
+    <span><i class="dot" style="background:#a855f7;"></i>Bar</span>
     <span><i class="dot" style="background:#ec4899;"></i>Spectacle</span>
-    <span><i class="dot" style="background:#ff9500;"></i>Arrêt Bus</span>
-    <span><i class="dot" style="background:#5856d6;"></i>Station Tram</span>
   </div>
 
   <aside class="sidebar">
     <div class="row between">
       <div>
-        <h1>Angers PMR</h1>
-        <div id="globalStats" class="sub">Chargement des lieux d'Angers…</div>
+        <h1>GPS PMR</h1>
+        <div id="globalStats" class="sub">Chargement rapide des données…</div>
       </div>
     </div>
 
@@ -337,7 +353,7 @@
               <span class="pin-dot pin-end"></span>
               <input
                 id="destInput"
-                placeholder="Destination à Angers (adresse, resto, arrêt…)"
+                placeholder="Destination à Angers (adresse, pharmacie, resto…)"
                 autocomplete="off"
                 onfocus="onAddressFocus('dest')"
                 oninput="onAddressInput('dest')"
@@ -369,7 +385,6 @@
           </button>
         </div>
 
-        <!-- PANNEAU 1 : FAUTEUIL -->
         <div id="panelWheelchair" style="display:flex; flex-direction:column; gap:8px;">
           <div class="segmented">
             <button id="btnManual" class="active" onclick="setProfile('manual')">♿ Manuel (≤ 5%)</button>
@@ -380,14 +395,12 @@
           </div>
         </div>
 
-        <!-- PANNEAU 2 : VOITURE -->
         <div id="panelCar" style="display:none; flex-direction:column; gap:8px;">
           <div class="sub" style="font-weight:700;">ITINÉRAIRE AUTO + STATIONNEMENT PMR</div>
           <div class="sub">Dès que vous choisissez une destination, la place PMR la plus proche est proposée automatiquement ci-dessous.</div>
           <div id="carParkingsList" style="display:flex; flex-direction:column; gap:7px; max-height:190px; overflow-y:auto;"></div>
         </div>
 
-        <!-- PANNEAU 3 : BUS IRIGO -->
         <div id="panelBus" style="display:none; flex-direction:column; gap:8px;">
           <div class="row between">
             <span class="sub" style="font-weight:700;">LIGNES DE BUS IRIGO</span>
@@ -399,7 +412,6 @@
           <div id="busStopsList" style="display:flex; flex-direction:column; gap:7px; max-height:220px; overflow-y:auto;"></div>
         </div>
 
-        <!-- PANNEAU 4 : TRAMWAY IRIGO -->
         <div id="panelTram" style="display:none; flex-direction:column; gap:8px;">
           <div class="row between">
             <span class="sub" style="font-weight:700;">LIGNES TRAM IRIGO ACCESSIBLES</span>
@@ -416,7 +428,7 @@
         </div>
       </div>
 
-      <!-- PROPOSITION AUTOMATIQUE & TEMPS RÉEL DU PARKING PMR EN MODE VOITURE -->
+      <!-- PROPOSITION AUTOMATIQUE PARKING PMR (VOITURE) -->
       <div id="carParkingProposal" class="parking-proposal">
         <div class="row between">
           <span class="badge b-yes">🅿️ PLACE PMR LA PLUS PROCHE</span>
@@ -431,7 +443,7 @@
         </div>
       </div>
 
-      <!-- Guidage vocal -->
+      <!-- GUIDAGE VOCAL -->
       <div id="navBox" class="nav-banner" style="display:none;">
         <div class="sub" style="color:#a1a1aa;">GUIDAGE VOCAL EN COURS</div>
         <div id="navDist" style="font-size:26px; font-weight:800;">0 m</div>
@@ -442,14 +454,33 @@
         </div>
       </div>
 
-      <!-- Résumé itinéraire -->
+      <!-- RÉSUMÉ ITINÉRAIRE + DÉNIVELÉ / BATTERIE -->
       <div id="routeBox" class="card" style="display:none;">
         <div class="row between">
           <b id="routeTitle">Itinéraire</b>
           <button class="go" onclick="startGuidance()">Y aller</button>
         </div>
         <div id="routeMeta" class="sub" style="margin:6px 0;"></div>
-        <div id="routeSteps" style="max-height:210px; overflow-y:auto;"></div>
+        <div id="routeElevationBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:8px;"></div>
+        <div id="routeSteps" style="max-height:200px; overflow-y:auto;"></div>
+      </div>
+
+      <!-- CARTE IRIGOFLEX -->
+      <div id="irigoflexBox" class="irigoflex-box">
+        <div class="row between">
+          <span class="badge b-gov">🚐 TRANSPORT PMR IRIGOFLEX</span>
+          <button onclick="document.getElementById('irigoflexBox').style.display='none'" style="padding:2px 7px;font-size:11px;">✕</button>
+        </div>
+        <div id="irigoflexReason" style="font-size:12.5px; font-weight:600;"></div>
+        <div class="sub">Service porte-à-porte d'Angers Loire Métropole pour les personnes à mobilité réduite.</div>
+        <div class="row">
+          <a href="tel:0241336464" style="flex:1; text-decoration:none;">
+            <button class="primary" style="width:100%; font-size:12.5px;">📞 02 41 33 64 64</button>
+          </a>
+          <a href="https://www.irigo.fr/se-deplacer/les-services-sur-mesure/irigoflex-access" target="_blank" rel="noopener" style="flex:1; text-decoration:none;">
+            <button style="width:100%; font-size:12.5px; background:var(--card2);">🌐 Réserver ↗</button>
+          </a>
+        </div>
       </div>
 
       <button class="warn" onclick="reportObstacleAtCenter()">⚠️ Signaler un obstacle au centre de la carte</button>
@@ -457,12 +488,16 @@
 
     <!-- ONGLET 2 : PRATIQUES PMR -->
     <div id="tabDirectory" class="scroll-area" style="display:none;">
-      <input id="dirSearch" placeholder="🔍 Chercher resto, rue, parking, salle…" oninput="renderDirectory()" />
+      <input id="dirSearch" placeholder="🔍 Chercher pharmacie, médecin, mairie, resto, rue…" oninput="renderDirectory()" />
 
       <div class="chip-wrap" id="dirCatChips">
         <button class="chip active" onclick="setDirCategory('all', this)">Tout</button>
         <button class="chip" onclick="setDirCategory('parking', this)">🅿️ Parkings</button>
         <button class="chip" onclick="setDirCategory('toilet', this)">🚻 Toilettes PMR</button>
+        <button class="chip" onclick="setDirCategory('pharmacy', this)">💊 Pharmacies</button>
+        <button class="chip" onclick="setDirCategory('medical', this)">🩺 Médecins</button>
+        <button class="chip" onclick="setDirCategory('market', this)">🛒 Supermarchés</button>
+        <button class="chip" onclick="setDirCategory('admin', this)">🏛️ Administrations</button>
         <button class="chip" onclick="setDirCategory('restaurant', this)">🍽️ Restos</button>
         <button class="chip" onclick="setDirCategory('bar', this)">🍻 Bars</button>
         <button class="chip" onclick="setDirCategory('venue', this)">🎭 Spectacles</button>
@@ -475,6 +510,18 @@
         <button class="chip" onclick="setDirAccess('no', this)">🔴 Non accessibles</button>
       </div>
 
+      <details class="card" style="padding:8px 10px;">
+        <summary class="sub" style="cursor:pointer; font-weight:700;">☁️ Partage communautaire (Supabase) & Accèslibre</summary>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+          <div id="supabaseStatusText" class="sub">Mode local (renseigne Supabase pour partager avec tous).</div>
+          <input id="sbUrlInput" placeholder="URL Supabase (https://xxx.supabase.co)" style="background:var(--card2);" />
+          <input id="sbKeyInput" placeholder="Clé publique Supabase (sb_publishable_... ou anon)" style="background:var(--card2);" />
+          <div id="acceslibreStatusText" class="sub" style="margin-top:4px;">Synchronisation automatique Accèslibre via data.gouv.fr.</div>
+          <input id="acceslibreKeyInput" placeholder="Clé API Accèslibre optionnelle" style="background:var(--card2);" />
+          <button class="primary" onclick="saveCommunitySettings()">Enregistrer & synchroniser</button>
+        </div>
+      </details>
+
       <div id="dirSummary" class="sub"></div>
       <div id="dirList" style="display:flex; flex-direction:column; gap:8px;"></div>
     </div>
@@ -483,11 +530,17 @@
   <script>
     const ANGERS = [-0.5632, 47.4784];
     const TRAM_IDS = new Set(["A", "B", "C"]);
+    const ACCESLIBRE_DATASET_URL =
+      "https://www.data.gouv.fr/api/1/datasets/accessibilite-des-etablissements-recevant-du-public-erp-pour-les-personnes-en-situation-de-handicap/";
 
-    const lightStyle = "https://tiles.openfreemap.org/styles/liberty";
-    const darkStyle = "https://tiles.openfreemap.org/styles/dark";
+    // Optionnel : colle ici ton URL et ta clé publique Supabase pour que tous les visiteurs partagent les mêmes signalements
+    const DEFAULT_SUPABASE_URL = "";
+    const DEFAULT_SUPABASE_KEY = "";
 
-    let activeTransportTab = "wheelchair"; // "wheelchair" | "car" | "bus" | "tram"
+    // Fond de plan clair conservé en permanence pour une lecture nette même en mode nuit
+    const MAP_CLEAR_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+
+    let activeTransportTab = "wheelchair";
     let profile = "manual";
     let isDark = false;
     let currentRoute = null;
@@ -508,7 +561,11 @@
     let autocompleteTimer = null;
     let autocompleteAbort = null;
 
+    let baseMunicipalPlaces = [];
+    let osmPlaces = [];
+    let acceslibreRawItems = [];
     let allPlaces = [];
+
     let tramFeatures = [];
     let tramColors = { A: "#E30613", B: "#009FE3", C: "#78BE20" };
     let tramStops = [];
@@ -521,16 +578,22 @@
     let busLineFilter = "all";
 
     let worksFeatures = [];
+    let communityObstacles = [];
     let blockedPoints = [];
+    let communityVotes = {};
 
-    let visibleLayers = { parking: true, toilet: true, restaurant: true, bar: true, venue: true, works: true, bus: false, tram: true };
+    let visibleLayers = {
+      parking: true, toilet: true, restaurant: true, bar: true, venue: true,
+      pharmacy: true, medical: true, market: true, admin: true,
+      works: true, bus: false, tram: true
+    };
     let dirCategory = "all";
     let dirAccess = "all";
     let mapEventsBound = false;
 
     const map = new maplibregl.Map({
       container: "map",
-      style: lightStyle,
+      style: MAP_CLEAR_STYLE,
       center: ANGERS,
       zoom: 14
     });
@@ -555,7 +618,460 @@
       box.style.display = "block";
     }
 
-    // MARK: - Proposition automatique & temps réel de Parking PMR en mode Voiture
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+      const ctrl = new AbortController();
+      const id = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: ctrl.signal });
+      } finally {
+        clearTimeout(id);
+      }
+    }
+
+    function saveCache(key, data) {
+      try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+    }
+
+    function loadCache(key, maxAgeHours = 12) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || (Date.now() - parsed.ts) > maxAgeHours * 3600 * 1000) return null;
+        return parsed.data;
+      } catch { return null; }
+    }
+
+    // MARK: - Supabase (Obstacles partagés + Votes lieux)
+
+    function getSupabaseConfig() {
+      const url = (localStorage.getItem("sb_url") || DEFAULT_SUPABASE_URL).trim().replace(/\/+$/, "");
+      const key = (localStorage.getItem("sb_key") || DEFAULT_SUPABASE_KEY).replace(/\s+/g, "");
+      return { url, key, enabled: url.startsWith("https://") && key.length > 10 };
+    }
+
+    function supabaseHeaders(key) {
+      const h = { "apikey": key, "Content-Type": "application/json" };
+      if (key.startsWith("eyJ")) h["Authorization"] = "Bearer " + key;
+      return h;
+    }
+
+    function saveCommunitySettings() {
+      localStorage.setItem("sb_url", (document.getElementById("sbUrlInput").value || "").trim());
+      localStorage.setItem("sb_key", (document.getElementById("sbKeyInput").value || "").replace(/\s+/g, ""));
+      localStorage.setItem("acceslibre_key", (document.getElementById("acceslibreKeyInput").value || "").trim());
+      loadAllData();
+    }
+
+    async function loadCommunityData() {
+      try { communityVotes = JSON.parse(localStorage.getItem("angers_place_votes_v1") || "{}"); }
+      catch { communityVotes = {}; }
+
+      let localObs = [];
+      try { localObs = JSON.parse(localStorage.getItem("angers_local_obstacles_v1") || "[]"); }
+      catch { localObs = []; }
+
+      const sb = getSupabaseConfig();
+      const sbStatus = document.getElementById("supabaseStatusText");
+
+      if (!sb.enabled) {
+        sbStatus.textContent = "Mode local (ajoute URL + Clé Supabase pour partager avec tous).";
+        communityObstacles = localObs;
+        syncBlockedPoints();
+        return;
+      }
+
+      sbStatus.textContent = "✅ Connecté à Supabase (partage temps réel actif).";
+
+      await Promise.allSettled([
+        fetchWithTimeout(`${sb.url}/rest/v1/rpc/nearby_active_obstacles`, {
+          method: "POST", headers: supabaseHeaders(sb.key),
+          body: JSON.stringify({ lat: 47.4784, lon: -0.5632, radius_meters: 5000 })
+        }, 6000).then(async res => {
+          if (res.ok) {
+            const rows = await res.json();
+            communityObstacles = (rows || []).map(o => ({
+              id: o.id, category: o.category || "Obstacle", description: o.description || "",
+              lat: o.latitude, lon: o.longitude, confirmationCount: o.confirmation_count || 1, isSupabase: true
+            }));
+          } else { communityObstacles = localObs; }
+        }),
+        fetchWithTimeout(`${sb.url}/rest/v1/place_accessibility_votes?select=place_key,access_status&order=updated_at.desc&limit=500`, {
+          headers: supabaseHeaders(sb.key)
+        }, 6000).then(async res => {
+          if (res.ok) {
+            const votes = await res.json();
+            const labelMap = { yes: "Accessible fauteuil", limited: "Accès partiel", no: "Non accessible" };
+            (votes || []).forEach(v => {
+              if (!communityVotes[v.place_key] && labelMap[v.access_status]) {
+                communityVotes[v.place_key] = { access: v.access_status, accessLabel: labelMap[v.access_status] };
+              }
+            });
+          }
+        })
+      ]);
+
+      syncBlockedPoints();
+    }
+
+    function syncBlockedPoints() {
+      blockedPoints = communityObstacles.map(o => ({ lat: o.lat, lon: o.lon }));
+    }
+
+    function placeVoteKey(p) {
+      return `${p.name.toLowerCase().slice(0, 24)}_${p.lat.toFixed(4)}_${p.lon.toFixed(4)}`;
+    }
+
+    async function votePlaceAccessibility(placeId, status) {
+      const p = allPlaces.find(item => item.id === placeId);
+      if (!p) return;
+
+      const labelMap = { yes: "Accessible fauteuil", limited: "Accès partiel", no: "Non accessible" };
+      p.access = status;
+      p.accessLabel = labelMap[status];
+      p.isCommunityVerified = true;
+
+      const key = placeVoteKey(p);
+      communityVotes[key] = { access: status, accessLabel: labelMap[status] };
+      localStorage.setItem("angers_place_votes_v1", JSON.stringify(communityVotes));
+
+      renderMapSourcesAndLayers();
+      if (document.getElementById("tabDirectory").style.display !== "none") renderDirectory();
+      setStatus(`✅ Merci ! « ${p.name} » noté : ${labelMap[status]}.`, "ok");
+
+      const sb = getSupabaseConfig();
+      if (sb.enabled) {
+        try {
+          await fetch(`${sb.url}/rest/v1/place_accessibility_votes`, {
+            method: "POST",
+            headers: { ...supabaseHeaders(sb.key), "Prefer": "resolution=merge-duplicates" },
+            body: JSON.stringify({
+              place_key: key, place_name: p.name, category: p.cat,
+              latitude: p.lat, longitude: p.lon, access_status: status
+            })
+          });
+        } catch {}
+      }
+    }
+
+    async function confirmCommunityObstacle(id) {
+      const obs = communityObstacles.find(o => o.id === id);
+      if (obs) obs.confirmationCount = (obs.confirmationCount || 1) + 1;
+      setStatus("👍 Obstacle confirmé pour la communauté.", "ok");
+
+      const sb = getSupabaseConfig();
+      if (sb.enabled && obs?.isSupabase) {
+        try {
+          await fetch(`${sb.url}/rest/v1/rpc/confirm_obstacle`, {
+            method: "POST", headers: supabaseHeaders(sb.key), body: JSON.stringify({ target_id: id })
+          });
+        } catch {}
+      }
+    }
+
+    async function resolveCommunityObstacle(id) {
+      const obs = communityObstacles.find(o => o.id === id);
+      communityObstacles = communityObstacles.filter(o => o.id !== id);
+      localStorage.setItem("angers_local_obstacles_v1", JSON.stringify(communityObstacles.filter(o => !o.isSupabase)));
+      syncBlockedPoints();
+      renderMapSourcesAndLayers();
+      setStatus("✅ Voie marquée comme libérée.", "ok");
+
+      const sb = getSupabaseConfig();
+      if (sb.enabled && obs?.isSupabase) {
+        try {
+          await fetch(`${sb.url}/rest/v1/rpc/resolve_obstacle`, {
+            method: "POST", headers: supabaseHeaders(sb.key), body: JSON.stringify({ target_id: id })
+          });
+        } catch {}
+      }
+      if (currentRoute) routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName);
+    }
+
+    // MARK: - Prochains passages Bus & Tram Irigo en direct
+
+    async function fetchLivePassages(lat, lon, stopName, containerEl) {
+      if (!containerEl) return;
+      try {
+        const whereClause = `within_distance(coordonnees,geom'POINT(${lon} ${lat})',220m) AND depart>=now()`;
+        const url = `https://data.angers.fr/api/explore/v2.1/catalog/datasets/bus-tram-circulation-passages/records?where=${encodeURIComponent(whereClause)}&order_by=depart%20asc&limit=15`;
+        const res = await fetchWithTimeout(url, {}, 6000);
+        if (!res.ok) throw new Error("API Irigo indisponible");
+        let records = (await res.json()).results || [];
+
+        if (records.length === 0 && stopName) {
+          const cleanName = stopName.replace(/[-']/g, " ").trim();
+          const urlByName = `https://data.angers.fr/api/explore/v2.1/catalog/datasets/bus-tram-circulation-passages/records?where=${encodeURIComponent(`search(nomarret,"${cleanName}") AND depart>=now()`)}&order_by=depart%20asc&limit=12`;
+          const r2 = await fetchWithTimeout(urlByName, {}, 6000);
+          if (r2.ok) records = (await r2.json()).results || [];
+        }
+
+        const nowMs = Date.now();
+        const upcoming = records
+          .map(r => {
+            const iso = r.arrivee || r.depart || r.arriveetheorique;
+            if (!iso) return null;
+            const diffMin = Math.round((new Date(iso).getTime() - nowMs) / 60000);
+            if (diffMin < -1 || diffMin > 90) return null;
+            return { line: r.mnemoligne || "?", dest: r.dest || "", diffMin };
+          })
+          .filter(Boolean)
+          .slice(0, 5);
+
+        if (upcoming.length === 0) {
+          containerEl.innerHTML = `<div class="sub">Aucun passage prévu dans l'immédiat.</div>`;
+          return;
+        }
+
+        containerEl.innerHTML = upcoming.map(u => {
+          const color = tramColors[u.line] || busColors[u.line] || "#5856d6";
+          const etaText = u.diffMin <= 0 ? "À l'approche" : `Dans ${u.diffMin} min`;
+          return `
+            <div class="live-passage-row">
+              <div class="row" style="gap:6px;min-width:0;">
+                <span class="line-pill" style="background:${color};">${escapeHTML(u.line)}</span>
+                <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;">→ ${escapeHTML(u.dest)}</span>
+              </div>
+              <span style="font-weight:800;color:#007aff;white-space:nowrap;">${etaText}</span>
+            </div>
+          `;
+        }).join("");
+      } catch {
+        containerEl.innerHTML = `<div class="sub">Horaires temps réel momentanément indisponibles.</div>`;
+      }
+    }
+
+    // MARK: - Dénivelé IGN RGE ALTI + Autonomie batterie + IrigoFlex
+
+    async function fetchRouteElevation(coords) {
+      if (!coords || coords.length < 2) return null;
+      const maxPts = 35;
+      const step = Math.max(1, Math.floor((coords.length - 1) / (maxPts - 1)));
+      const sampled = [];
+      for (let i = 0; i < coords.length; i += step) sampled.push(coords[i]);
+      const last = coords[coords.length - 1];
+      if (sampled[sampled.length - 1] !== last) sampled.push(last);
+
+      let altitudes = null;
+
+      try {
+        const lons = sampled.map(c => c[0].toFixed(5)).join("|");
+        const lats = sampled.map(c => c[1].toFixed(5)).join("|");
+        const url = `https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json?lon=${encodeURIComponent(lons)}&lat=${encodeURIComponent(lats)}&resource=ign_rge_alti_wld&zonly=true`;
+        const res = await fetchWithTimeout(url, {}, 6000);
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json.elevations) && json.elevations.length >= 2) {
+            altitudes = json.elevations.filter(z => typeof z === "number" && z > -100);
+          }
+        }
+      } catch {}
+
+      if (!altitudes || altitudes.length < 2) {
+        try {
+          const shape = sampled.map(c => ({ lon: c[0], lat: c[1] }));
+          const res = await fetchWithTimeout(`https://valhalla1.openstreetmap.de/height?json=${encodeURIComponent(JSON.stringify({ shape }))}`, {}, 6000);
+          if (res.ok) {
+            const json = await res.json();
+            if (Array.isArray(json.height)) altitudes = json.height.filter(z => typeof z === "number");
+          }
+        } catch {}
+      }
+
+      if (!altitudes || altitudes.length < 2) return null;
+
+      let ascent = 0, descent = 0;
+      for (let i = 1; i < altitudes.length; i++) {
+        const diff = altitudes[i] - altitudes[i - 1];
+        if (diff > 0.6) ascent += diff;
+        else if (diff < -0.6) descent += Math.abs(diff);
+      }
+      return { ascent: Math.round(ascent), descent: Math.round(descent) };
+    }
+
+    function updateRouteElevationAndIrigoFlex(coords, distMeters, usedFallback) {
+      const bar = document.getElementById("routeElevationBar");
+      const flexBox = document.getElementById("irigoflexBox");
+      const flexReason = document.getElementById("irigoflexReason");
+
+      if (activeTransportTab === "car") {
+        bar.innerHTML = "";
+        flexBox.style.display = "none";
+        return;
+      }
+
+      bar.innerHTML = `<span class="badge b-unk">⛰️ Calcul du dénivelé IGN…</span>`;
+
+      const triggers = [];
+      if (distMeters > 1500) triggers.push(`distance importante (${(distMeters / 1000).toFixed(1)} km)`);
+      if (usedFallback) triggers.push("côte raide (> 5%)");
+
+      if (triggers.length > 0) {
+        flexReason.textContent = `Alternative conseillée (${triggers.join(" et ")}) :`;
+        flexBox.style.display = "flex";
+      } else {
+        flexBox.style.display = "none";
+      }
+
+      fetchRouteElevation(coords).then(elev => {
+        if (!elev) {
+          bar.innerHTML = `<span class="badge b-unk">⛰️ Dénivelé indisponible</span>`;
+          return;
+        }
+        const batteryOneWay = Math.max(1, Math.round((distMeters / 1000) * 2.5 + elev.ascent * 0.12));
+        const batteryRoundTrip = Math.min(100, batteryOneWay * 2);
+
+        bar.innerHTML = `
+          <span class="badge ${elev.ascent >= 20 ? 'b-lim' : 'b-yes'}">⛰️ +${elev.ascent} m / -${elev.descent} m</span>
+          <span class="badge b-gov" title="Estimation indicative pour fauteuil électrique">🔋 ~${batteryOneWay}% aller (~${batteryRoundTrip}% A/R)</span>
+        `;
+
+        if (elev.ascent >= 20 && !triggers.includes("dénivelé")) {
+          triggers.push(`dénivelé de +${elev.ascent} m`);
+          flexReason.textContent = `Alternative conseillée (${triggers.join(", ")}) :`;
+          flexBox.style.display = "flex";
+        }
+      });
+    }
+
+    // MARK: - Helpers Accèslibre
+
+    function parseBoolAL(v) {
+      if (v === true || v === 1) return true;
+      if (v === false || v === 0) return false;
+      if (typeof v === "string") {
+        const s = v.trim().toLowerCase();
+        if (["true", "vrai", "oui", "1", "yes"].includes(s)) return true;
+        if (["false", "faux", "non", "0", "no"].includes(s)) return false;
+      }
+      return null;
+    }
+
+    function classifyAcceslibreActivity(activityName, name) {
+      const text = `${activityName || ""} ${name || ""}`.toLowerCase();
+      if (text.includes("pharmacie")) return "pharmacy";
+      if (/(médecin|medecin|docteur|dentiste|kiné|kine|infirmier|hôpital|hopital|clinique|laboratoire|radiologie|ophtalmo|cardiolog|orthophon|podolog|ostéopath|osteopath|sage-femme|santé|sante|chu|centre médical)/.test(text)) return "medical";
+      if (/(supermarché|supermarche|hypermarché|hypermarche|supérette|superette|alimentation|épicerie|epicerie|carrefour|leclerc|auchan|intermarché|super u|u express|lidl|aldi|monoprix|biocoop|grand frais)/.test(text)) return "market";
+      if (/(mairie|préfecture|prefecture|caf|cpam|assurance maladie|france travail|pôle emploi|impôts|finances publiques|trésor|tribunal|commissariat|gendarmerie|poste|administration|service public|hôtel de ville|ccas|mdph)/.test(text)) return "admin";
+      if (/(restaurant|restauration|pizzeria|crêperie|creperie|bistrot|kebab|fast-food|sushi|traiteur)/.test(text)) return "restaurant";
+      if (/(café|cafe|bar|pub|brasserie|discothèque|discotheque|salon de thé)/.test(text)) return "bar";
+      if (/(théâtre|theatre|cinéma|cinema|concert|spectacle|opéra|opera|musée|musee|salle des fêtes|centre culturel|auditorium|zénith|chabada|quai)/.test(text)) return "venue";
+      if (/(toilettes|sanitaire|wc)/.test(text)) return "toilet";
+      return null;
+    }
+
+    function extractAcceslibreProfile(row) {
+      const entree = row.accessibilite?.entree || row;
+      const chem = row.accessibilite?.cheminement_ext || row;
+      const accueil = row.accessibilite?.accueil || row;
+      const san = row.accessibilite?.sanitaires || row;
+      const park = row.accessibilite?.stationnement || row;
+
+      const plainPied = parseBoolAL(entree.entree_plain_pied);
+      const chemPlainPied = parseBoolAL(chem.cheminement_ext_plain_pied);
+      const entreePMR = parseBoolAL(entree.entree_pmr);
+      const largeur = Number(entree.entree_largeur_mini);
+      const hasRampe = !!(entree.entree_marches_rampe && !["aucune", "non", "null", "false"].includes(String(entree.entree_marches_rampe).toLowerCase()))
+        || !!(chem.cheminement_ext_rampe && !["aucune", "non", "null", "false"].includes(String(chem.cheminement_ext_rampe).toLowerCase()));
+      const hasAscenseur = parseBoolAL(entree.entree_ascenseur_pmr) === true || parseBoolAL(entree.entree_ascenseur) === true;
+      const hasSonnette = parseBoolAL(entree.entree_dispositif_appel) === true;
+      const hasAideHumaine = parseBoolAL(entree.entree_aide_humaine) === true;
+      const hasVitrophanie = parseBoolAL(entree.entree_vitree_vitrophanie) === true;
+      const hasWC = parseBoolAL(san.sanitaires_adaptes) === true;
+      const hasBIM = parseBoolAL(accueil.accueil_equipements_malentendants_presence) === true;
+      const hasParkPMR = parseBoolAL(park.stationnement_pmr) === true || parseBoolAL(park.stationnement_ext_pmr) === true;
+
+      const features = [];
+      if (plainPied === true) features.push("📐 Entrée plain-pied");
+      if (hasRampe) features.push("♿ Rampe d'accès");
+      if (hasAscenseur) features.push("🛗 Ascenseur");
+      if (!isNaN(largeur) && largeur > 0) features.push(`🚪 Porte ${largeur} cm`);
+      if (hasSonnette) features.push("🛎️ Sonnette d'appel");
+      if (hasAideHumaine) features.push("🤝 Aide humaine");
+      if (hasVitrophanie) features.push("🪟 Vitrophanie (contraste)");
+      if (hasWC) features.push("🚻 WC PMR");
+      if (hasParkPMR) features.push("🅿️ Parking PMR");
+      if (hasBIM) features.push("🔊 Boucle auditive");
+
+      let access = "unknown", accessLabel = "À vérifier";
+      if (entreePMR === true || (plainPied === true && (isNaN(largeur) || largeur >= 80) && chemPlainPied !== false)) {
+        access = "yes"; accessLabel = "Accessible fauteuil";
+      } else if (hasRampe || hasAscenseur || plainPied === true || hasAideHumaine || hasSonnette) {
+        access = "limited"; accessLabel = "Accès partiel / aidé";
+      } else if (plainPied === false || entreePMR === false || (!isNaN(largeur) && largeur > 0 && largeur < 75)) {
+        access = "no"; accessLabel = "Non accessible";
+      }
+
+      return { access, accessLabel, features, toiletsPMR: hasWC ? "yes" : null };
+    }
+
+    async function fetchAcceslibreAngers() {
+      const statusEl = document.getElementById("acceslibreStatusText");
+      const customKey = (localStorage.getItem("acceslibre_key") || "").trim();
+
+      if (customKey) {
+        try {
+          const allERPs = [];
+          let url = "https://acceslibre.beta.gouv.fr/api/erps/?commune=Angers&page_size=100";
+          for (let page = 0; page < 8 && url; page++) {
+            const res = await fetchWithTimeout(url, { headers: { "Authorization": "Api-Key " + customKey, "Accept": "application/json" } }, 7000);
+            if (!res.ok) break;
+            const json = await res.json();
+            allERPs.push(...(json.results || []));
+            url = json.next;
+          }
+          if (allERPs.length > 0) {
+            statusEl.textContent = `✅ API Accèslibre directe : ${allERPs.length} établissements à Angers.`;
+            return allERPs.map(erp => {
+              const coords = erp.geom?.coordinates;
+              return {
+                name: erp.nom, lat: coords ? coords[1] : null, lon: coords ? coords[0] : null,
+                activite: erp.activite?.nom || "", address: erp.adresse || "Angers",
+                web_url: erp.web_url || (erp.uuid ? `https://acceslibre.beta.gouv.fr/uuid/${erp.uuid}/` : null),
+                raw: erp
+              };
+            });
+          }
+        } catch {}
+      }
+
+      try {
+        const metaRes = await fetchWithTimeout(ACCESLIBRE_DATASET_URL, {}, 7000);
+        if (!metaRes.ok) throw new Error("Dataset indisponible");
+        const meta = await metaRes.json();
+        const csvResources = (meta.resources || []).filter(r =>
+          (r.format || "").toLowerCase() === "csv" && (r.title || "").toLowerCase().includes("acceslibre")
+        );
+        csvResources.sort((a, b) => (a.extras?.["analysis:parsing:finished_at"] ? 0 : 1) - (b.extras?.["analysis:parsing:finished_at"] ? 0 : 1));
+
+        for (const resObj of csvResources) {
+          const rows = [];
+          let nextUrl = `https://tabular-api.data.gouv.fr/api/resources/${resObj.id}/data/?commune__exact=Angers&page_size=200`;
+          for (let p = 0; p < 6 && nextUrl; p++) {
+            const r = await fetchWithTimeout(nextUrl, {}, 7000);
+            if (!r.ok) { rows.length = 0; break; }
+            const j = await r.json();
+            rows.push(...(j.data || []));
+            nextUrl = j.links?.next || null;
+          }
+          if (rows.length > 0) {
+            statusEl.textContent = `✅ Accèslibre (data.gouv.fr) : ${rows.length} établissements officiels à Angers.`;
+            return rows.map(row => ({
+              name: row.name, lat: Number(row.latitude), lon: Number(row.longitude),
+              activite: row.activite || "",
+              address: [row.numero, row.voie, row.postal_code, row.commune].filter(Boolean).join(" ") || "Angers",
+              web_url: row.web_url || (row.id ? `https://acceslibre.beta.gouv.fr/uuid/${row.id}/` : null),
+              raw: row
+            }));
+          }
+        }
+      } catch {}
+
+      statusEl.textContent = "ℹ️ OpenStreetMap + communauté actifs (Accèslibre via clé API optionnelle).";
+      return [];
+    }
+
+    // MARK: - Parking PMR auto en mode Voiture
 
     async function findAndProposeNearestParking(destLat, destLon, destName) {
       if (parkingSearchAbort) parkingSearchAbort.abort();
@@ -582,12 +1098,11 @@
         fetch("https://overpass-api.de/api/interpreter", {
           method: "POST", signal,
           headers: { "Content-Type": "application/x-www-form-urlencoded; charset=utf-8" },
-          body: "data=" + encodeURIComponent(`[out:json][timeout:8];(nwr["amenity"="parking_space"]["disabled"="yes"](around:700,${destLat},${destLon});nwr["amenity"="parking"]["capacity:disabled"](around:700,${destLat},${destLon}););out center qt;`)
+          body: "data=" + encodeURIComponent(`[out:json][timeout:6];(nwr["amenity"="parking_space"]["disabled"="yes"](around:700,${destLat},${destLon});nwr["amenity"="parking"]["capacity:disabled"](around:700,${destLat},${destLon}););out center qt;`)
         }).then(r => r.json())
       ]);
 
       if (signal.aborted) return;
-
       const liveCandidates = [...localCandidates.slice(0, 5)];
 
       if (angersLive.status === "fulfilled" && angersLive.value?.results) {
@@ -596,28 +1111,23 @@
           if (!pt) continue;
           const nb = r.nombre ? `${r.nombre} place(s) CMI` : "Place réservée PMR";
           liveCandidates.push({
-            name: r.adresse_1 || "Stationnement PMR",
-            lat: pt.lat, lon: pt.lon,
+            name: r.adresse_1 || "Stationnement PMR", lat: pt.lat, lon: pt.lon,
             details: [nb, r.commentaire].filter(Boolean).join(" • "),
-            distToDest: distanceMeters(destLat, destLon, pt.lat, pt.lon),
-            source: "Live data.angers.fr"
+            distToDest: distanceMeters(destLat, destLon, pt.lat, pt.lon), source: "Live data.angers.fr"
           });
         }
       }
 
       if (osmLive.status === "fulfilled" && osmLive.value?.elements) {
         for (const el of osmLive.value.elements) {
-          const lat = el.lat ?? el.center?.lat;
-          const lon = el.lon ?? el.center?.lon;
+          const lat = el.lat ?? el.center?.lat, lon = el.lon ?? el.center?.lon;
           if (lat == null || lon == null) continue;
           const t = el.tags || {};
           const cap = t["capacity:disabled"] ? `${t["capacity:disabled"]} place(s) PMR` : "Place PMR";
           liveCandidates.push({
-            name: t.name || t["addr:street"] || "Parking PMR (OSM)",
-            lat, lon,
+            name: t.name || t["addr:street"] || "Parking PMR (OSM)", lat, lon,
             details: `${cap} • OpenStreetMap`,
-            distToDest: distanceMeters(destLat, destLon, lat, lon),
-            source: "Live OpenStreetMap"
+            distToDest: distanceMeters(destLat, destLon, lat, lon), source: "Live OpenStreetMap"
           });
         }
       }
@@ -644,22 +1154,14 @@
 
       document.getElementById("proposalGoBtn").onclick = () => {
         routeTo(parking.lat, parking.lon, `Parking PMR (${parking.name})`, {
-          isParkingRoute: true,
-          finalDestName: destName,
-          finalDestLat: destLat,
-          finalDestLon: destLon,
-          parkingDist: parking.distToDest
+          isParkingRoute: true, finalDestName: destName, finalDestLat: destLat, finalDestLon: destLon, parkingDist: parking.distToDest
         });
       };
-
-      document.getElementById("proposalSeeBtn").onclick = () => {
-        map.flyTo({ center: [parking.lon, parking.lat], zoom: 17 });
-      };
+      document.getElementById("proposalSeeBtn").onclick = () => { map.flyTo({ center: [parking.lon, parking.lat], zoom: 17 }); };
 
       if (proposedParkingMarker) proposedParkingMarker.remove();
       const el = document.createElement("div");
-      el.className = "parking-pin";
-      el.textContent = "P";
+      el.className = "parking-pin"; el.textContent = "P";
       proposedParkingMarker = new maplibregl.Marker({ element: el })
         .setLngLat([parking.lon, parking.lat])
         .setPopup(new maplibregl.Popup().setHTML(`<b>🅿️ Place PMR conseillée</b><br>${escapeHTML(parking.name)}<br><span class="sub">À ${parking.distToDest} m de ${escapeHTML(destName)}</span>`))
@@ -690,7 +1192,7 @@
       }
     }
 
-    // MARK: - Gestion des 4 Onglets (Fauteuil / Voiture / Bus / Tramway)
+    // MARK: - 4 Onglets (Fauteuil / Voiture / Bus / Tramway)
 
     function switchModeTab(mode) {
       const prevMode = activeTransportTab;
@@ -706,11 +1208,8 @@
       document.getElementById("modeTabBus").className        = mode === "bus" ? "active-bus" : "";
       document.getElementById("modeTabTram").className       = mode === "tram" ? "active-tram" : "";
 
-      if (mode !== "car") {
-        clearParkingProposal();
-      } else {
-        renderCarParkingsNearTarget();
-      }
+      if (mode !== "car") clearParkingProposal();
+      else renderCarParkingsNearTarget();
 
       if (mode === "bus") {
         if (!visibleLayers.bus) {
@@ -776,9 +1275,7 @@
           </div>
         `;
         card.querySelector(".see-pk").addEventListener("click", () => { map.flyTo({ center: [p.lon, p.lat], zoom: 17 }); openPlacePopup(p); });
-        card.querySelector(".go-pk").addEventListener("click", () => {
-          routeTo(p.lat, p.lon, "Parking PMR " + p.name, { isParkingRoute: true });
-        });
+        card.querySelector(".go-pk").addEventListener("click", () => { routeTo(p.lat, p.lon, "Parking PMR " + p.name, { isParkingRoute: true }); });
         list.appendChild(card);
       });
     }
@@ -832,9 +1329,8 @@
       document.getElementById("busCountLabel").textContent = `${filtered.length} arrêt(s)`;
       const list = document.getElementById("busStopsList");
       list.innerHTML = "";
-
       if (filtered.length === 0) {
-        list.innerHTML = `<div class="sub" style="padding:8px;">Aucun arrêt de bus trouvé.</div>`;
+        list.innerHTML = `<div class="sub" style="padding:8px;">${busStops.length === 0 ? "Chargement des arrêts Irigo…" : "Aucun arrêt trouvé."}</div>`;
         return;
       }
 
@@ -856,17 +1352,12 @@
             <span class="badge ${s.accessible ? 'b-yes' : 'b-lim'}">${s.accessible ? '♿ Accessible' : '⚠️ À vérifier'}</span>
           </div>
           <div class="row" style="margin-top:2px;">
-            <button style="flex:1;padding:6px;font-size:12.5px;" class="see-bus-btn">📍 Voir</button>
+            <button style="flex:1;padding:6px;font-size:12.5px;" class="see-bus-btn">📍 Voir & Horaires</button>
             <button style="flex:1;padding:6px;font-size:12.5px;" class="primary go-bus-btn">♿ Y aller</button>
           </div>
         `;
-        card.querySelector(".see-bus-btn").addEventListener("click", () => {
-          map.flyTo({ center: [s.lon, s.lat], zoom: 16.5 });
-          openBusStopPopup(s);
-        });
-        card.querySelector(".go-bus-btn").addEventListener("click", () => {
-          routeTo(s.lat, s.lon, "Arrêt Bus " + s.name);
-        });
+        card.querySelector(".see-bus-btn").addEventListener("click", () => { map.flyTo({ center: [s.lon, s.lat], zoom: 16.5 }); openBusStopPopup(s); });
+        card.querySelector(".go-bus-btn").addEventListener("click", () => { routeTo(s.lat, s.lon, "Arrêt Bus " + s.name); });
         list.appendChild(card);
       });
     }
@@ -882,21 +1373,21 @@
           <div class="row" style="gap:4px;flex-wrap:wrap;">${pillsHTML}</div>
           <div><span class="badge ${s.accessible ? 'b-yes' : 'b-lim'}">${s.accessible ? '♿ Arrêt accessible PMR' : '⚠️ Accessibilité à vérifier'}</span></div>
           ${s.precision ? `<div class="sub">${escapeHTML(s.precision)}</div>` : ""}
-          <button class="primary" style="margin-top:4px;width:100%;">♿ Définir comme arrivée</button>
+          <div class="card" style="padding:8px;margin-top:2px;">
+            <div class="sub" style="font-weight:700;margin-bottom:4px;">⏱️ PROCHAINS PASSAGES EN DIRECT</div>
+            <div class="live-passages-box sub">Chargement Irigo…</div>
+          </div>
+          <button class="primary" style="margin-top:2px;width:100%;">♿ Définir comme arrivée</button>
         </div>
       `;
-      container.querySelector("button").addEventListener("click", () => {
-        routeTo(Number(s.lat), Number(s.lon), "Arrêt Bus " + s.name);
-      });
+      container.querySelector("button").addEventListener("click", () => { routeTo(Number(s.lat), Number(s.lon), "Arrêt Bus " + s.name); });
       new maplibregl.Popup().setLngLat([Number(s.lon), Number(s.lat)]).setDOMContent(container).addTo(map);
+      fetchLivePassages(Number(s.lat), Number(s.lon), s.name, container.querySelector(".live-passages-box"));
     }
 
     function setTramLineFilter(line, btn) {
       tramLineFilter = line;
-      document.querySelectorAll("#tramLineFilters .line-filter-btn").forEach(b => {
-        b.classList.remove("selected");
-        b.style.background = "";
-      });
+      document.querySelectorAll("#tramLineFilters .line-filter-btn").forEach(b => { b.classList.remove("selected"); b.style.background = ""; });
       btn.classList.add("selected");
       btn.style.background = line === "all" ? "#5856d6" : (tramColors[line] || "#5856d6");
       renderTramStations();
@@ -936,17 +1427,12 @@
             <span class="badge ${s.accessible ? 'b-yes' : 'b-lim'}">${s.accessible ? '♿ Quai à niveau' : '⚠️ Vérifier quai'}</span>
           </div>
           <div class="row" style="margin-top:2px;">
-            <button style="flex:1;padding:6px;font-size:12.5px;" class="see-tram-btn">📍 Voir</button>
+            <button style="flex:1;padding:6px;font-size:12.5px;" class="see-tram-btn">📍 Voir & Horaires</button>
             <button style="flex:1;padding:6px;font-size:12.5px;" class="primary go-tram-btn">♿ Y aller</button>
           </div>
         `;
-        card.querySelector(".see-tram-btn").addEventListener("click", () => {
-          map.flyTo({ center: [s.lon, s.lat], zoom: 16.5 });
-          openTramStopPopup(s);
-        });
-        card.querySelector(".go-tram-btn").addEventListener("click", () => {
-          routeTo(s.lat, s.lon, "Tram " + s.name);
-        });
+        card.querySelector(".see-tram-btn").addEventListener("click", () => { map.flyTo({ center: [s.lon, s.lat], zoom: 16.5 }); openTramStopPopup(s); });
+        card.querySelector(".go-tram-btn").addEventListener("click", () => { routeTo(s.lat, s.lon, "Tram " + s.name); });
         list.appendChild(card);
       });
     }
@@ -962,13 +1448,16 @@
           <div class="row" style="gap:4px;">${pillsHTML}</div>
           <div><span class="badge ${s.accessible ? 'b-yes' : 'b-lim'}">${s.accessible ? '♿ Quai plain-pied' : '⚠️ Accessibilité partielle'}</span></div>
           ${s.precision ? `<div class="sub">${escapeHTML(s.precision)}</div>` : ""}
-          <button class="primary" style="margin-top:4px;width:100%;">♿ Définir comme arrivée</button>
+          <div class="card" style="padding:8px;margin-top:2px;">
+            <div class="sub" style="font-weight:700;margin-bottom:4px;">⏱️ PROCHAINS PASSAGES EN DIRECT</div>
+            <div class="live-passages-box sub">Chargement Irigo…</div>
+          </div>
+          <button class="primary" style="margin-top:2px;width:100%;">♿ Définir comme arrivée</button>
         </div>
       `;
-      container.querySelector("button").addEventListener("click", () => {
-        routeTo(Number(s.lat), Number(s.lon), "Tram " + s.name);
-      });
+      container.querySelector("button").addEventListener("click", () => { routeTo(Number(s.lat), Number(s.lon), "Tram " + s.name); });
       new maplibregl.Popup().setLngLat([Number(s.lon), Number(s.lat)]).setDOMContent(container).addTo(map);
+      fetchLivePassages(Number(s.lat), Number(s.lon), s.name, container.querySelector(".live-passages-box"));
     }
 
     // MARK: - Autocomplétion Départ & Arrivée
@@ -1022,7 +1511,7 @@
       items.push(
         { icon: "🏰", title: "Château d'Angers", subtitle: "Promenade du Bout du Monde, Angers", lat: 47.4702, lon: -0.5600 },
         { icon: "🚊", title: "Gare Angers Saint-Laud", subtitle: "Esplanade de la Gare, Angers", lat: 47.4647, lon: -0.5568 },
-        { icon: "📍", title: "Place du Ralliement", subtitle: "Centre-ville, Angers", lat: 47.4712, lon: -0.5518 }
+        { icon: "🏛️", title: "Mairie d'Angers", subtitle: "Boulevard de la Résistance et de la Déportation", lat: 47.4698, lon: -0.5469 }
       );
       renderSuggestions(items, field, false);
     }
@@ -1042,12 +1531,15 @@
         }
         if (hits.length >= 4) break;
       }
-      const icons = { parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭" };
+      const icons = {
+        parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭",
+        pharmacy: "💊", medical: "🩺", market: "🛒", admin: "🏛️"
+      };
       for (const p of allPlaces) {
-        if (`${p.name} ${p.address}`.toLowerCase().includes(q)) {
+        if (`${p.name} ${p.address} ${p.details}`.toLowerCase().includes(q)) {
           hits.push({ icon: icons[p.cat] || "📍", title: p.name, subtitle: `${p.accessLabel} • ${p.address}`, lat: p.lat, lon: p.lon });
         }
-        if (hits.length >= 7) break;
+        if (hits.length >= 8) break;
       }
       return hits;
     }
@@ -1268,178 +1760,281 @@
       if (!isMap) renderDirectory();
     }
 
+    // Mode Nuit : interface sombre + plan conservé en clair pour une lisibilité maximale
     function toggleDarkMode() {
       isDark = !isDark;
       document.body.classList.toggle("dark", isDark);
-      map.setStyle(isDark ? darkStyle : lightStyle);
-      map.once("style.load", () => { renderMapSourcesAndLayers(); });
     }
 
-    // MARK: - Chargement des données d'Angers + Lignes Bus & Tram Irigo
+    // MARK: - Fusion rapide des sources
+
+    function rebuildMergedPlacesAndRefreshUI() {
+      const merged = [
+        ...baseMunicipalPlaces.map(p => ({ ...p, features: [...(p.features || [])] })),
+        ...osmPlaces.map(p => ({ ...p, features: [...(p.features || [])] }))
+      ];
+
+      for (const item of acceslibreRawItems) {
+        if (!item.name || isNaN(item.lat) || isNaN(item.lon)) continue;
+        const cat = classifyAcceslibreActivity(item.activite, item.name);
+        if (!cat) continue;
+        const prof = extractAcceslibreProfile(item.raw);
+        const existing = merged.find(p => p.cat === cat && distanceMeters(p.lat, p.lon, item.lat, item.lon) < 35);
+
+        if (existing) {
+          if (prof.access !== "unknown") { existing.access = prof.access; existing.accessLabel = prof.accessLabel; }
+          existing.isAcceslibre = true;
+          existing.webUrl = item.web_url;
+          if (prof.toiletsPMR) existing.toiletsPMR = prof.toiletsPMR;
+          existing.features = Array.from(new Set([...(existing.features || []), ...prof.features]));
+          if (!existing.address || existing.address === "Angers") existing.address = item.address;
+          if (item.activite && !existing.details.includes(item.activite)) {
+            existing.details = [item.activite, existing.details].filter(Boolean).join(" • ");
+          }
+        } else {
+          merged.push({
+            id: "al_" + Math.random().toString(36).slice(2, 10),
+            cat, name: item.name, address: item.address, lat: item.lat, lon: item.lon,
+            access: prof.access, accessLabel: prof.accessLabel,
+            details: item.activite || "Établissement Accèslibre",
+            toiletsPMR: prof.toiletsPMR, features: prof.features,
+            isAcceslibre: true, isCommunityVerified: false, webUrl: item.web_url
+          });
+        }
+      }
+
+      merged.forEach(p => {
+        const vote = communityVotes[placeVoteKey(p)];
+        if (vote) {
+          p.access = vote.access;
+          p.accessLabel = vote.accessLabel;
+          p.isCommunityVerified = true;
+        }
+      });
+
+      allPlaces = merged;
+      refreshPlaceDistances();
+      updateGlobalStats();
+      renderMapSourcesAndLayers();
+    }
+
+    // MARK: - Chargement progressif rapide (Cache + Vagues parallèles)
 
     async function loadAllData() {
-      setStatus("⏳ Chargement des parkings, toilettes, restos, bars, bus et tramway Irigo…", "info");
-      allPlaces = [];
-      worksFeatures = [];
-      tramFeatures = [];
-      tramStops = [];
-      busFeatures = [];
-      busLinesMeta = [];
-      busStops = [];
+      document.getElementById("sbUrlInput").value = localStorage.getItem("sb_url") || DEFAULT_SUPABASE_URL;
+      document.getElementById("sbKeyInput").value = localStorage.getItem("sb_key") || DEFAULT_SUPABASE_KEY;
+      document.getElementById("acceslibreKeyInput").value = localStorage.getItem("acceslibre_key") || "";
 
-      const linesPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/irigo_gtfs_lines/exports/json")
-        .then(r => r.json())
-        .then(rows => {
-          const seenBus = new Set();
-          (rows || []).forEach(r => {
-            const shortName = r.route_short_name || r.route_id || "";
-            const color = "#" + (r.route_color || (r.route_type === "Tram" ? "5856d6" : "ff9500"));
-            if (r.route_type === "Tram") {
-              if (shortName) tramColors[shortName] = color;
-              if (r.shape) {
-                tramFeatures.push({
-                  type: "Feature", properties: { color, shortName }, geometry: r.shape.geometry || r.shape
-                });
-              }
-            } else {
-              if (shortName) busColors[shortName] = color;
-              if (shortName && !seenBus.has(shortName)) {
-                seenBus.add(shortName);
-                busLinesMeta.push({ shortName, longName: r.route_long_name || `Ligne ${shortName}`, color });
-              }
-              if (r.shape) {
-                busFeatures.push({
-                  type: "Feature", properties: { color, shortName }, geometry: r.shape.geometry || r.shape
-                });
-              }
-            }
-          });
-          busLinesMeta.sort((a, b) => a.shortName.localeCompare(b.shortName, "fr", { numeric: true }));
-        }).catch(() => {});
+      const cachedMuni = loadCache("gps_pmr_muni_v2", 12);
+      const cachedOSM  = loadCache("gps_pmr_osm_v2", 12);
+      const cachedIrigo = loadCache("gps_pmr_irigo_v2", 24);
 
-      const stopsPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stop_route_irigo_gtfs/exports/json")
-        .then(r => r.json())
-        .then(records => {
-          const tramMap = new Map();
-          const busMap = new Map();
+      if (cachedMuni) baseMunicipalPlaces = cachedMuni;
+      if (cachedOSM)  osmPlaces = cachedOSM;
+      if (cachedIrigo) {
+        tramFeatures = cachedIrigo.tramFeatures || [];
+        tramColors   = cachedIrigo.tramColors || tramColors;
+        tramStops    = cachedIrigo.tramStops || [];
+        busFeatures  = cachedIrigo.busFeatures || [];
+        busLinesMeta = cachedIrigo.busLinesMeta || [];
+        busColors    = cachedIrigo.busColors || {};
+        busStops     = cachedIrigo.busStops || [];
+        renderBusLineFilters();
+        renderTramStations();
+        renderBusStops();
+      }
+      if (cachedMuni || cachedOSM) {
+        rebuildMergedPlacesAndRefreshUI();
+        setStatus("⚡ Chargé instantanément • Actualisation en arrière-plan…", "info");
+      } else {
+        setStatus("⏳ Chargement rapide d'Angers et Irigo…", "info");
+      }
 
-          (records || []).forEach(r => {
-            if (!r.arret_nom || !r.arret_coordonnees || !r.ligne_id) return;
-            const isTram = TRAM_IDS.has(r.ligne_id);
-            const targetMap = isTram ? tramMap : busMap;
-
-            const existing = targetMap.get(r.arret_nom) || {
-              name: r.arret_nom, lat: r.arret_coordonnees.lat, lon: r.arret_coordonnees.lon,
-              lines: new Set(), accessible: false, precision: r.arret_accessibilite_precision || ""
-            };
-            existing.lines.add(r.ligne_id);
-            if (r.arret_accessibilite === 1) existing.accessible = true;
-            targetMap.set(r.arret_nom, existing);
-          });
-
-          tramStops = Array.from(tramMap.values()).map(s => ({ ...s, lines: Array.from(s.lines).sort(), dist: 0 }));
-          busStops = Array.from(busMap.values()).map(s => ({
-            ...s, lines: Array.from(s.lines).sort((a, b) => a.localeCompare(b, "fr", { numeric: true })), dist: 0
-          }));
-        }).catch(() => {});
-
-      const parkingPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stationnement_pmr_angers/exports/json")
-        .then(r => r.json())
-        .then(rows => {
-          (rows || []).forEach((r, idx) => {
-            const pt = r.geo_point_2d;
-            if (!pt) return;
-            const nb = r.nombre ? `${r.nombre} place(s) CMI` : "Place réservée PMR";
-            const details = [nb, r.commentaire].filter(Boolean).join(" • ");
-            allPlaces.push({
-              id: "pk_" + (r.id || idx), cat: "parking",
-              name: r.adresse_1 || "Stationnement PMR", address: r.adresse_1 || "Angers",
-              lat: pt.lat, lon: pt.lon, access: "yes", accessLabel: "Stationnement PMR", details, toiletsPMR: null
-            });
-          });
-        }).catch(() => {});
-
-      const toiletsPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/sanitaires-publics-angers/records?limit=100")
+      const tramLinesFast = fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/irigo_gtfs_lines/records?where=route_type%3D%22Tram%22&limit=10", {}, 7000)
         .then(r => r.json())
         .then(json => {
-          (json.results || []).forEach((r, idx) => {
-            const pt = r.geo_point_2d;
-            if (!pt) return;
-            const nom = r.nom || "Sanitaire public";
-            if (nom.toLowerCase().includes("urinoir")) return;
-            const modele = (r.modele || "").toUpperCase();
-            const isAutoPMR = ["SAGELEC", "ENTRETIEN DECAUX", "MDO", "ALTER"].includes(modele);
-            allPlaces.push({
-              id: "to_" + (r.gid || idx), cat: "toilet",
-              name: "Toilettes : " + nom, address: nom, lat: pt.lat, lon: pt.lon,
-              access: isAutoPMR ? "yes" : "limited",
-              accessLabel: isAutoPMR ? "Toilettes PMR" : "Accès à vérifier",
-              details: modele ? `Modèle ${modele} • Ville d'Angers` : "Sanitaire public Ville d'Angers", toiletsPMR: "yes"
-            });
+          tramFeatures = (json.results || []).filter(r => r.shape).map(r => {
+            const color = "#" + (r.route_color || "5856d6");
+            if (r.route_short_name) tramColors[r.route_short_name] = color;
+            return { type: "Feature", properties: { color, shortName: r.route_short_name }, geometry: r.shape.geometry || r.shape };
           });
         }).catch(() => {});
 
-      const worksPromise = fetch("https://data.angers.fr/api/explore/v2.1/catalog/datasets/info-travaux/records?where=endat%20%3E%20now()&limit=50")
+      const tramStopsFast = Promise.all([
+        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stop_route_irigo_gtfs/records?where=ligne_id%20IN%20(%22A%22,%22B%22,%22C%22)&limit=100&offset=0", {}, 7000).then(r => r.json()),
+        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stop_route_irigo_gtfs/records?where=ligne_id%20IN%20(%22A%22,%22B%22,%22C%22)&limit=100&offset=100", {}, 7000).then(r => r.json())
+      ]).then(([p1, p2]) => {
+        const tramMap = new Map();
+        [...(p1.results || []), ...(p2.results || [])].forEach(r => {
+          if (!r.arret_nom || !r.arret_coordonnees) return;
+          const ex = tramMap.get(r.arret_nom) || {
+            name: r.arret_nom, lat: r.arret_coordonnees.lat, lon: r.arret_coordonnees.lon,
+            lines: new Set(), accessible: false, precision: r.arret_accessibilite_precision || ""
+          };
+          if (r.ligne_id) ex.lines.add(r.ligne_id);
+          if (r.arret_accessibilite === 1) ex.accessible = true;
+          tramMap.set(r.arret_nom, ex);
+        });
+        tramStops = Array.from(tramMap.values()).map(s => ({ ...s, lines: Array.from(s.lines).sort(), dist: 0 }));
+      }).catch(() => {});
+
+      const muniPromise = Promise.all([
+        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stationnement_pmr_angers/exports/json", {}, 9000).then(r => r.json()).catch(() => []),
+        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/sanitaires-publics-angers/records?limit=100", {}, 7000).then(r => r.json()).catch(() => ({ results: [] }))
+      ]).then(([parkings, toilets]) => {
+        const list = [];
+        (parkings || []).forEach((r, idx) => {
+          const pt = r.geo_point_2d;
+          if (!pt) return;
+          const nb = r.nombre ? `${r.nombre} place(s) CMI` : "Place réservée PMR";
+          list.push({
+            id: "pk_" + (r.id || idx), cat: "parking",
+            name: r.adresse_1 || "Stationnement PMR", address: r.adresse_1 || "Angers",
+            lat: pt.lat, lon: pt.lon, access: "yes", accessLabel: "Stationnement PMR",
+            details: [nb, r.commentaire].filter(Boolean).join(" • "),
+            toiletsPMR: null, features: [], isAcceslibre: false, webUrl: null
+          });
+        });
+        (toilets.results || []).forEach((r, idx) => {
+          const pt = r.geo_point_2d;
+          if (!pt) return;
+          const nom = r.nom || "Sanitaire public";
+          if (nom.toLowerCase().includes("urinoir")) return;
+          const modele = (r.modele || "").toUpperCase();
+          const isAutoPMR = ["SAGELEC", "ENTRETIEN DECAUX", "MDO", "ALTER"].includes(modele);
+          list.push({
+            id: "to_" + (r.gid || idx), cat: "toilet",
+            name: "Toilettes : " + nom, address: nom, lat: pt.lat, lon: pt.lon,
+            access: isAutoPMR ? "yes" : "limited",
+            accessLabel: isAutoPMR ? "Toilettes PMR" : "Accès à vérifier",
+            details: modele ? `Modèle ${modele} • Ville d'Angers` : "Sanitaire public Ville d'Angers",
+            toiletsPMR: "yes", features: isAutoPMR ? ["🚻 Sanitaire PMR automatique"] : [], isAcceslibre: false, webUrl: null
+          });
+        });
+        if (list.length > 0) {
+          baseMunicipalPlaces = list;
+          saveCache("gps_pmr_muni_v2", list);
+        }
+      });
+
+      const worksPromise = fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/info-travaux/records?where=endat%20%3E%20now()&limit=50", {}, 7000)
         .then(r => r.json())
         .then(json => {
           worksFeatures = (json.results || []).filter(r => r.geo_point_2d).map(r => ({
             type: "Feature",
             geometry: { type: "Point", coordinates: [r.geo_point_2d.lon, r.geo_point_2d.lat] },
-            properties: {
-              name: r.title || "Travaux en cours", address: r.address || "",
-              details: r.description || "", lat: r.geo_point_2d.lat, lon: r.geo_point_2d.lon
-            }
+            properties: { name: r.title || "Travaux en cours", address: r.address || "", details: r.description || "", lat: r.geo_point_2d.lat, lon: r.geo_point_2d.lon }
           }));
         }).catch(() => {});
 
-      await Promise.all([linesPromise, stopsPromise, parkingPromise, toiletsPromise, worksPromise, fetchOverpassPlaces()]);
-
-      refreshPlaceDistances();
-      updateGlobalStats();
-      renderBusLineFilters();
-      renderMapSourcesAndLayers();
-      renderDirectory();
+      await Promise.all([tramLinesFast, tramStopsFast, muniPromise, worksPromise, loadCommunityData()]);
+      rebuildMergedPlacesAndRefreshUI();
       renderTramStations();
-      renderBusStops();
-      renderCarParkingsNearTarget();
-      setStatus("✅ Données d'Angers et réseau Irigo (Bus + Tram) chargés.", "ok");
+
+      const osmBg = fetchOverpassPlaces().then(freshOSM => {
+        if (freshOSM.length > 0) {
+          osmPlaces = freshOSM;
+          saveCache("gps_pmr_osm_v2", freshOSM);
+          rebuildMergedPlacesAndRefreshUI();
+        }
+      });
+
+      const busBg = Promise.all([
+        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/irigo_gtfs_lines/exports/json", {}, 12000).then(r => r.json()),
+        fetchWithTimeout("https://data.angers.fr/api/explore/v2.1/catalog/datasets/stop_route_irigo_gtfs/exports/json", {}, 14000).then(r => r.json())
+      ]).then(([lineRows, stopRows]) => {
+        const seenBus = new Set(), tmpBusLines = [], tmpBusFeat = [];
+        (lineRows || []).forEach(r => {
+          const shortName = r.route_short_name || r.route_id || "";
+          const color = "#" + (r.route_color || (r.route_type === "Tram" ? "5856d6" : "ff9500"));
+          if (r.route_type !== "Tram") {
+            if (shortName) busColors[shortName] = color;
+            if (shortName && !seenBus.has(shortName)) {
+              seenBus.add(shortName);
+              tmpBusLines.push({ shortName, longName: r.route_long_name || `Ligne ${shortName}`, color });
+            }
+            if (r.shape) tmpBusFeat.push({ type: "Feature", properties: { color, shortName }, geometry: r.shape.geometry || r.shape });
+          }
+        });
+        tmpBusLines.sort((a, b) => a.shortName.localeCompare(b.shortName, "fr", { numeric: true }));
+
+        const busMap = new Map();
+        (stopRows || []).forEach(r => {
+          if (!r.arret_nom || !r.arret_coordonnees || !r.ligne_id || TRAM_IDS.has(r.ligne_id)) return;
+          const ex = busMap.get(r.arret_nom) || {
+            name: r.arret_nom, lat: r.arret_coordonnees.lat, lon: r.arret_coordonnees.lon,
+            lines: new Set(), accessible: false, precision: r.arret_accessibilite_precision || ""
+          };
+          ex.lines.add(r.ligne_id);
+          if (r.arret_accessibilite === 1) ex.accessible = true;
+          busMap.set(r.arret_nom, ex);
+        });
+
+        busLinesMeta = tmpBusLines;
+        busFeatures = tmpBusFeat;
+        busStops = Array.from(busMap.values()).map(s => ({
+          ...s, lines: Array.from(s.lines).sort((a, b) => a.localeCompare(b, "fr", { numeric: true })), dist: 0
+        }));
+
+        saveCache("gps_pmr_irigo_v2", {
+          tramFeatures, tramColors, tramStops,
+          busFeatures, busLinesMeta, busColors, busStops
+        });
+        refreshPlaceDistances();
+        renderBusLineFilters();
+        renderBusStops();
+        updateBusMapLayer();
+      }).catch(() => {});
+
+      const acceslibreBg = fetchAcceslibreAngers().then(items => {
+        if (items.length > 0) {
+          acceslibreRawItems = items;
+          rebuildMergedPlacesAndRefreshUI();
+        }
+      });
+
+      await Promise.allSettled([osmBg, busBg, acceslibreBg]);
+      setStatus("✅ Toutes les données d'Angers et Irigo sont à jour.", "ok");
     }
 
     async function fetchOverpassPlaces() {
       const ql = `
-        [out:json][timeout:25];
+        [out:json][timeout:14][bbox:47.445,-0.605,47.505,-0.510];
         (
-          nwr["amenity"="toilets"]["wheelchair"~"^(yes|designated|limited)$"](around:3200,47.4784,-0.5632);
-          nwr["amenity"="restaurant"](around:2600,47.4784,-0.5632);
-          nwr["amenity"~"^(bar|pub|biergarten|nightclub)$"]["wheelchair"~"^(yes|designated|limited)$"](around:3200,47.4784,-0.5632);
-          nwr["amenity"~"^(theatre|concert_hall|music_venue|cinema|arts_centre|events_venue)$"]["wheelchair"~"^(yes|designated|limited)$"](around:4500,47.4784,-0.5632);
+          nwr["amenity"~"^(toilets|restaurant|bar|pub|biergarten|nightclub|theatre|concert_hall|music_venue|cinema|arts_centre|events_venue|pharmacy|doctors|clinic|hospital|dentist|townhall|public_building|courthouse|post_office)$"];
+          nwr["shop"~"^(supermarket|hypermarket|convenience)$"];
+          nwr["office"="government"];
         );
         out center qt;
       `;
-      const endpoints = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+      const endpoints = [
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+      ];
       let data = null;
       for (const ep of endpoints) {
         try {
-          const res = await fetch(ep, {
+          const res = await fetchWithTimeout(ep, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded; charset=utf-8" },
             body: "data=" + encodeURIComponent(ql)
-          });
+          }, 11000);
           if (res.ok) { data = await res.json(); break; }
         } catch {}
       }
-      if (!data || !data.elements) return;
+      if (!data || !data.elements) return [];
 
+      const results = [];
       for (const el of data.elements) {
-        const lat = el.lat ?? el.center?.lat;
-        const lon = el.lon ?? el.center?.lon;
+        const lat = el.lat ?? el.center?.lat, lon = el.lon ?? el.center?.lon;
         if (lat == null || lon == null) continue;
         const t = el.tags || {};
-        const am = t.amenity;
+        const am = t.amenity, shop = t.shop, office = t.office;
         const wc = (t.wheelchair || "").toLowerCase();
         const addr = [t["addr:housenumber"], t["addr:street"]].filter(Boolean).join(" ") || t["addr:city"] || "Angers";
 
-        let access = "unknown", accessLabel = "Non renseigné";
+        let access = "unknown", accessLabel = "À vérifier";
         if (wc === "yes" || wc === "designated") { access = "yes"; accessLabel = "Accessible fauteuil"; }
         else if (wc === "limited") { access = "limited"; accessLabel = "Accès partiel"; }
         else if (wc === "no") { access = "no"; accessLabel = "Non accessible"; }
@@ -1447,34 +2042,40 @@
         const toiletsPMR = t["toilets:wheelchair"] || null;
         const toiletNote = toiletsPMR === "yes" ? "Toilettes PMR : Oui" : (toiletsPMR === "no" ? "Toilettes PMR : Non" : null);
 
+        let cat = null, fallbackName = "Lieu", typeLabel = "";
         if (am === "toilets") {
-          if (allPlaces.some(p => p.cat === "toilet" && distanceMeters(p.lat, p.lon, lat, lon) < 25)) continue;
-          allPlaces.push({
-            id: "osm_" + el.id, cat: "toilet", name: t.name || "Toilettes PMR (OSM)", address: addr,
-            lat, lon, access, accessLabel,
-            details: t.fee === "yes" ? "Payant • " + accessLabel : "Gratuit / Public • " + accessLabel, toiletsPMR: "yes"
-          });
+          if (access === "no" || access === "unknown") continue;
+          if (baseMunicipalPlaces.some(p => p.cat === "toilet" && distanceMeters(p.lat, p.lon, lat, lon) < 25)) continue;
+          cat = "toilet"; fallbackName = "Toilettes PMR (OSM)"; typeLabel = t.fee === "yes" ? "Payant" : "Public";
         } else if (am === "restaurant") {
-          allPlaces.push({
-            id: "osm_" + el.id, cat: "restaurant", name: t.name || "Restaurant", address: addr,
-            lat, lon, access, accessLabel,
-            details: [t.cuisine ? "Cuisine : " + t.cuisine : null, toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • ") || "Restaurant (OpenStreetMap)",
-            toiletsPMR
-          });
+          cat = "restaurant"; fallbackName = "Restaurant"; typeLabel = t.cuisine ? "Cuisine : " + t.cuisine : "Restaurant";
         } else if (["bar", "pub", "biergarten", "nightclub"].includes(am)) {
-          allPlaces.push({
-            id: "osm_" + el.id, cat: "bar", name: t.name || "Bar adapté", address: addr,
-            lat, lon, access, accessLabel,
-            details: [am.toUpperCase(), toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • "), toiletsPMR
-          });
-        } else {
-          allPlaces.push({
-            id: "osm_" + el.id, cat: "venue", name: t.name || "Salle / Spectacle", address: addr,
-            lat, lon, access, accessLabel,
-            details: [translateVenueType(am), toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • "), toiletsPMR
-          });
+          if (access === "no" || access === "unknown") continue;
+          cat = "bar"; fallbackName = "Bar adapté"; typeLabel = am.toUpperCase();
+        } else if (["theatre", "concert_hall", "music_venue", "cinema", "arts_centre", "events_venue"].includes(am)) {
+          if (access === "no" || access === "unknown") continue;
+          cat = "venue"; fallbackName = "Salle / Spectacle"; typeLabel = translateVenueType(am);
+        } else if (am === "pharmacy") {
+          cat = "pharmacy"; fallbackName = "Pharmacie"; typeLabel = "Pharmacie";
+        } else if (["doctors", "clinic", "hospital", "dentist"].includes(am)) {
+          cat = "medical"; fallbackName = "Cabinet / Santé"; typeLabel = translateMedicalType(am);
+        } else if (shop) {
+          cat = "market"; fallbackName = "Supermarché / Alimentation"; typeLabel = shop === "supermarket" ? "Supermarché" : "Supérette / Alimentation";
+        } else if (["townhall", "public_building", "courthouse", "post_office"].includes(am) || office === "government") {
+          cat = "admin"; fallbackName = "Administration"; typeLabel = am === "post_office" ? "La Poste" : (am === "townhall" ? "Mairie" : "Service public");
         }
+        if (!cat) continue;
+
+        results.push({
+          id: "osm_" + el.id, cat, name: t.name || fallbackName, address: addr,
+          lat, lon, access, accessLabel,
+          details: [typeLabel, toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • "),
+          toiletsPMR: cat === "toilet" ? "yes" : toiletsPMR,
+          features: toiletsPMR === "yes" ? ["🚻 WC PMR"] : [],
+          isAcceslibre: false, isCommunityVerified: false, webUrl: null
+        });
       }
+      return results;
     }
 
     function translateVenueType(am) {
@@ -1484,16 +2085,27 @@
       }[am] || "Spectacle / Culture";
     }
 
+    function translateMedicalType(am) {
+      return {
+        doctors: "Cabinet médical", clinic: "Clinique / Centre de santé",
+        hospital: "Hôpital", dentist: "Chirurgien-dentiste"
+      }[am] || "Santé";
+    }
+
     function updateGlobalStats() {
-      const counts = { parking: 0, toilet: 0, restaurant: 0, bar: 0 };
+      const counts = { parking: 0, toilet: 0, pharmacy: 0, medical: 0, restaurant: 0 };
       allPlaces.forEach(p => { if (counts[p.cat] != null) counts[p.cat]++; });
       document.getElementById("globalStats").textContent =
-        `${counts.parking} parkings • ${counts.toilet} toilettes • ${counts.restaurant} restos • ${busLinesMeta.length} lignes bus • ${tramStops.length} tram`;
+        `${counts.parking} parkings • ${counts.toilet} toilettes • ${counts.restaurant} restos • ${counts.pharmacy} pharmacies • ${tramStops.length} tram`;
     }
 
     function colorForPlace(p) {
       if (p.cat === "parking") return "#007aff";
       if (p.cat === "toilet") return "#06b6d4";
+      if (p.cat === "pharmacy") return "#10b981";
+      if (p.cat === "medical") return "#e11d48";
+      if (p.cat === "market") return "#d97706";
+      if (p.cat === "admin") return "#2563eb";
       if (p.cat === "bar") return "#a855f7";
       if (p.cat === "venue") return "#ec4899";
       if (p.access === "yes") return "#22c55e";
@@ -1502,17 +2114,20 @@
       return "#9ca3af";
     }
 
+    function strokeColorForAccess(access) {
+      if (access === "yes") return "#22c55e";
+      if (access === "limited") return "#f59e0b";
+      if (access === "no") return "#ef4444";
+      return "#ffffff";
+    }
+
     function getFilteredBusLinesGeo() {
-      const feats = busLineFilter === "all"
-        ? busFeatures
-        : busFeatures.filter(f => f.properties.shortName === busLineFilter);
+      const feats = busLineFilter === "all" ? busFeatures : busFeatures.filter(f => f.properties.shortName === busLineFilter);
       return { type: "FeatureCollection", features: feats };
     }
 
     function getFilteredBusStopsGeo() {
-      const stops = busLineFilter === "all"
-        ? busStops
-        : busStops.filter(s => s.lines.includes(busLineFilter));
+      const stops = busLineFilter === "all" ? busStops : busStops.filter(s => s.lines.includes(busLineFilter));
       return {
         type: "FeatureCollection",
         features: stops.map(s => ({
@@ -1532,16 +2147,14 @@
     }
 
     function renderMapSourcesAndLayers() {
+      if (!map.isStyleLoaded()) return;
+
       if (!map.getSource("bus-lines")) {
         map.addSource("bus-lines", { type: "geojson", data: getFilteredBusLinesGeo() });
         map.addLayer({
           id: "bus-lines-layer", type: "line", source: "bus-lines",
           layout: { visibility: visibleLayers.bus ? "visible" : "none" },
-          paint: {
-            "line-color": ["get", "color"],
-            "line-width": busLineFilter === "all" ? 2.4 : 4.5,
-            "line-opacity": busLineFilter === "all" ? 0.55 : 0.92
-          }
+          paint: { "line-color": ["get", "color"], "line-width": busLineFilter === "all" ? 2.4 : 4.5, "line-opacity": busLineFilter === "all" ? 0.55 : 0.92 }
         });
       }
       if (!map.getSource("bus-stops")) {
@@ -1553,15 +2166,19 @@
         });
       }
 
-      if (tramFeatures.length && !map.getSource("tram")) {
-        map.addSource("tram", { type: "geojson", data: { type: "FeatureCollection", features: tramFeatures } });
-        map.addLayer({
-          id: "tram-lines", type: "line", source: "tram",
-          layout: { visibility: visibleLayers.tram ? "visible" : "none" },
-          paint: { "line-color": ["get", "color"], "line-width": 4, "line-opacity": 0.85 }
-        });
+      if (tramFeatures.length) {
+        const tramData = { type: "FeatureCollection", features: tramFeatures };
+        if (map.getSource("tram")) map.getSource("tram").setData(tramData);
+        else {
+          map.addSource("tram", { type: "geojson", data: tramData });
+          map.addLayer({
+            id: "tram-lines", type: "line", source: "tram",
+            layout: { visibility: visibleLayers.tram ? "visible" : "none" },
+            paint: { "line-color": ["get", "color"], "line-width": 4, "line-opacity": 0.85 }
+          });
+        }
       }
-      if (tramStops.length && !map.getSource("tram-stops")) {
+      if (tramStops.length) {
         const stopsGeo = {
           type: "FeatureCollection",
           features: tramStops.map(s => ({
@@ -1569,21 +2186,26 @@
             properties: { name: s.name, lat: s.lat, lon: s.lon, linesJSON: JSON.stringify(s.lines), accessible: s.accessible, precision: s.precision || "" }
           }))
         };
-        map.addSource("tram-stops", { type: "geojson", data: stopsGeo });
-        map.addLayer({
-          id: "tram-stops-layer", type: "circle", source: "tram-stops",
-          layout: { visibility: visibleLayers.tram ? "visible" : "none" },
-          paint: { "circle-color": "#5856d6", "circle-radius": 6.5, "circle-stroke-width": 2, "circle-stroke-color": "#ffffff" }
-        });
+        if (map.getSource("tram-stops")) map.getSource("tram-stops").setData(stopsGeo);
+        else {
+          map.addSource("tram-stops", { type: "geojson", data: stopsGeo });
+          map.addLayer({
+            id: "tram-stops-layer", type: "circle", source: "tram-stops",
+            layout: { visibility: visibleLayers.tram ? "visible" : "none" },
+            paint: { "circle-color": "#5856d6", "circle-radius": 6.5, "circle-stroke-width": 2, "circle-stroke-color": "#ffffff" }
+          });
+        }
       }
 
       const parkingGeoJSON = {
         type: "FeatureCollection",
         features: allPlaces.filter(p => p.cat === "parking").map(p => ({
-          type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] }, properties: { ...p, color: "#007aff" }
+          type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] },
+          properties: { ...p, featuresJSON: "[]", color: "#007aff", strokeColor: "#ffffff" }
         }))
       };
-      if (!map.getSource("parkings")) {
+      if (map.getSource("parkings")) map.getSource("parkings").setData(parkingGeoJSON);
+      else {
         map.addSource("parkings", { type: "geojson", data: parkingGeoJSON, cluster: true, clusterMaxZoom: 15, clusterRadius: 42 });
         map.addLayer({
           id: "parkings-clusters", type: "circle", source: "parkings", filter: ["has", "point_count"],
@@ -1605,7 +2227,16 @@
       const poisGeoJSON = {
         type: "FeatureCollection",
         features: allPlaces.filter(p => p.cat !== "parking" && visibleLayers[p.cat]).map(p => ({
-          type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] }, properties: { ...p, color: colorForPlace(p) }
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [p.lon, p.lat] },
+          properties: {
+            ...p,
+            featuresJSON: JSON.stringify(p.features || []),
+            color: colorForPlace(p),
+            strokeColor: ["pharmacy", "medical", "market", "admin"].includes(p.cat)
+              ? strokeColorForAccess(p.access)
+              : "#ffffff"
+          }
         }))
       };
       if (map.getSource("pois")) map.getSource("pois").setData(poisGeoJSON);
@@ -1615,18 +2246,32 @@
           id: "pois-layer", type: "circle", source: "pois",
           paint: {
             "circle-color": ["get", "color"],
-            "circle-radius": ["match", ["get", "cat"], "venue", 9, "bar", 8, "toilet", 8, 6.5],
-            "circle-stroke-width": 2, "circle-stroke-color": "#ffffff"
+            "circle-radius": ["match", ["get", "cat"], "venue", 9, "admin", 8.5, "pharmacy", 8, "medical", 8, "market", 8, "bar", 8, "toilet", 8, 6.5],
+            "circle-stroke-width": 2.3,
+            "circle-stroke-color": ["get", "strokeColor"]
           }
         });
       }
 
-      if (!map.getSource("works")) {
-        map.addSource("works", { type: "geojson", data: { type: "FeatureCollection", features: worksFeatures } });
+      const combinedWorks = [
+        ...worksFeatures,
+        ...communityObstacles.map(o => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [o.lon, o.lat] },
+          properties: {
+            id: o.id, name: o.category, address: "Signalement communautaire",
+            details: o.description, lat: o.lat, lon: o.lon, isCommunity: true, confirmationCount: o.confirmationCount || 1
+          }
+        }))
+      ];
+      if (map.getSource("works")) {
+        map.getSource("works").setData({ type: "FeatureCollection", features: combinedWorks });
+      } else {
+        map.addSource("works", { type: "geojson", data: { type: "FeatureCollection", features: combinedWorks } });
         map.addLayer({
           id: "works-layer", type: "circle", source: "works",
           layout: { visibility: visibleLayers.works ? "visible" : "none" },
-          paint: { "circle-color": "#ff3b30", "circle-radius": 7.5, "circle-stroke-width": 2, "circle-stroke-color": "#ffd60a" }
+          paint: { "circle-color": "#ff3b30", "circle-radius": 8, "circle-stroke-width": 2.5, "circle-stroke-color": "#ffd60a" }
         });
       }
 
@@ -1658,7 +2303,14 @@
       ["parkings-unclustered", "pois-layer"].forEach(layerId => {
         map.on("click", layerId, e => {
           const f = e.features?.[0];
-          if (f) openPlacePopup(f.properties);
+          if (!f) return;
+          const p = { ...f.properties };
+          if (typeof p.featuresJSON === "string") {
+            try { p.features = JSON.parse(p.featuresJSON); } catch { p.features = []; }
+          }
+          p.isAcceslibre = p.isAcceslibre === true || p.isAcceslibre === "true";
+          p.isCommunityVerified = p.isCommunityVerified === true || p.isCommunityVerified === "true";
+          openPlacePopup(p);
         });
         map.on("mouseenter", layerId, () => map.getCanvas().style.cursor = "pointer");
         map.on("mouseleave", layerId, () => map.getCanvas().style.cursor = "");
@@ -1691,31 +2343,77 @@
       map.on("click", "works-layer", e => {
         const p = e.features?.[0]?.properties;
         if (!p) return;
-        new maplibregl.Popup()
-          .setLngLat([Number(p.lon), Number(p.lat)])
-          .setHTML(`<b>🚧 ${escapeHTML(p.name)}</b><br><span class="sub">${escapeHTML(p.address)}</span><br><div style="margin-top:4px;font-size:12px;">${escapeHTML(p.details)}</div>`)
-          .addTo(map);
+        const container = document.createElement("div");
+        const isComm = p.isCommunity === true || p.isCommunity === "true";
+        container.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-weight:700;font-size:14px;">${isComm ? "⚠️" : "🚧"} ${escapeHTML(p.name)}</div>
+            <div class="sub">${escapeHTML(p.address)}</div>
+            <div style="font-size:12px;">${escapeHTML(p.details)}</div>
+            ${isComm ? `
+              <div class="sub" style="font-weight:700;">👍 ${p.confirmationCount || 1} confirmation(s)</div>
+              <div class="row">
+                <button class="conf-btn" style="flex:1;padding:6px;font-size:12px;background:#ff9500;color:#fff;border:none;">👍 Toujours là</button>
+                <button class="res-btn" style="flex:1;padding:6px;font-size:12px;background:#34c759;color:#fff;border:none;">✅ Libérée</button>
+              </div>
+            ` : ""}
+          </div>
+        `;
+        const popup = new maplibregl.Popup().setLngLat([Number(p.lon), Number(p.lat)]).setDOMContent(container).addTo(map);
+        if (isComm) {
+          container.querySelector(".conf-btn").addEventListener("click", () => { confirmCommunityObstacle(p.id); popup.remove(); });
+          container.querySelector(".res-btn").addEventListener("click", () => { resolveCommunityObstacle(p.id); popup.remove(); });
+        }
       });
+      map.on("mouseenter", "works-layer", () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", "works-layer", () => map.getCanvas().style.cursor = "");
     }
 
     function openPlacePopup(p) {
       const badgeClass = { yes: "b-yes", limited: "b-lim", no: "b-no", unknown: "b-unk" }[p.access] || "b-unk";
-      const icon = { parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭" }[p.cat] || "📍";
+      const icons = {
+        parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭",
+        pharmacy: "💊", medical: "🩺", market: "🛒", admin: "🏛️"
+      };
+      const icon = icons[p.cat] || "📍";
+      const featsHTML = (p.features || []).map(f => `<span class="b-feat">${escapeHTML(f)}</span>`).join(" ");
 
       const container = document.createElement("div");
       container.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:6px;">
           <div style="font-weight:700;font-size:14px;">${icon} ${escapeHTML(p.name)}</div>
-          <div><span class="badge ${badgeClass}">${escapeHTML(p.accessLabel)}</span></div>
+          <div class="row" style="flex-wrap:wrap;gap:5px;">
+            <span class="badge ${badgeClass}">${escapeHTML(p.accessLabel)}</span>
+            ${p.isAcceslibre ? `<span class="badge b-gov">🇫🇷 Accèslibre</span>` : ""}
+            ${p.isCommunityVerified ? `<span class="badge b-gov">👥 Vérifié usagers</span>` : ""}
+          </div>
           <div class="sub">${escapeHTML(p.address)}</div>
           ${p.details ? `<div style="font-size:12px;">${escapeHTML(p.details)}</div>` : ""}
-          <button class="primary" style="margin-top:4px;width:100%;">♿ Calculer l'itinéraire</button>
+          ${featsHTML ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">${featsHTML}</div>` : ""}
+          ${p.webUrl ? `<a href="${escapeHTML(p.webUrl)}" target="_blank" rel="noopener" style="font-size:12px;color:#007aff;font-weight:600;text-decoration:none;">Voir la fiche Accèslibre ↗</a>` : ""}
+          ${p.cat !== "parking" ? `
+            <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:2px;">
+              <div class="sub" style="font-weight:700;margin-bottom:4px;">📝 VÉRIFIER / NOTER CE LIEU :</div>
+              <div class="vote-bar">
+                <button class="vote-btn v-yes">🟢 Accessible</button>
+                <button class="vote-btn v-lim">🟠 Partiel</button>
+                <button class="vote-btn v-no">🔴 Non</button>
+              </div>
+            </div>
+          ` : ""}
+          <button class="primary go-route-btn" style="margin-top:4px;width:100%;">♿ Calculer l'itinéraire</button>
         </div>
       `;
-      container.querySelector("button").addEventListener("click", () => {
+      const popup = new maplibregl.Popup().setLngLat([Number(p.lon), Number(p.lat)]).setDOMContent(container).addTo(map);
+
+      if (p.cat !== "parking") {
+        container.querySelector(".v-yes").addEventListener("click", () => { votePlaceAccessibility(p.id, "yes"); popup.remove(); });
+        container.querySelector(".v-lim").addEventListener("click", () => { votePlaceAccessibility(p.id, "limited"); popup.remove(); });
+        container.querySelector(".v-no").addEventListener("click", () => { votePlaceAccessibility(p.id, "no"); popup.remove(); });
+      }
+      container.querySelector(".go-route-btn").addEventListener("click", () => {
         routeTo(Number(p.lat), Number(p.lon), p.name, { isParkingRoute: p.cat === "parking" });
       });
-      new maplibregl.Popup().setLngLat([Number(p.lon), Number(p.lat)]).setDOMContent(container).addTo(map);
     }
 
     function toggleMapLayer(layerKey, btn) {
@@ -1736,7 +2434,9 @@
           if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
         });
       }
-      if (["toilet", "restaurant", "bar", "venue"].includes(layerKey)) renderMapSourcesAndLayers();
+      if (["toilet", "restaurant", "bar", "venue", "pharmacy", "medical", "market", "admin"].includes(layerKey)) {
+        renderMapSourcesAndLayers();
+      }
     }
 
     function setDirCategory(cat, btn) {
@@ -1758,7 +2458,7 @@
       const filtered = allPlaces.filter(p => {
         if (dirCategory !== "all" && p.cat !== dirCategory) return false;
         if (dirAccess !== "all" && p.access !== dirAccess) return false;
-        if (q && !`${p.name} ${p.address} ${p.details}`.toLowerCase().includes(q)) return false;
+        if (q && !`${p.name} ${p.address} ${p.details} ${(p.features || []).join(" ")}`.toLowerCase().includes(q)) return false;
         return true;
       });
 
@@ -1770,10 +2470,16 @@
 
       const listEl = document.getElementById("dirList");
       listEl.innerHTML = "";
+      const icons = {
+        parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭",
+        pharmacy: "💊", medical: "🩺", market: "🛒", admin: "🏛️"
+      };
+
       shown.forEach(p => {
         const badgeClass = { yes: "b-yes", limited: "b-lim", no: "b-no", unknown: "b-unk" }[p.access] || "b-unk";
-        const icon = { parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭" }[p.cat] || "📍";
+        const icon = icons[p.cat] || "📍";
         const distLabel = p.dist >= 1000 ? (p.dist / 1000).toFixed(1) + " km" : p.dist + " m";
+        const featsHTML = (p.features || []).slice(0, 5).map(f => `<span class="b-feat">${escapeHTML(f)}</span>`).join("");
 
         const card = document.createElement("div");
         card.className = "dir-item";
@@ -1782,16 +2488,30 @@
             <div class="dir-title">${icon} ${escapeHTML(p.name)}</div>
             <span class="sub">${distLabel}</span>
           </div>
-          <div class="row" style="flex-wrap:wrap;">
+          <div class="row" style="flex-wrap:wrap;gap:5px;">
             <span class="badge ${badgeClass}">${escapeHTML(p.accessLabel)}</span>
-            ${p.toiletsPMR === "yes" && p.cat !== "toilet" ? `<span class="badge b-yes">🚻 WC PMR</span>` : ""}
+            ${p.isAcceslibre ? `<span class="badge b-gov">🇫🇷 Accèslibre</span>` : ""}
+            ${p.isCommunityVerified ? `<span class="badge b-gov">👥 Vérifié usagers</span>` : ""}
           </div>
           <div class="sub">${escapeHTML(p.address)}${p.details ? " • " + escapeHTML(p.details) : ""}</div>
+          ${featsHTML ? `<div style="display:flex;flex-wrap:wrap;gap:4px;">${featsHTML}</div>` : ""}
+          ${p.cat !== "parking" ? `
+            <div class="vote-bar">
+              <button class="vote-btn v-yes">🟢 Accessible</button>
+              <button class="vote-btn v-lim">🟠 Partiel</button>
+              <button class="vote-btn v-no">🔴 Non</button>
+            </div>
+          ` : ""}
           <div class="row" style="margin-top:2px;">
             <button style="flex:1;padding:6px;" class="see-btn">📍 Voir</button>
             <button style="flex:1;padding:6px;" class="primary go-btn">♿ Y aller</button>
           </div>
         `;
+        if (p.cat !== "parking") {
+          card.querySelector(".v-yes").addEventListener("click", () => votePlaceAccessibility(p.id, "yes"));
+          card.querySelector(".v-lim").addEventListener("click", () => votePlaceAccessibility(p.id, "limited"));
+          card.querySelector(".v-no").addEventListener("click", () => votePlaceAccessibility(p.id, "no"));
+        }
         card.querySelector(".see-btn").addEventListener("click", () => { map.flyTo({ center: [p.lon, p.lat], zoom: 16.5 }); openPlacePopup(p); });
         card.querySelector(".go-btn").addEventListener("click", () => {
           switchTab("map");
@@ -1839,7 +2559,7 @@
             directions_options: { units: "kilometers", language: "fr-FR" }
           };
 
-      const res = await fetch("https://valhalla1.openstreetmap.de/route?json=" + encodeURIComponent(JSON.stringify(payload)));
+      const res = await fetchWithTimeout("https://valhalla1.openstreetmap.de/route?json=" + encodeURIComponent(JSON.stringify(payload)), {}, 10000);
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || `Erreur Valhalla (${res.status})`);
       return data;
@@ -1856,9 +2576,7 @@
 
       if (isCar) {
         renderCarParkingsNearTarget();
-        if (!options.isParkingRoute) {
-          findAndProposeNearestParking(lat, lon, name);
-        }
+        if (!options.isParkingRoute) findAndProposeNearestParking(lat, lon, name);
       } else {
         clearParkingProposal();
       }
@@ -1909,6 +2627,8 @@
 
         document.getElementById("routeSteps").innerHTML = steps.map(s => `<div class="step-item">${escapeHTML(s.instruction)} (${s.distance} m)</div>`).join("");
         document.getElementById("routeBox").style.display = "block";
+
+        updateRouteElevationAndIrigoFlex(coords, dist, usedFallback);
         setStatus(usedFallback ? "⚠️ Côte importante sur ce trajet (pente > 5%)." : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
       } catch (err) {
         setStatus("❌ " + err.message, "error");
@@ -1934,11 +2654,48 @@
 
     async function reportObstacleAtCenter() {
       const c = map.getCenter();
-      const desc = prompt("Quel obstacle signalez-vous ?", "Véhicule garé sur le trottoir");
+      const desc = prompt("Quel obstacle signalez-vous à cet endroit ?", "Véhicule garé sur le trottoir");
       if (!desc) return;
-      blockedPoints.push({ lat: c.lat, lon: c.lng });
-      new maplibregl.Marker({ color: "#ff9500" }).setLngLat([c.lng, c.lat]).setPopup(new maplibregl.Popup().setHTML(`<b>⚠️ Signalement</b><br>${escapeHTML(desc)}`)).addTo(map);
-      setStatus("✅ Obstacle ajouté (contourné au prochain calcul).", "ok");
+
+      const obs = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        category: "Obstacle signalé",
+        description: desc,
+        lat: c.lat,
+        lon: c.lng,
+        confirmationCount: 1,
+        isSupabase: false
+      };
+
+      const sb = getSupabaseConfig();
+      if (sb.enabled) {
+        try {
+          const res = await fetch(`${sb.url}/rest/v1/reported_obstacles`, {
+            method: "POST",
+            headers: { ...supabaseHeaders(sb.key), "Prefer": "return=representation" },
+            body: JSON.stringify({
+              id: obs.id,
+              category: "Véhicule sur trottoir",
+              severity: "Passage impossible",
+              latitude: obs.lat,
+              longitude: obs.lon,
+              description: obs.description,
+              street_name: "Signalement Web",
+              avoidance_radius_meters: 25
+            })
+          });
+          if (res.ok) obs.isSupabase = true;
+        } catch {}
+      }
+
+      communityObstacles.unshift(obs);
+      if (!obs.isSupabase) {
+        localStorage.setItem("angers_local_obstacles_v1", JSON.stringify(communityObstacles.filter(o => !o.isSupabase)));
+      }
+      syncBlockedPoints();
+      renderMapSourcesAndLayers();
+
+      setStatus(obs.isSupabase ? "✅ Obstacle partagé avec tous les utilisateurs (Supabase) !" : "✅ Obstacle enregistré localement et contourné.", "ok");
       if (currentRoute) routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName);
     }
 
