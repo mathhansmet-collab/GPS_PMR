@@ -43,15 +43,29 @@
     h1 { font-size: 19px; margin: 0; }
     .sub { font-size: 12px; color: var(--sub); }
 
-    input, button { font-size: 13.5px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.15s ease; }
+    input, button { font-size: 13.5px; border-radius: 12px; border: 1px solid var(--border); transition: filter 0.15s ease, background-color 0.15s ease; }
     input { padding: 10px 12px; background: var(--card); color: var(--text); width: 100%; outline: none; }
-    input:focus { border-color: #007aff; }
+    input:focus, button:focus-visible { border-color: #007aff; outline: 2px solid rgba(0,122,255,0.45); outline-offset: 1px; }
     button { padding: 9px 12px; font-weight: 600; cursor: pointer; background: var(--card); color: var(--text); }
     button:hover { filter: brightness(0.96); }
     button.primary { background: #007aff; color: #fff; border: none; }
     button.go { background: #34c759; color: #fff; border: none; }
     button.warn { background: #ffd60a; color: #000; border: 2px solid #000; }
     button.danger { background: #ff3b30; color: #fff; border: none; }
+    button.sos-btn { background: #dc2626; color: #fff; border: 2px solid #ffffff; box-shadow: 0 4px 12px rgba(220,38,38,0.35); }
+
+    /* Mode Grand Format / Basse vision / Dextérité */
+    body.large-mode .sidebar { width: 455px; gap: 14px; padding: 18px; }
+    body.large-mode h1 { font-size: 23px; }
+    body.large-mode .sub { font-size: 14.5px; }
+    body.large-mode button { min-height: 48px; font-size: 15.5px; padding: 11px 14px; }
+    body.large-mode input, body.large-mode .field-box input { font-size: 16px; min-height: 42px; }
+    body.large-mode .dir-title, body.large-mode .sug-title { font-size: 16px; }
+    body.large-mode .badge { font-size: 13px; padding: 5px 10px; }
+    body.large-mode .chip { font-size: 14px; padding: 9px 13px; }
+    body.large-mode .step-item { font-size: 15.5px; padding: 10px 0; }
+    body.large-mode .mode-tabs-4 button { min-height: 58px; font-size: 13px; }
+    body.large-mode .mode-tabs-4 button .m-ico { font-size: 20px; }
 
     .tabs {
       display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
@@ -78,11 +92,11 @@
     .pin-end { background: #ff3b30; box-shadow: 0 0 0 3px rgba(255,59,48,0.22); }
     .clear-btn {
       border: none; background: rgba(120,120,128,0.18); color: var(--sub);
-      width: 22px; height: 22px; border-radius: 50%; padding: 0; font-size: 11px;
+      width: 26px; height: 26px; min-height: 26px !important; border-radius: 50%; padding: 0; font-size: 11px;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .swap-btn {
-      width: 34px; height: 58px; padding: 0; border-radius: 12px;
+      width: 36px; height: 60px; padding: 0; border-radius: 12px;
       background: var(--card2); font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
 
@@ -136,6 +150,12 @@
       border-radius: 15px; padding: 11px; display: none; flex-direction: column; gap: 7px;
     }
     body.dark .irigoflex-box { background: rgba(88, 86, 214, 0.22); }
+
+    .sos-box {
+      background: rgba(220, 38, 38, 0.10); border: 2px solid #dc2626;
+      border-radius: 16px; padding: 12px; display: none; flex-direction: column; gap: 8px;
+    }
+    body.dark .sos-box { background: rgba(220, 38, 38, 0.22); }
 
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; }
     .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -206,7 +226,7 @@
 
     .floating-right {
       position: absolute; top: 14px; right: 14px; z-index: 10;
-      display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 440px;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 480px;
     }
     .pill-bar {
       background: var(--bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
@@ -268,15 +288,15 @@
     .maplibregl-popup-close-button { color: var(--sub) !important; font-size: 18px; padding: 4px 8px; }
 
     @media (max-width: 768px) {
-      .sidebar {
+      .sidebar, body.large-mode .sidebar {
         top: auto; left: 8px; right: 8px; bottom: 8px;
-        width: auto; height: 52vh; border-radius: 22px; padding: 12px; gap: 9px;
+        width: auto; height: 54vh; border-radius: 22px; padding: 12px; gap: 9px;
       }
       .floating-right {
         top: 8px; right: 8px; left: 8px; max-width: none;
         align-items: stretch; gap: 6px;
       }
-      .floating-right > .row { justify-content: flex-end; }
+      .floating-right > .row { flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
       #layerToggles {
         flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
         padding: 7px 8px; border-radius: 14px; -webkit-overflow-scrolling: touch;
@@ -287,16 +307,17 @@
   </style>
 </head>
 <body>
-  <div id="map"></div>
+  <div id="map" aria-label="Carte interactive GPS PMR"></div>
 
   <div class="floating-right">
-    <div class="row">
-      <button class="pill-bar" style="padding:8px 14px; border-radius:999px;" onclick="toggleDarkMode()">🌓 Mode Jour / Nuit</button>
-      <button class="pill-bar" style="padding:8px 14px; border-radius:999px;" onclick="recenterOnStart()">🎯 Ma position</button>
-      <button class="pill-bar" style="padding:8px 14px; border-radius:999px;" onclick="refreshCurrentZone(true)">🔄 Cette zone</button>
+    <div class="row" style="flex-wrap:wrap; justify-content:flex-end;">
+      <button id="largeModeBtn" class="pill-bar" style="padding:8px 13px; border-radius:999px;" onclick="toggleLargeMode()" aria-pressed="false" aria-label="Activer le mode gros boutons et grand texte">👁️ Grand format</button>
+      <button id="darkModeBtn" class="pill-bar" style="padding:8px 13px; border-radius:999px;" onclick="toggleDarkMode()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit">🌓 Mode Jour / Nuit</button>
+      <button class="pill-bar" style="padding:8px 13px; border-radius:999px;" onclick="recenterOnStart()" aria-label="Recentrer la carte sur ma position actuelle">🎯 Ma position</button>
+      <button class="pill-bar" style="padding:8px 13px; border-radius:999px;" onclick="refreshCurrentZone(true)" aria-label="Actualiser les lieux de cette zone">🔄 Cette zone</button>
     </div>
 
-    <div class="pill-bar" id="layerToggles">
+    <div class="pill-bar" id="layerToggles" role="group" aria-label="Filtres de couches sur la carte">
       <button class="chip active" data-layer="parking" onclick="toggleMapLayer('parking', this)">🅿️ Parkings</button>
       <button class="chip active" data-layer="toilet" onclick="toggleMapLayer('toilet', this)">🚻 Toilettes PMR</button>
       <button class="chip active" data-layer="restaurant" onclick="toggleMapLayer('restaurant', this)">🍽️ Restos</button>
@@ -312,7 +333,7 @@
     </div>
   </div>
 
-  <div class="legend">
+  <div class="legend" aria-hidden="true">
     <span><i class="dot" style="background:#007aff;"></i>Parking PMR</span>
     <span><i class="dot" style="background:#06b6d4;"></i>Toilettes PMR</span>
     <span><i class="dot" style="background:#10b981;"></i>Pharmacie</span>
@@ -326,7 +347,7 @@
     <span><i class="dot" style="background:#ec4899;"></i>Spectacle</span>
   </div>
 
-  <aside class="sidebar">
+  <aside class="sidebar" role="region" aria-label="Panneau de navigation et pratiques PMR">
     <div class="row between">
       <div>
         <h1>GPS PMR</h1>
@@ -335,12 +356,12 @@
       <span id="zoneCityBadge" class="badge b-gov">🇫🇷 France</span>
     </div>
 
-    <div class="tabs">
-      <button id="tabMapBtn" class="active" onclick="switchTab('map')">🗺️ GPS & Trajets</button>
-      <button id="tabDirBtn" onclick="switchTab('directory')">📋 Pratiques PMR</button>
+    <div class="tabs" role="tablist">
+      <button id="tabMapBtn" class="active" role="tab" aria-selected="true" onclick="switchTab('map')">🗺️ GPS & Trajets</button>
+      <button id="tabDirBtn" role="tab" aria-selected="false" onclick="switchTab('directory')">📋 Pratiques PMR</button>
     </div>
 
-    <div id="statusBox" class="status-box"></div>
+    <div id="statusBox" class="status-box" role="status" aria-live="polite"></div>
 
     <!-- ONGLET 1 : GPS & TRAJETS -->
     <div id="tabMap" class="scroll-area">
@@ -355,51 +376,53 @@
         <div class="planner-inputs-wrap">
           <div class="planner-fields">
             <div class="field-box">
-              <span class="pin-dot pin-start"></span>
+              <span class="pin-dot pin-start" aria-hidden="true"></span>
               <input
                 id="originInput"
                 value="📍 Ma position actuelle"
                 placeholder="Point de départ (rue, ville…)"
+                aria-label="Point de départ"
                 autocomplete="off"
                 onfocus="onAddressFocus('origin')"
                 oninput="onAddressInput('origin')"
               />
-              <button class="clear-btn" title="Effacer le départ" onclick="clearAddressField('origin')">✕</button>
+              <button class="clear-btn" aria-label="Effacer le point de départ" onclick="clearAddressField('origin')">✕</button>
             </div>
 
             <div class="field-box">
-              <span class="pin-dot pin-end"></span>
+              <span class="pin-dot pin-end" aria-hidden="true"></span>
               <input
                 id="destInput"
                 placeholder="Destination"
+                aria-label="Destination"
                 autocomplete="off"
                 onfocus="onAddressFocus('dest')"
                 oninput="onAddressInput('dest')"
               />
-              <button class="clear-btn" title="Effacer la destination" onclick="clearAddressField('dest')">✕</button>
+              <button class="clear-btn" aria-label="Effacer la destination" onclick="clearAddressField('dest')">✕</button>
             </div>
           </div>
 
-          <button class="swap-btn" title="Inverser départ et arrivée" onclick="swapOriginAndDest()">⇅</button>
+          <button class="swap-btn" aria-label="Inverser le départ et l'arrivée" onclick="swapOriginAndDest()">⇅</button>
         </div>
 
-        <div id="suggestionsBox" class="suggestions-list" style="display:none;"></div>
+        <div id="suggestionsBox" class="suggestions-list" style="display:none;" role="listbox" aria-label="Suggestions d'adresses"></div>
       </div>
 
       <!-- 4 ONGLETS : FAUTEUIL | VOITURE | BUS | TRAMWAY -->
       <div class="mode-shell">
-        <div class="mode-tabs-4">
-          <button id="modeTabWheelchair" class="active-wc" onclick="switchModeTab('wheelchair')">
-            <span class="m-ico">♿</span><span>Fauteuil</span>
+        <div class="mode-tabs-4" role="tablist" aria-label="Mode de déplacement">
+          <button id="modeTabWheelchair" class="active-wc" onclick="switchModeTab('wheelchair')" aria-label="Mode fauteuil roulant">
+            <span class="m-ico" aria-hidden="true">♿</span><span>Fauteuil</span>
           </button>
-          <button id="modeTabCar" onclick="switchModeTab('car')">
-            <span class="m-ico">🚗</span><span>Voiture</span>
+          <button id="modeTabCar" onclick="switchModeTab('car')" aria-label="Mode voiture avec parking PMR">
+            <span class="m-ico" aria-hidden="true">🚗</span><span>Voiture</span>
           </button>
-          <button id="modeTabBus" onclick="switchModeTab('bus')">
-            <span class="m-ico">🚌</span><span>Bus</span>
+          <button id="modeTabBus" onclick="switchModeTab('bus')" aria-label="Arrêts et lignes de bus">
+            <span class="m-ico" aria-hidden="true">🚌</span><span>Bus</span>
           </button>
-          <button id="modeTabTram" onclick="switchModeTab('tram')">
-            <span class="m-ico">🚊</span><span>Tramway</span>
+          <button id="modeTabTram" onclick="switchModeTab('tram')" aria-label="Stations tramway, métro et gares">
+            <span class="m-ico" aria-hidden="true">🚊</span><span>Tramway</span>
           </button>
         </div>
 
@@ -426,7 +449,7 @@
           </div>
           <div class="horiz-scroll" id="busLineFilters"></div>
           <div id="selectedBusLineTitle" class="sub" style="font-weight:600;"></div>
-          <input id="busSearchInput" placeholder="🔍 Chercher un arrêt de bus…" oninput="renderBusStops()" style="background:var(--card2); padding:8px 10px;" />
+          <input id="busSearchInput" placeholder="🔍 Chercher un arrêt de bus…" aria-label="Chercher un arrêt de bus" oninput="debouncedBusSearch()" style="background:var(--card2); padding:8px 10px;" />
           <div id="busStopsList" style="display:flex; flex-direction:column; gap:7px; max-height:220px; overflow-y:auto;"></div>
         </div>
 
@@ -436,7 +459,7 @@
             <span id="tramCountLabel" class="sub">Chargement…</span>
           </div>
           <div class="chip-wrap" id="tramLineFilters"></div>
-          <input id="tramSearchInput" placeholder="🔍 Chercher une station ou gare…" oninput="renderTramStations()" style="background:var(--card2); padding:8px 10px;" />
+          <input id="tramSearchInput" placeholder="🔍 Chercher une station ou gare…" aria-label="Chercher une station ou gare" oninput="debouncedTramSearch()" style="background:var(--card2); padding:8px 10px;" />
           <div id="tramStationsList" style="display:flex; flex-direction:column; gap:7px; max-height:220px; overflow-y:auto;"></div>
         </div>
       </div>
@@ -452,34 +475,38 @@
         <div class="row" style="margin-top:2px;">
           <button id="proposalGoBtn" class="go" style="flex:1; font-size:13px;">🚗 M'y garer</button>
           <button id="proposalSeeBtn" style="padding:8px 12px; font-size:13px;">📍 Voir</button>
-          <button onclick="clearParkingProposal()" style="padding:8px 10px; font-size:12px;" title="Masquer">✕</button>
+          <button onclick="clearParkingProposal()" style="padding:8px 10px; font-size:12px;" aria-label="Masquer la place PMR proposée">✕</button>
         </div>
       </div>
 
-      <!-- GUIDAGE VOCAL + FLÈCHE TEMPS RÉEL -->
+      <!-- GUIDAGE VOCAL + FLÈCHE TEMPS RÉEL (avec Répéter & Muet) -->
       <div id="navBox" class="nav-banner" style="display:none;">
         <div class="row between">
           <span class="sub" style="color:#a1a1aa;font-weight:700;">GUIDAGE GPS EN DIRECT</span>
           <span id="navHeadingBadge" class="sub" style="color:#66b2ff;font-weight:700;">🧭 Cap actif</span>
         </div>
         <div id="navDist" style="font-size:26px; font-weight:800; margin-top:2px;">0 m</div>
-        <div id="navInstruction" style="font-size:15px; font-weight:600; margin-top:4px;"></div>
+        <div id="navInstruction" style="font-size:15px; font-weight:600; margin-top:4px;" aria-live="assertive"></div>
         <div class="row" style="margin-top:10px; flex-wrap:wrap;">
           <button id="simBtn" class="go" style="flex:1; font-size:12.5px;" onclick="toggleSimulation()">▶️ Simuler</button>
           <button class="primary" style="flex:1; font-size:12.5px;" onclick="nextStep()">⏭️ Suivant</button>
-          <button style="background:#2c2c34;color:#fff;border:1px solid rgba(255,255,255,0.2);font-size:12.5px;" onclick="enableFollowCamera()">🎯 Suivre</button>
+          <button style="background:#2c2c34;color:#fff;border:1px solid rgba(255,255,255,0.2);font-size:12.5px;" onclick="repeatCurrentInstruction()" aria-label="Répéter l'instruction vocale">🔁 Répéter</button>
+          <button id="muteBtn" style="background:#2c2c34;color:#fff;border:1px solid rgba(255,255,255,0.2);font-size:12.5px;" onclick="toggleMuteGuidance()" aria-pressed="false" aria-label="Couper ou réactiver la voix">🔊 Son</button>
+          <button style="background:#2c2c34;color:#fff;border:1px solid rgba(255,255,255,0.2);font-size:12.5px;" onclick="enableFollowCamera()" aria-label="Recentrer la caméra sur la flèche">🎯 Suivre</button>
           <button class="danger" style="font-size:12.5px;" onclick="stopGuidance()">Fin</button>
         </div>
       </div>
 
-      <!-- RÉSUMÉ ITINÉRAIRE + DÉNIVELÉ / BATTERIE -->
+      <!-- RÉSUMÉ ITINÉRAIRE + DÉNIVELÉ + MÉTÉO + TOILETTES SUR TRAJET -->
       <div id="routeBox" class="card" style="display:none;">
         <div class="row between">
           <b id="routeTitle">Itinéraire</b>
           <button class="go" onclick="startGuidance()">Y aller</button>
         </div>
         <div id="routeMeta" class="sub" style="margin:6px 0;"></div>
-        <div id="routeElevationBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:8px;"></div>
+        <div id="routeElevationBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
+        <div id="routeWeatherBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
+        <div id="routeToiletsBar" style="margin-bottom:8px;"></div>
         <div id="routeSteps" style="max-height:200px; overflow-y:auto;"></div>
       </div>
 
@@ -487,28 +514,45 @@
       <div id="irigoflexBox" class="irigoflex-box">
         <div class="row between">
           <span id="pmrTransportBadge" class="badge b-gov">🚐 TRANSPORT PMR ADAPTÉ</span>
-          <button onclick="document.getElementById('irigoflexBox').style.display='none'" style="padding:2px 7px;font-size:11px;">✕</button>
+          <button onclick="document.getElementById('irigoflexBox').style.display='none'" style="padding:2px 7px;font-size:11px;" aria-label="Fermer la suggestion de transport PMR">✕</button>
         </div>
         <div id="irigoflexReason" style="font-size:12.5px; font-weight:600;"></div>
         <div id="pmrTransportDesc" class="sub"></div>
         <div id="pmrTransportActions" class="row"></div>
       </div>
 
-      <button class="warn" onclick="reportObstacleAtCenter()">⚠️ Signaler un obstacle au centre de la carte</button>
+      <!-- ENCART SOS / PARTAGE POSITION D'AIDE -->
+      <div id="sosBox" class="sos-box" role="region" aria-label="Partage de position d'urgence">
+        <div class="row between">
+          <span class="badge b-no">🆘 PARTAGER MA POSITION</span>
+          <button onclick="document.getElementById('sosBox').style.display='none'" style="padding:2px 8px;font-size:11px;" aria-label="Fermer l'encart d'aide">✕</button>
+        </div>
+        <div id="sosAddressText" style="font-size:13px; font-weight:700;">Localisation en cours…</div>
+        <div id="sosMessagePreview" class="sub" style="background:var(--card2);padding:8px;border-radius:10px;border:1px solid var(--border);word-break:break-word;"></div>
+        <div class="row" style="flex-wrap:wrap;">
+          <a id="sosSmsLink" href="#" style="flex:1; text-decoration:none;"><button class="primary" style="width:100%;">💬 SMS</button></a>
+          <a id="sosWaLink" href="#" target="_blank" rel="noopener" style="flex:1; text-decoration:none;"><button class="go" style="width:100%;">📱 WhatsApp</button></a>
+          <button onclick="copySosMessage()" style="flex:1;">📋 Copier</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="warn" style="flex:1;" onclick="reportObstacleAtCenter()" aria-label="Signaler un obstacle au centre de la carte">⚠️ Signaler un obstacle</button>
+        <button class="sos-btn" onclick="triggerHelpShare()" aria-label="Besoin d'aide : partager ma position GPS">🆘 Besoin d'aide</button>
+      </div>
     </div>
 
-    <!-- ONGLET 2 : PRATIQUES PMR (TOUTES LES PRATIQUES DANS TOUTE LA FRANCE) -->
+    <!-- ONGLET 2 : PRATIQUES PMR -->
     <div id="tabDirectory" class="scroll-area" style="display:none;">
-      <!-- Sélecteur de ville partout en France -->
       <div class="card" style="padding:9px 10px;">
         <div class="sub" style="font-weight:700; margin-bottom:5px;">🌍 EXPLORER UNE VILLE EN FRANCE</div>
         <div class="row">
-          <input id="cityJumpInput" placeholder="Ex: Paris, Lyon, Nantes, Bordeaux…" style="background:var(--card2); padding:8px 10px;" onkeydown="if(event.key==='Enter') jumpToFrenchCity()" />
+          <input id="cityJumpInput" placeholder="Ex: Paris, Lyon, Nantes, Bordeaux…" aria-label="Nom d'une ville en France à explorer" style="background:var(--card2); padding:8px 10px;" onkeydown="if(event.key==='Enter') jumpToFrenchCity()" />
           <button class="primary" style="white-space:nowrap; padding:8px 12px;" onclick="jumpToFrenchCity()">Explorer</button>
         </div>
       </div>
 
-      <input id="dirSearch" placeholder="🔍 Filtrer dans cette ville (lieu, rue, bar, salle, tram…)" oninput="renderDirectory()" />
+      <input id="dirSearch" placeholder="🔍 Filtrer dans cette ville (lieu, rue, bar, salle, tram…)" aria-label="Filtrer les lieux pratiques PMR" oninput="debouncedDirectorySearch()" />
 
       <div class="chip-wrap" id="dirCatChips">
         <button class="chip active" onclick="setDirCategory('all', this)">Tout</button>
@@ -556,7 +600,7 @@
     const ACCESLIBRE_DATASET_URL =
       "https://www.data.gouv.fr/api/1/datasets/accessibilite-des-etablissements-recevant-du-public-erp-pour-les-personnes-en-situation-de-handicap/";
 
-    // Optionnel : colle ici ton URL et ta clé publique Supabase pour que tous les utilisateurs en France partagent les signalements
+    // Optionnel : colle ici ton URL et ta clé publique Supabase pour que tous les visiteurs partagent les signalements
     const DEFAULT_SUPABASE_URL = "";
     const DEFAULT_SUPABASE_KEY = "";
 
@@ -565,6 +609,8 @@
     let activeTransportTab = "wheelchair";
     let profile = "manual";
     let isDark = false;
+    let isLargeMode = false;
+    let isMuted = false;
     let currentRoute = null;
     let navIndex = 0;
 
@@ -591,6 +637,9 @@
     let activeField = null;
     let autocompleteTimer = null;
     let autocompleteAbort = null;
+    let dirSearchTimer = null;
+    let busSearchTimer = null;
+    let tramSearchTimer = null;
 
     let currentZoneCenter = { lat: DEFAULT_CENTER[1], lon: DEFAULT_CENTER[0] };
     let currentCommune = "";
@@ -601,6 +650,7 @@
 
     const zoneMemoryCache = new Map();
     const acceslibreCommuneCache = new Map();
+    const weatherCache = new Map();
 
     let angersMuniPlaces = [];
     let osmPlaces = [];
@@ -626,6 +676,7 @@
     let communityObstacles = [];
     let blockedPoints = [];
     let communityVotes = {};
+    let lastSosMessage = "";
 
     let visibleLayers = {
       parking: true, toilet: true, restaurant: true, bar: true, venue: true,
@@ -655,10 +706,28 @@
         return;
       }
       clearTimeout(zoneFetchTimer);
-      zoneFetchTimer = setTimeout(() => {
-        loadZoneData(c.lat, c.lng, false);
-      }, 650);
+      zoneFetchTimer = setTimeout(() => { loadZoneData(c.lat, c.lng, false); }, 650);
     });
+
+    // Restauration des préférences d'accessibilité
+    (function restoreUIPrefs() {
+      if (localStorage.getItem("gps_pmr_large_mode") === "1") {
+        isLargeMode = true;
+        document.body.classList.add("large-mode");
+        const b = document.getElementById("largeModeBtn");
+        if (b) { b.setAttribute("aria-pressed", "true"); b.style.borderColor = "#007aff"; }
+      }
+    })();
+
+    function toggleLargeMode() {
+      isLargeMode = !isLargeMode;
+      document.body.classList.toggle("large-mode", isLargeMode);
+      localStorage.setItem("gps_pmr_large_mode", isLargeMode ? "1" : "0");
+      const btn = document.getElementById("largeModeBtn");
+      btn.setAttribute("aria-pressed", String(isLargeMode));
+      btn.style.borderColor = isLargeMode ? "#007aff" : "";
+      setStatus(isLargeMode ? "👁️ Mode Grand format activé (textes et boutons agrandis)." : "Mode affichage standard rétabli.", "info");
+    }
 
     function escapeHTML(str) {
       return String(str || "").replace(/[&<>"']/g, s => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s]));
@@ -717,7 +786,153 @@
       } catch { return null; }
     }
 
-    // Explorer directement n'importe quelle ville de France depuis Pratiques PMR
+    // MARK: - Point 2 : SOS Partage Position + Toilettes sur trajet + Météo / Sol glissant
+
+    async function reverseGeocodeFullAddress(lat, lon) {
+      try {
+        const res = await fetchWithTimeout(`https://data.geopf.fr/geocodage/reverse?lon=${lon}&lat=${lat}&limit=1`, {}, 4500);
+        if (!res.ok) return "";
+        const json = await res.json();
+        return json.features?.[0]?.properties?.label || json.features?.[0]?.properties?.city || "";
+      } catch { return ""; }
+    }
+
+    async function triggerHelpShare() {
+      const box = document.getElementById("sosBox");
+      const addrEl = document.getElementById("sosAddressText");
+      const msgEl = document.getElementById("sosMessagePreview");
+      box.style.display = "flex";
+
+      let lat, lon;
+      if (userPos) {
+        lat = userPos.lat; lon = userPos.lon;
+      } else {
+        const c = map.getCenter();
+        lat = c.lat; lon = c.lng;
+      }
+
+      addrEl.textContent = "Recherche de l'adresse exacte…";
+      const label = await reverseGeocodeFullAddress(lat, lon);
+      const latS = lat.toFixed(5), lonS = lon.toFixed(5);
+      const mapLink = `https://www.openstreetmap.org/?mlat=${latS}&mlon=${lonS}#map=18/${latS}/${lonS}`;
+      const addrText = label || `${latS}, ${lonS}`;
+
+      addrEl.textContent = `📍 Position actuelle : ${addrText}`;
+      lastSosMessage = `🆘 Besoin d'aide (GPS PMR) : je me trouve à « ${addrText} ». Ma position exacte : ${mapLink}`;
+      msgEl.textContent = lastSosMessage;
+
+      document.getElementById("sosSmsLink").href = `sms:?&body=${encodeURIComponent(lastSosMessage)}`;
+      document.getElementById("sosWaLink").href = `https://wa.me/?text=${encodeURIComponent(lastSosMessage)}`;
+
+      // Sur smartphone, proposer directement le menu de partage natif iOS / Android
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Ma position GPS PMR", text: lastSosMessage });
+        } catch {}
+      }
+      box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function copySosMessage() {
+      if (!lastSosMessage) return;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(lastSosMessage).then(() => {
+          setStatus("📋 Message et lien GPS copiés dans le presse-papiers !", "ok");
+        }).catch(() => {});
+      }
+    }
+
+    // Toilettes PMR situées à ≤ 120 m le long du tracé calculé (0 ms, sans requête réseau)
+    function findToiletsAlongRoute(coords) {
+      const bar = document.getElementById("routeToiletsBar");
+      bar.innerHTML = "";
+      if (!coords || coords.length < 2) return;
+
+      const toilets = allPlaces.filter(p => p.cat === "toilet");
+      if (toilets.length === 0) return;
+
+      // Échantillonner le tracé (max 55 points pour rester ultra-rapide)
+      const step = Math.max(1, Math.floor(coords.length / 55));
+      const sampled = [];
+      for (let i = 0; i < coords.length; i += step) sampled.push(coords[i]);
+      sampled.push(coords[coords.length - 1]);
+
+      const nearby = [];
+      for (const t of toilets) {
+        let minDist = Infinity;
+        for (const pt of sampled) {
+          // Pré-filtre rectangulaire rapide (~130 m)
+          if (Math.abs(t.lat - pt[1]) > 0.0013 || Math.abs(t.lon - pt[0]) > 0.0018) continue;
+          const d = distanceMeters(t.lat, t.lon, pt[1], pt[0]);
+          if (d < minDist) minDist = d;
+        }
+        if (minDist <= 120) {
+          nearby.push({ toilet: t, routeDist: minDist });
+        }
+      }
+
+      if (nearby.length === 0) {
+        bar.innerHTML = `<span class="badge b-unk">🚻 Aucune toilette PMR recensée le long de ce tracé</span>`;
+        return;
+      }
+
+      nearby.sort((a, b) => a.routeDist - b.routeDist);
+      const best = nearby[0];
+      const btn = document.createElement("button");
+      btn.style.cssText = "width:100%;text-align:left;padding:8px 10px;font-size:12.5px;background:rgba(6,182,212,0.14);border:1px solid rgba(6,182,212,0.45);";
+      btn.innerHTML = `🚻 <b>${nearby.length} toilette(s) PMR sur ce trajet</b> (la plus proche : ${escapeHTML(best.toilet.name)} à ${best.routeDist} m du tracé) — <u>Voir</u>`;
+      btn.addEventListener("click", () => {
+        map.flyTo({ center: [best.toilet.lon, best.toilet.lat], zoom: 17 });
+        openPlacePopup(best.toilet);
+      });
+      bar.appendChild(btn);
+    }
+
+    // Alerte Météo / Sol glissant via Open-Meteo (modèles Météo-France AROME/ARPEGE, gratuit, sans clé)
+    async function updateRouteWeatherAlert(lat, lon) {
+      const bar = document.getElementById("routeWeatherBar");
+      bar.innerHTML = "";
+      const key = `${lat.toFixed(2)}_${lon.toFixed(2)}`;
+      let current = null;
+
+      const cached = weatherCache.get(key);
+      if (cached && (Date.now() - cached.ts) < 20 * 60 * 1000) {
+        current = cached.data;
+      } else {
+        try {
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,rain,weather_code,wind_speed_10m&timezone=auto`;
+          const res = await fetchWithTimeout(url, {}, 5000);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.current) {
+              current = json.current;
+              weatherCache.set(key, { ts: Date.now(), data: current });
+            }
+          }
+        } catch {}
+      }
+
+      if (!current) return;
+
+      const temp = Math.round(current.temperature_2m ?? 0);
+      const code = Number(current.weather_code ?? 0);
+      const rain = Number(current.rain ?? 0) + Number(current.precipitation ?? 0);
+      const wind = Math.round(current.wind_speed_10m ?? 0);
+
+      const isSnowOrIce = (code >= 71 && code <= 77) || code === 85 || code === 86 || code === 56 || code === 57 || code === 66 || code === 67;
+      const isRain = rain > 0.05 || (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95;
+
+      if (isSnowOrIce) {
+        bar.innerHTML = `<span class="badge b-no">❄️ Risque neige/verglas (${temp}°C) • Chaussée très glissante</span>`;
+      } else if (isRain) {
+        bar.innerHTML = `<span class="badge b-lim">🌧️ Pluie (${temp}°C) • Sol glissant (pavés & rampes métalliques)</span>`;
+      } else if (wind >= 45) {
+        bar.innerHTML = `<span class="badge b-lim">💨 Vent fort ${wind} km/h (${temp}°C)</span>`;
+      } else {
+        bar.innerHTML = `<span class="badge b-yes">☀️ ${temp}°C • Temps sec</span>`;
+      }
+    }
+
     async function jumpToFrenchCity() {
       const query = (document.getElementById("cityJumpInput").value || "").trim();
       if (!query) return;
@@ -1199,7 +1414,7 @@
       });
     }
 
-    // MARK: - Helpers Accèslibre (France entière)
+    // MARK: - Helpers Accèslibre
 
     function parseBoolAL(v) {
       if (v === true || v === 1) return true;
@@ -1619,11 +1834,16 @@
       updateBusMapLayer();
     }
 
+    function debouncedBusSearch() {
+      clearTimeout(busSearchTimer);
+      busSearchTimer = setTimeout(renderBusStops, 110);
+    }
+
     function renderBusStops() {
       const q = (document.getElementById("busSearchInput").value || "").trim().toLowerCase();
       const filtered = busStops.filter(s => {
         if (busLineFilter !== "all" && !s.lines.includes(busLineFilter)) return false;
-        if (q && !s.name.toLowerCase().includes(q)) return false;
+        if (q && !(s._search || s.name.toLowerCase()).includes(q)) return false;
         return true;
       });
 
@@ -1708,11 +1928,16 @@
       });
     }
 
+    function debouncedTramSearch() {
+      clearTimeout(tramSearchTimer);
+      tramSearchTimer = setTimeout(renderTramStations, 110);
+    }
+
     function renderTramStations() {
       const q = (document.getElementById("tramSearchInput").value || "").trim().toLowerCase();
       const filtered = tramStops.filter(s => {
         if (tramLineFilter !== "all" && !(s.lines || []).includes(tramLineFilter)) return false;
-        if (q && !s.name.toLowerCase().includes(q)) return false;
+        if (q && !(s._search || s.name.toLowerCase()).includes(q)) return false;
         return true;
       });
 
@@ -1846,13 +2071,13 @@
       const q = query.toLowerCase();
       const hits = [];
       for (const s of tramStops) {
-        if (s.name.toLowerCase().includes(q)) {
+        if ((s._search || s.name.toLowerCase()).includes(q)) {
           hits.push({ icon: "🚊", title: s.name, subtitle: "Station / Gare à proximité", lat: s.lat, lon: s.lon });
         }
         if (hits.length >= 2) break;
       }
       for (const s of busStops) {
-        if (s.name.toLowerCase().includes(q)) {
+        if ((s._search || s.name.toLowerCase()).includes(q)) {
           hits.push({ icon: "🚌", title: "Bus " + s.name, subtitle: "Arrêt de bus à proximité", lat: s.lat, lon: s.lon });
         }
         if (hits.length >= 4) break;
@@ -1862,7 +2087,7 @@
         pharmacy: "💊", medical: "🩺", market: "🛒", admin: "🏛️"
       };
       for (const p of allPlaces) {
-        if (`${p.name} ${p.address} ${p.details}`.toLowerCase().includes(q)) {
+        if ((p._search || p.name.toLowerCase()).includes(q)) {
           hits.push({ icon: icons[p.cat] || "📍", title: p.name, subtitle: `${p.accessLabel} • ${p.address}`, lat: p.lat, lon: p.lon });
         }
         if (hits.length >= 8) break;
@@ -1913,7 +2138,8 @@
       const combined = [...localHits];
       for (const item of remoteHits) {
         const dup = combined.some(e =>
-          distanceMeters(e.lat, e.lon, item.lat, item.lon) < 25 &&
+          Math.abs(e.lat - item.lat) < 0.0003 &&
+          Math.abs(e.lon - item.lon) < 0.0004 &&
           e.title.toLowerCase().slice(0, 10) === item.title.toLowerCase().slice(0, 10)
         );
         if (!dup) combined.push(item);
@@ -1935,6 +2161,7 @@
         const btn = document.createElement("button");
         btn.className = "sug-item";
         btn.type = "button";
+        btn.setAttribute("role", "option");
         btn.innerHTML = `
           <div class="sug-icon">${item.icon}</div>
           <div style="min-width:0; flex:1;">
@@ -2103,15 +2330,18 @@
       document.getElementById("tabDirectory").style.display = isMap ? "none" : "flex";
       document.getElementById("tabMapBtn").classList.toggle("active", isMap);
       document.getElementById("tabDirBtn").classList.toggle("active", !isMap);
+      document.getElementById("tabMapBtn").setAttribute("aria-selected", String(isMap));
+      document.getElementById("tabDirBtn").setAttribute("aria-selected", String(!isMap));
       if (!isMap) renderDirectory();
     }
 
     function toggleDarkMode() {
       isDark = !isDark;
       document.body.classList.toggle("dark", isDark);
+      document.getElementById("darkModeBtn").setAttribute("aria-pressed", String(isDark));
     }
 
-    // MARK: - Fusion rapide des sources
+    // MARK: - Fusion rapide avec pré-indexation de recherche
 
     function rebuildMergedPlacesAndRefreshUI() {
       const inAngers = isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon);
@@ -2125,7 +2355,14 @@
         const cat = classifyAcceslibreActivity(item.activite, item.name);
         if (!cat) continue;
         const prof = extractAcceslibreProfile(item.raw);
-        const existing = merged.find(p => p.cat === cat && distanceMeters(p.lat, p.lon, item.lat, item.lon) < 35);
+
+        // Pré-filtre rectangulaire rapide (~40 m) avant trigonométrie
+        const existing = merged.find(p =>
+          p.cat === cat &&
+          Math.abs(p.lat - item.lat) < 0.0004 &&
+          Math.abs(p.lon - item.lon) < 0.0006 &&
+          distanceMeters(p.lat, p.lon, item.lat, item.lon) < 35
+        );
 
         if (existing) {
           if (prof.access !== "unknown") { existing.access = prof.access; existing.accessLabel = prof.accessLabel; }
@@ -2156,13 +2393,17 @@
           p.accessLabel = vote.accessLabel;
           p.isCommunityVerified = true;
         }
+        // Index de recherche pré-calculé pour filtrage instantané
+        p._search = `${p.name} ${p.address} ${p.details} ${(p.features || []).join(" ")}`.toLowerCase();
       });
 
       if (inAngers && irigoTramStops.length > 0) tramStops = [...irigoTramStops];
       else tramStops = [...osmTramStops];
+      tramStops.forEach(s => { s._search = s.name.toLowerCase(); });
 
       if (inAngers && irigoBusStops.length > 0) busStops = [...irigoBusStops];
       else busStops = [...osmBusStops];
+      busStops.forEach(s => { s._search = s.name.toLowerCase(); });
 
       allPlaces = merged;
       refreshPlaceDistances();
@@ -2207,7 +2448,6 @@
         return city;
       });
 
-      // Deux requêtes Overpass spécialisées en parallèle (POIs/Salles + Transports) pour éviter toute troncature
       const osmPromise = fetchOverpassZoneSplit(lat, lon, signal).then(parsed => {
         if (signal.aborted || !parsed) return;
         osmPlaces = parsed.places;
@@ -2381,7 +2621,6 @@
       return null;
     }
 
-    // Requête Overpass séparée (POIs & Salles sur rayon élargi + Transports dédiés) pour zéro troncature partout en France
     async function fetchOverpassZoneSplit(lat, lon, signal) {
       const bboxMed = `${(lat - 0.022).toFixed(4)},${(lon - 0.032).toFixed(4)},${(lat + 0.022).toFixed(4)},${(lon + 0.032).toFixed(4)}`;
       const bboxLarge = `${(lat - 0.045).toFixed(4)},${(lon - 0.065).toFixed(4)},${(lat + 0.045).toFixed(4)},${(lon + 0.065).toFixed(4)}`;
@@ -2528,7 +2767,7 @@
     }
 
     function updateGlobalStats() {
-      const counts = { parking: 0, toilet: 0, restaurant: 0, bar: 0, venue: 0, pharmacy: 0 };
+      const counts = { parking: 0, restaurant: 0, bar: 0, venue: 0 };
       allPlaces.forEach(p => { if (counts[p.cat] != null) counts[p.cat]++; });
       document.getElementById("globalStats").textContent =
         `${counts.parking} parkings • ${counts.restaurant} restos • ${counts.bar} bars • ${counts.venue} salles • ${tramStops.length} gares/tram`;
@@ -2892,10 +3131,13 @@
       renderDirectory();
     }
 
+    function debouncedDirectorySearch() {
+      clearTimeout(dirSearchTimer);
+      dirSearchTimer = setTimeout(renderDirectory, 110);
+    }
+
     function renderDirectory() {
       const q = (document.getElementById("dirSearch").value || "").trim().toLowerCase();
-
-      // Construire la vue unifiée de toutes les pratiques PMR (lieux + gares/tram + bus)
       let items = [];
 
       if (dirCategory === "tram") {
@@ -2905,7 +3147,8 @@
           lat: s.lat, lon: s.lon, dist: s.dist,
           access: s.accessible === true ? "yes" : (s.accessible === false ? "no" : "unknown"),
           accessLabel: s.accessible === true ? "Accessible PMR" : (s.accessible === false ? "Non accessible" : "À vérifier"),
-          details: s.precision || "", features: [], rawTramStop: s
+          details: s.precision || "", features: [], rawTramStop: s,
+          _search: s._search || s.name.toLowerCase()
         }));
       } else if (dirCategory === "bus") {
         items = busStops.map(s => ({
@@ -2914,12 +3157,12 @@
           lat: s.lat, lon: s.lon, dist: s.dist,
           access: s.accessible === true ? "yes" : (s.accessible === false ? "no" : "unknown"),
           accessLabel: s.accessible === true ? "Accessible PMR" : (s.accessible === false ? "Non accessible" : "À vérifier"),
-          details: s.precision || "", features: [], rawBusStop: s
+          details: s.precision || "", features: [], rawBusStop: s,
+          _search: s._search || s.name.toLowerCase()
         }));
       } else {
         items = [...allPlaces];
         if (dirCategory === "all") {
-          // Inclure Tram/Gares dans "Tout" (et Bus si recherche texte active)
           tramStops.forEach(s => {
             items.push({
               id: "tr_" + s.name, cat: "tram", name: s.name,
@@ -2927,7 +3170,8 @@
               lat: s.lat, lon: s.lon, dist: s.dist,
               access: s.accessible === true ? "yes" : (s.accessible === false ? "no" : "unknown"),
               accessLabel: s.accessible === true ? "Accessible PMR" : (s.accessible === false ? "Non accessible" : "À vérifier"),
-              details: s.precision || "", features: [], rawTramStop: s
+              details: s.precision || "", features: [], rawTramStop: s,
+              _search: s._search || s.name.toLowerCase()
             });
           });
           if (q.length >= 2) {
@@ -2938,7 +3182,8 @@
                 lat: s.lat, lon: s.lon, dist: s.dist,
                 access: s.accessible === true ? "yes" : (s.accessible === false ? "no" : "unknown"),
                 accessLabel: s.accessible === true ? "Accessible PMR" : (s.accessible === false ? "Non accessible" : "À vérifier"),
-                details: s.precision || "", features: [], rawBusStop: s
+                details: s.precision || "", features: [], rawBusStop: s,
+                _search: s._search || s.name.toLowerCase()
               });
             });
           }
@@ -2949,7 +3194,7 @@
       const filtered = items.filter(p => {
         if (dirCategory !== "all" && p.cat !== dirCategory) return false;
         if (dirAccess !== "all" && p.access !== dirAccess) return false;
-        if (q && !`${p.name} ${p.address} ${p.details} ${(p.features || []).join(" ")}`.toLowerCase().includes(q)) return false;
+        if (q && !(p._search || p.name.toLowerCase()).includes(q)) return false;
         return true;
       });
 
@@ -3138,7 +3383,11 @@
         document.getElementById("routeSteps").innerHTML = steps.map(s => `<div class="step-item">${escapeHTML(s.instruction)} (${s.distance} m)</div>`).join("");
         document.getElementById("routeBox").style.display = "block";
 
+        // Dénivelé + Batterie + IrigoFlex + Météo sol glissant + Toilettes PMR sur le tracé
         updateRouteElevationAndIrigoFlex(coords, dist, usedFallback, lat, lon);
+        updateRouteWeatherAlert(lat, lon);
+        findToiletsAlongRoute(coords);
+
         setStatus(usedFallback ? "⚠️ Côte importante sur ce trajet (pente > 5%)." : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
       } catch (err) {
         setStatus("❌ " + err.message, "error");
@@ -3146,10 +3395,26 @@
     }
 
     function speakFR(text) {
+      if (isMuted) return;
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "fr-FR";
       window.speechSynthesis.speak(u);
+    }
+
+    function toggleMuteGuidance() {
+      isMuted = !isMuted;
+      if (isMuted) window.speechSynthesis.cancel();
+      const btn = document.getElementById("muteBtn");
+      btn.textContent = isMuted ? "🔇 Muet" : "🔊 Son";
+      btn.setAttribute("aria-pressed", String(isMuted));
+    }
+
+    function repeatCurrentInstruction() {
+      if (!currentRoute) return;
+      const step = currentRoute.steps[navIndex];
+      const msg = step ? step.instruction : ("Arrivé à destination : " + currentRoute.destName);
+      speakFR(msg);
     }
 
     function startGuidance() {
