@@ -425,6 +425,8 @@
     .legend.collapsed span { display: none; }
     .legend .leg-title { font-weight: 700; display: none; }
     .legend.collapsed .leg-title { display: inline; }
+    .legend .leg-fold { flex-basis: 100%; text-align: center; font-weight: 700; color: #007aff; padding-top: 4px; border-top: 1px solid var(--border); }
+    .legend.collapsed .leg-fold { display: none; }
     #routeBox { position: sticky; top: 0; z-index: 5; order: -1; box-shadow: 0 6px 16px rgba(0,0,0,0.14); }
     #routeBox > .row.between { flex-wrap: wrap; gap: 8px; }
     #routeBox button { white-space: nowrap; }
@@ -654,6 +656,7 @@
     <span><i class="dot" style="background:#ef4444;"></i>Non accessible</span>
     <span><i class="dot" style="background:#a855f7;"></i>Bar</span>
     <span><i class="dot" style="background:#ec4899;"></i>Spectacle</span>
+    <b class="leg-fold" aria-hidden="true">▾ Replier</b>
   </div>
 
   <button id="sbOpen" class="sb-open" onclick="toggleSidebar()" aria-label="Afficher le panneau" title="Afficher le panneau (S)">☰</button>
