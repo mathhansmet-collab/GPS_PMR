@@ -201,6 +201,25 @@
     }
     .line-filter-btn.selected { color: #fff; border-color: transparent; }
 
+    #tripCard > summary, #battCard > summary, #packCard > summary { list-style: none; }
+    .trip-row { display: flex; gap: 8px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--border); }
+    .trip-row:last-child { border-bottom: 0; }
+    .trip-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+    .trip-main .badge { white-space: normal; }
+    .trip-btns { display: flex; flex-direction: column; gap: 3px; flex: none; }
+    .trip-btns button { padding: 3px 9px; font-size: 12px; min-width: 34px; }
+    .trip-done { opacity: .6; }
+    .trip-cur { background: rgba(0,122,255,.08); border-radius: 10px; padding-left: 4px; }
+    .trip-warn { background: rgba(255,59,48,.12); border-radius: 10px; padding: 7px 9px; font-size: 12.5px; margin-top: 4px; }
+    .trip-ok { background: rgba(52,199,89,.14); border-radius: 10px; padding: 7px 9px; font-size: 12.5px; margin-top: 4px; }
+    .batt-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+    .batt-box { border-radius: 12px; padding: 9px 11px; font-size: 13px; border: 1px solid transparent; }
+    .batt-ok { background: rgba(52,199,89,.14); border-color: rgba(52,199,89,.4); }
+    .batt-warn { background: rgba(255,149,0,.16); border-color: rgba(255,149,0,.5); }
+    .batt-danger { background: rgba(255,59,48,.14); border-color: rgba(255,59,48,.5); }
+    .batt-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .sncf-card { border: 1px solid var(--border); border-radius: 12px; padding: 8px; background: var(--card2); }
+    .sncf-card a { color: #007aff; }
     .horiz-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
     .chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip {
@@ -801,6 +820,65 @@
         <div id="suggestionsBox" class="suggestions-list" style="display:none;" role="listbox" aria-label="Suggestions d'adresses"></div>
       </div>
 
+      <!-- TOURNÉE MULTI-ÉTAPES -->
+      <details class="card" id="tripCard">
+        <summary class="sub" style="cursor:pointer;font-weight:700;">🧭 Tournée : plusieurs étapes <span id="tripCount" class="badge b-gov" style="display:none;"></span></summary>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+          <div class="sub">Ex. pharmacie, puis supermarché, puis retour. L'appli vérifie que chaque lieu est <b>ouvert à l'heure où vous y arrivez</b>.</div>
+          <div class="chip-wrap">
+            <button class="chip" onclick="tripQuickAdd('pharmacy')">💊 Pharmacie</button>
+            <button class="chip" onclick="tripQuickAdd('market')">🛒 Supermarché / commerce</button>
+            <button class="chip" onclick="tripQuickAdd('medical')">🩺 Médecin</button>
+            <button class="chip" onclick="tripAddDest()">➕ Destination saisie</button>
+          </div>
+          <div id="tripList"></div>
+          <div class="row" style="gap:10px;flex-wrap:wrap;">
+            <label class="sub">Départ à <input id="tripStart" type="time" onchange="tripSetStart(this.value)" style="width:auto;" aria-label="Heure de départ (vide = maintenant)" /></label>
+            <label class="sub" style="display:flex;align-items:center;gap:5px;"><input id="tripReturn" type="checkbox" checked onchange="tripSetReturn(this.checked)" style="width:auto;" /> Retour au départ</label>
+          </div>
+          <div id="tripSummary"></div>
+          <div class="row" style="gap:6px;flex-wrap:wrap;">
+            <button onclick="tripOptimize()">🔀 Meilleur ordre</button>
+            <button id="tripCheckBtn" class="primary" onclick="tripCompute()">✅ Vérifier la tournée</button>
+          </div>
+          <div class="row" style="gap:6px;">
+            <button id="tripGoBtn" class="go" style="flex:1;" onclick="tripGo()">▶ Démarrer la tournée</button>
+            <button onclick="tripClear()" aria-label="Vider la tournée">🗑</button>
+          </div>
+          <div class="batt-slot" data-scope="trip"></div>
+        </div>
+      </details>
+
+      <!-- BATTERIE DU FAUTEUIL -->
+      <details class="card" id="battCard">
+        <summary class="sub" style="cursor:pointer;font-weight:700;">🔋 Batterie du fauteuil électrique <span id="battBadge" class="badge b-gov" style="display:none;"></span></summary>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+          <div class="batt-fields">
+            <label class="sub">Charge actuelle (%)<input id="battPct" type="number" min="0" max="100" inputmode="numeric" placeholder="ex. 70" oninput="battChanged()" /></label>
+            <label class="sub">Autonomie à 100 % (km)<input id="battRange" type="number" min="5" max="150" inputmode="numeric" oninput="battChanged()" /></label>
+            <label class="sub">Réserve de sécurité (%)<input id="battReserve" type="number" min="0" max="60" inputmode="numeric" oninput="battChanged()" /></label>
+          </div>
+          <div class="batt-slot" data-empty="1"></div>
+          <div class="sub">Estimation indicative (distance + dénivelé). Elle dépend de votre fauteuil, de votre poids, du revêtement et de la température : ajustez « Autonomie à 100 % » d'après votre expérience.</div>
+        </div>
+      </details>
+
+      <!-- HORS LIGNE -->
+      <details class="card" id="packCard">
+        <summary class="sub" style="cursor:pointer;font-weight:700;">📴 Hors ligne : télécharger une zone</summary>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+          <div class="sub">Mémorise la zone affichée sur la carte : lieux, fiches Accèslibre, lignes de tram/bus, gares et fond de carte. Utile avant un train ou en zone sans réseau. Le <b>calcul d'un nouvel itinéraire</b> demande en revanche une connexion ; le dernier itinéraire reste consultable.</div>
+          <div class="row" style="gap:6px;flex-wrap:wrap;">
+            <select id="packSize" aria-label="Taille de la zone"><option value="city">Ville (≈ 5 km autour du centre de la carte)</option><option value="big">Grande zone (≈ 9 km)</option></select>
+            <button id="packBtn" class="primary" onclick="packDownload()">⬇️ Télécharger</button>
+          </div>
+          <div id="packBar" style="display:none;height:8px;border-radius:6px;background:var(--card2);overflow:hidden;"><div style="height:100%;width:0;background:#007aff;transition:width .2s;"></div></div>
+          <div id="packTxt" class="sub"></div>
+          <div id="packList"></div>
+          <div id="packSwNote" class="sub"></div>
+        </div>
+      </details>
+
       <div class="card" id="arrivedCard" role="status">
         <div class="row between"><b>🏁 Vous êtes arrivé</b><button onclick="document.getElementById('arrivedCard').style.display='none'" aria-label="Fermer">✕</button></div>
         <a id="arrivedSms" href="#" style="text-decoration:none;"><button class="go" style="width:100%;margin-top:8px;">✅ Prévenir <span id="arrivedName"></span> : bien arrivé</button></a>
@@ -924,6 +1002,7 @@
         <div id="rainAdvice" style="display:none;" aria-live="polite"></div>
         <div id="routeAlts" class="alts" role="radiogroup" aria-label="Choix de l'itinéraire" style="display:none;"></div>
         <div id="routeElevationBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
+        <div class="batt-slot" data-scope="route" style="margin-bottom:6px;"></div>
         <div id="routeWeatherBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
         <div id="tramInfo" style="display:none;"></div>
         <div id="routeToiletsBar" style="margin-bottom:8px;"></div>
@@ -2279,6 +2358,7 @@
       if (activeTransportTab === "car") {
         bar.innerHTML = "";
         flexBox.style.display = "none";
+        battClear();
         return;
       }
 
@@ -2314,6 +2394,7 @@
       fetchRouteElevation(coords).then(elev => {
         if (!elev) {
           bar.innerHTML = `<span class="badge b-unk">⛰️ Dénivelé indisponible</span>`;
+          battOnRoute(distMeters, 0, destLat, destLon);
           return;
         }
         const batteryOneWay = Math.max(1, Math.round((distMeters / 1000) * 2.5 + elev.ascent * 0.12));
@@ -2324,6 +2405,7 @@
           <span class="badge b-gov" title="Estimation indicative pour fauteuil électrique">🔋 ~${batteryOneWay}% aller (~${batteryRoundTrip}% A/R)</span>
         `;
 
+        battOnRoute(distMeters, elev.ascent, destLat, destLon);
         if (elev.ascent >= 20 && !triggers.some(t => t.includes("dénivelé"))) {
           triggers.push(`dénivelé de +${elev.ascent} m`);
           configureTransportCard(triggers);
@@ -3431,6 +3513,14 @@
         </div>
       `;
       container.querySelector("button").addEventListener("click", () => { routeTo(Number(s.lat), Number(s.lon), s.name); });
+      if (s.isSncf) {
+        const box = document.createElement("div");
+        container.querySelector("button").before(box);
+        sncfFill(s, box);
+      }
+      const tb = document.createElement("button"); tb.textContent = "➕ Ajouter à la tournée"; tb.style.width = "100%";
+      tb.addEventListener("click", () => tripAdd({ name: s.name, lat: s.lat, lon: s.lon, cat: "" }));
+      container.firstElementChild.appendChild(tb);
       new maplibregl.Popup().setLngLat([Number(s.lon), Number(s.lat)]).setDOMContent(container).addTo(map);
       fetchLivePassages(Number(s.lat), Number(s.lon), s.name, container.querySelector(".live-passages-box"));
     }
@@ -3985,16 +4075,19 @@
         return city;
       });
 
+      if (!navigator.onLine && !cached) packApply(lat, lon, signal).catch(() => {});   // hors ligne : pack téléchargé, sans attendre les délais réseau
+
       // 3. OpenStreetMap : 3 requêtes en parallèle, la carte se remplit au fil des réponses
       const osmPromise = fresh ? Promise.resolve() : fetchOverpassZoneSplit(lat, lon, signal, partial => {
         if (signal.aborted) return;
         osmPlaces = partial.places; osmTramStops = partial.tramStops; osmBusStops = partial.busStops;
         scheduleRebuild();
-      }).then(parsed => {
+      }).then(async parsed => {
         if (signal.aborted) return;
         if (!parsed) {                                      // échec réseau : on pourra réessayer au prochain mouvement
           lastFetchedZoneCenter = null;
-          if (!cached) setStatus("⚠️ Données OpenStreetMap indisponibles pour le moment (réessai au prochain déplacement).", "error");
+          const usedPack = await packApply(lat, lon, signal).catch(() => false);
+          if (!cached && !usedPack && !signal.aborted) setStatus("⚠️ Données OpenStreetMap indisponibles pour le moment (réessai au prochain déplacement).", "error");
           return;
         }
         osmPlaces = parsed.places; osmTramStops = parsed.tramStops; osmBusStops = parsed.busStops;
@@ -4012,7 +4105,8 @@
       communePromise.then(city => { if (!signal.aborted) rtSetCity(city || currentCommune); });
       const alPromise = communePromise.then(async city => {
         if (!city || signal.aborted) return;
-        const items = await fetchAcceslibreForCommune(city);
+        let items = await fetchAcceslibreForCommune(city);
+        if (!items.length) { try { const pk = await packFor(lat, lon); if (pk && pk.al && pk.al.length) items = pk.al; } catch {} }
         if (signal.aborted) return;
         if (items.length > 0 || city !== lastAlCity) {
           acceslibreRawItems = items;
@@ -4348,7 +4442,8 @@
             tStops.push({
               name: t.name, lat: elat, lon: elon,
               lines: t.station === "subway" ? ["Métro"] : (t.railway === "station" ? ["Gare"] : ["Tram"]),
-              accessible: acc, precision: t.description || "", dist: 0
+              accessible: acc, precision: t.description || "", dist: 0,
+              isSncf: (t.railway === "station" || t.railway === "halt") && !["subway", "light_rail", "tram", "monorail"].includes(t.station) && t.subway !== "yes" && t.light_rail !== "yes" && t.tram !== "yes"
             });
           } else if (t.highway === "bus_stop") {
             const key = `${t.name.toLowerCase()}_${elat.toFixed(3)}`;
@@ -4604,6 +4699,7 @@
         map.addLayer({ id: "route-line", type: "line", source: "route", paint: { "line-color": "#007aff", "line-width": 7 } });
       }
 
+      try { tripEnsureLayer(); } catch {}
       bindMapClickEventsOnce();
     }
 
@@ -4723,6 +4819,7 @@
             </div>
           ` : ""}
           <button class="primary go-route-btn" style="margin-top:4px;width:100%;">♿ Calculer l'itinéraire</button>
+          <button class="trip-add-btn" style="width:100%;">➕ Ajouter à la tournée</button>
         </div>
       `;
       const popup = new maplibregl.Popup().setLngLat([Number(p.lon), Number(p.lat)]).setDOMContent(container).addTo(map);
@@ -4735,6 +4832,7 @@
       container.querySelector(".go-route-btn").addEventListener("click", () => {
         routeTo(Number(p.lat), Number(p.lon), p.name, { isParkingRoute: p.cat === "parking" });
       });
+      container.querySelector(".trip-add-btn").addEventListener("click", () => { if (tripAdd(p)) popup.remove(); });
     }
 
     function toggleMapLayer(layerKey, btn) {
@@ -4894,6 +4992,7 @@
           <div class="row" style="margin-top:2px;">
             <button style="flex:1;padding:6px;" class="see-btn">📍 Voir</button>
             <button style="flex:1;padding:6px;" class="primary go-btn">♿ Y aller</button>
+            <button style="flex:0 0 auto;padding:6px 10px;" class="trip-btn" aria-label="Ajouter à la tournée" title="Ajouter à la tournée">➕ Étape</button>
           </div>
         `;
         if (isVotable) {
@@ -4907,6 +5006,7 @@
           else if (p.rawBusStop) openBusStopPopup(p.rawBusStop);
           else openPlacePopup(p);
         });
+        card.querySelector(".trip-btn").addEventListener("click", () => tripAdd(p));
         card.querySelector(".go-btn").addEventListener("click", () => {
           switchTab("map");
           routeTo(p.lat, p.lon, p.name, { isParkingRoute: p.cat === "parking" });
@@ -6125,6 +6225,7 @@
       const hs = gid("hudShare"); if (hs) { hs.classList.toggle("on", on); hs.setAttribute("aria-pressed", String(on)); }
     }
     function onArrivedSafety() {
+      try { tripOnArrived(); } catch {}
       if (live.active) {
         live.status = "arrived"; pushLive(); clearTimeout(live.stopT);
         live.stopT = setTimeout(() => { if (live.active && live.status === "arrived") stopLiveShare(); }, 10 * 60 * 1000);
@@ -7115,6 +7216,598 @@
       rtStop(true); RT.net = net; RT.fails = 0; ensureRtLayer(); rtPoll();
     }
     document.addEventListener("visibilitychange", () => { if (!document.hidden && RT.net && !RT.timer) rtPoll(); });
+
+    // =====================================================================================
+    // TOURNÉE, BATTERIE, GARES SNCF — fonctions pures (testées sous Node)
+    // =====================================================================================
+    const TRIP_DWELL = { pharmacy: 10, market: 25, medical: 20, admin: 15, restaurant: 45, bar: 30, venue: 60, toilet: 5, parking: 0 };
+    const tripDwell = p => (p && p.dwell != null) ? p.dwell : (TRIP_DWELL[p && p.cat] ?? 15);
+    const _hav = (la1, lo1, la2, lo2) => {
+      const R = 6371000, r = Math.PI / 180, dLa = (la2 - la1) * r, dLo = (lo2 - lo1) * r;
+      const a = Math.sin(dLa / 2) ** 2 + Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin(dLo / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    };
+    // Calendrier d'une tournée : legsSec[i] = trajet du point i au point i+1 (point 0 = départ). Dernier élément = retour éventuel.
+    // isOpenFn(horaires, Date) → true / false / null (comme isOpenNow)
+    function tripSchedule(startMs, stops, legsSec, isOpenFn) {
+      let t = startMs;
+      const out = [];
+      stops.forEach((s, i) => {
+        const arrive = t + (legsSec[i] || 0) * 1000;
+        const depart = arrive + tripDwell(s) * 60000;
+        let st = "unknown";
+        if (s.hours) {
+          const o1 = isOpenFn(s.hours, new Date(arrive));
+          if (o1 === true) {
+            const o2 = tripDwell(s) > 0 ? isOpenFn(s.hours, new Date(depart - 60000)) : true;
+            st = o2 === false ? "closing" : "open";
+          } else if (o1 === false) st = "closed";
+        }
+        out.push({ arrive, depart, status: st });
+        t = depart;
+      });
+      const back = legsSec.length > stops.length ? t + legsSec[stops.length] * 1000 : null;
+      return { items: out, backAt: back, endAt: back != null ? back : t };
+    }
+    // Meilleur ordre (≤ 7 étapes : toutes les permutations ; au-delà : plus proche voisin). Coût = durée + pénalités de fermeture.
+    function tripBestOrder(origin, stops, startMs, speedMps, isOpenFn, ret, dist) {
+      dist = dist || _hav;
+      const n = stops.length;
+      if (n < 2) return { order: stops.map((_, i) => i), cost: 0 };
+      const P = [origin, ...stops];
+      const leg = (a, b) => dist(P[a].lat, P[a].lon, P[b].lat, P[b].lon) * 1.3 / speedMps;
+      const cost = ord => {
+        let t = startMs, pen = 0, prev = 0, tot = 0;
+        for (const k of ord) {
+          const l = leg(prev, k + 1); tot += l;
+          const arrive = t + l * 1000, s = stops[k], d = tripDwell(s);
+          if (s.hours) {
+            const o1 = isOpenFn(s.hours, new Date(arrive));
+            if (o1 === false) pen += 3600;
+            else if (o1 === true && d > 0 && isOpenFn(s.hours, new Date(arrive + d * 60000 - 60000)) === false) pen += 900;
+          }
+          t = arrive + d * 60000; prev = k + 1;
+        }
+        if (ret) tot += leg(prev, 0);
+        return tot + pen;
+      };
+      let best = null;
+      if (n <= 7) {
+        const perm = (arr, cur) => {
+          if (!arr.length) { const c = cost(cur); if (!best || c < best.cost - 1e-9) best = { order: cur.slice(), cost: c }; return; }
+          for (let i = 0; i < arr.length; i++) perm(arr.slice(0, i).concat(arr.slice(i + 1)), cur.concat(arr[i]));
+        };
+        perm(stops.map((_, i) => i), []);
+      } else {
+        const left = new Set(stops.map((_, i) => i)), ord = []; let prev = 0;
+        while (left.size) { let bk = -1, bl = 1e18; left.forEach(k => { const l = leg(prev, k + 1); if (l < bl) { bl = l; bk = k; } }); ord.push(bk); left.delete(bk); prev = bk + 1; }
+        best = { order: ord, cost: cost(ord) };
+      }
+      return best;
+    }
+    // Batterie : on garde le modèle déjà affiché (≈ 2,5 % par km et 0,12 % par mètre de dénivelé positif pour 40 km d'autonomie)
+    function batteryRisk(o) {
+      const range = o.rangeKm > 0 ? o.rangeKm : 40, k = (100 / range) / 2.5;
+      const one = Math.max(1, Math.round(((o.km || 0) * 2.5 + (o.ascentM || 0) * 0.12) * k));
+      const rt = o.alreadyRoundTrip ? one : one * 2;
+      const reserve = o.reservePct != null ? o.reservePct : 15;
+      if (o.pct == null || isNaN(o.pct)) return { level: "unknown", one, rt, remainRT: null, remainOne: null, reserve };
+      const remainOne = Math.round(o.pct - one), remainRT = Math.round(o.pct - rt);
+      let level = "ok";
+      if (remainOne < 5) level = "danger";            // même l'aller seul ne passe pas avec de la marge
+      else if (remainRT < 5) level = "danger";
+      else if (remainRT < reserve) level = "warn";
+      // distance maximale aller-retour avec la réserve conservée (sans dénivelé)
+      const maxKmRT = Math.max(0, Math.round(((o.pct - reserve) / ((100 / range)) / 2) * 10) / 10);
+      return { level, one, rt, remainOne, remainRT, reserve, maxKmRT };
+    }
+    // ---- Gares SNCF : rapprochement par nom + lecture défensive des jeux de données (clés inconnues) ----
+    const normStation = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\b(gare|station|sncf|de|du|des|d|la|le|les|l)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+    function parseCsvLoose(txt) {
+      const first = (txt.split(/\r?\n/, 1)[0] || "");
+      const sep = (first.match(/;/g) || []).length >= (first.match(/,/g) || []).length ? ";" : ",";
+      const rows = []; let row = [], cur = "", q = false;
+      for (let i = 0; i < txt.length; i++) {
+        const c = txt[i];
+        if (q) { if (c === '"') { if (txt[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+        else if (c === '"') q = true;
+        else if (c === sep) { row.push(cur); cur = ""; }
+        else if (c === "\n") { row.push(cur.replace(/\r$/, "")); rows.push(row); row = []; cur = ""; }
+        else cur += c;
+      }
+      if (cur || row.length) { row.push(cur.replace(/\r$/, "")); rows.push(row); }
+      if (rows.length < 2) return [];
+      const head = rows[0].map(h => h.trim());
+      return rows.slice(1).filter(r => r.length > 1).map(r => { const o = {}; head.forEach((h, i) => { o[h] = r[i]; }); return o; });
+    }
+    function sncfRowsFor(rows, name) {
+      const want = normStation(name); if (!want || !Array.isArray(rows)) return [];
+      const res = [];
+      for (const r of rows) {
+        if (!r || typeof r !== "object") continue;
+        const rec = r.fields && typeof r.fields === "object" ? r.fields : r;
+        let hit = false;
+        for (const k of Object.keys(rec)) {
+          if (!/gare|station|arret|nom|libelle|label/i.test(k.normalize("NFD").replace(/[\u0300-\u036f]/g, ""))) continue;
+          const v = normStation(rec[k]); if (!v) continue;
+          if (v === want || (want.length >= 4 && v.length >= 4 && (v.includes(want) || want.includes(v)) && Math.min(v.length, want.length) / Math.max(v.length, want.length) >= 0.6)) { hit = true; break; }
+        }
+        if (hit) res.push(rec);
+      }
+      return res;
+    }
+    function sncfClassify(rec) {
+      let label = "", state = "unknown", where = "";
+      for (const k of Object.keys(rec)) {
+        const v = rec[k]; if (v == null || v === "") continue;
+        const kn = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (/etat|statut|dispo|panne|fonction|service/i.test(kn) && !/date|heure|maj|mise/i.test(kn)) {
+          const s = String(v).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+          if (/hors|panne|indispo|arret|ferme|inoperan|defaill|\bnon\b|false|^0$/.test(s)) state = "down";
+          else if (/en service|disponible|fonctionn|marche|\boui\b|true|^1$|^ok$/.test(s)) state = state === "down" ? "down" : "up";
+        } else if (/equip|ascens|escal|type|elevat/i.test(kn) && !label && typeof v !== "object") label = String(v);
+        else if (/local|emplacement|position|acces|desserte|quai|zone|libelle/i.test(kn) && !/gare|station|nom/i.test(kn) && !where && typeof v !== "object") where = String(v);
+      }
+      return { label: label || "Équipement", state, where };
+    }
+
+    // =====================================================================================
+    // 1) TOURNÉE : plusieurs étapes, ouverture vérifiée à l'heure d'arrivée
+    // =====================================================================================
+    const TRIP_KEY = "gps_pmr_trip_v1";
+    const trip = Object.assign({ stops: [], ret: true, done: 0, startHM: "", origin: null, active: false, back: false, res: null, markers: [], busy: false },
+      (() => { try { const o = JSON.parse(localStorage.getItem(TRIP_KEY) || "{}"); return o && typeof o === "object" && Array.isArray(o.stops) ? { stops: o.stops.slice(0, 6), ret: o.ret !== false, done: o.done | 0, startHM: o.startHM || "", origin: o.origin || null } : {}; } catch { return {}; } })());
+    trip.res = null; trip.markers = []; trip.busy = false; trip.active = false; trip.back = false;
+    const tripSave = () => { try { localStorage.setItem(TRIP_KEY, JSON.stringify({ stops: trip.stops, ret: trip.ret, done: trip.done, startHM: trip.startHM, origin: trip.origin })); } catch {} };
+    const TRIP_ICON = { pharmacy: "💊", market: "🛒", medical: "🩺", admin: "🏛️", restaurant: "🍽️", bar: "🍻", venue: "🎭", toilet: "🚻", parking: "🅿️" };
+    function tripStartMs() {
+      const now = Date.now();
+      const m = /^(\d{1,2}):(\d{2})$/.exec(trip.startHM || ""); if (!m) return now;
+      const d = new Date(); d.setHours(+m[1], +m[2], 0, 0);
+      let t = d.getTime(); if (t < now - 10 * 60000) t += 86400000;
+      return t;
+    }
+    function tripOpenCard() { const d = gid("tripCard"); if (d && !d.open) d.open = true; }
+    function tripAdd(p) {
+      if (!p || p.lat == null || p.lon == null) return false;
+      const lat = +p.lat, lon = +p.lon;
+      if (trip.stops.length >= 6) { setStatus("⚠️ 6 étapes maximum par tournée.", "error"); return false; }
+      if (trip.stops.some(s => (s.id && p.id && s.id === p.id) || (Math.abs(s.lat - lat) < 2e-5 && Math.abs(s.lon - lon) < 2e-5))) { setStatus("Cette étape est déjà dans la tournée.", "info"); return false; }
+      trip.stops.push({ id: p.id || "", name: p.name, lat, lon, cat: p.cat || "", hours: p.hours || "" });
+      trip.res = null; tripSave(); tripOpenCard(); renderTrip(); tripDrawMarkers();
+      setStatus(`➕ « ${p.name} » ajouté à la tournée (${trip.stops.length}).`, "ok");
+      return true;
+    }
+    function tripRemove(i) { trip.stops.splice(i, 1); if (trip.done > i) trip.done--; trip.res = null; tripSave(); renderTrip(); tripDrawMarkers(); tripDrawLine(null); }
+    function tripMove(i, d) {
+      const j = i + d; if (j < trip.done || j >= trip.stops.length || i < trip.done) return;
+      [trip.stops[i], trip.stops[j]] = [trip.stops[j], trip.stops[i]];
+      trip.res = null; tripSave(); renderTrip(); tripDrawMarkers(); tripDrawLine(null);
+    }
+    function tripClear() {
+      trip.stops = []; trip.done = 0; trip.res = null; trip.active = false; trip.back = false; trip.origin = null;
+      tripSave(); renderTrip(); tripDrawMarkers(); tripDrawLine(null);
+    }
+    function tripSetDwell(i, v) { if (trip.stops[i]) { trip.stops[i].dwell = +v; trip.res = null; tripSave(); renderTrip(); } }
+    function tripQuickAdd(cat) {
+      const o = getOriginCoordinate();
+      const from = trip.stops.length ? trip.stops[trip.stops.length - 1] : { lat: o[1], lon: o[0] };
+      const when = new Date(tripStartMs() + 15 * 60000);
+      let best = null, bs = 1e18;
+      for (const p of allPlaces) {
+        if (p.cat !== cat || p.access === "no" || !placePassesFine(p)) continue;
+        if (trip.stops.some(s => s.id && s.id === p.id)) continue;
+        let sc = distanceMeters(from.lat, from.lon, +p.lat, +p.lon);
+        const op = isOpenNow(p.hours, when);
+        if (op === false) sc += 6000; else if (op === null) sc += 150;
+        if (sc < bs) { bs = sc; best = p; }
+      }
+      if (!best) { setStatus("Aucun lieu de ce type n'est chargé dans la zone : déplacez la carte ou utilisez « Y aller » depuis la liste.", "info"); return; }
+      tripAdd(best);
+    }
+    function tripAddDest() {
+      if (!selectedDest) { setStatus("Saisissez d'abord une destination dans le champ « Destination ».", "info"); return; }
+      const hit = allPlaces.find(p => p.name === selectedDest.name && distanceMeters(+p.lat, +p.lon, selectedDest.lat, selectedDest.lon) < 25);
+      tripAdd(hit || { name: selectedDest.name, lat: selectedDest.lat, lon: selectedDest.lon });
+    }
+    function tripStatusHTML(s, st, hours) {
+      const hm = hhmm(st.arrive);
+      if (st.status === "open") { const n = openingNote(hours, new Date(st.arrive)); return `<span class="badge b-yes">🟢 Ouvert à ${hm}${n ? " • " + escapeHTML(n) : ""}</span>`; }
+      if (st.status === "closing") { const n = openingNote(hours, new Date(st.arrive)); return `<span class="badge b-lim">🟠 Arrivée ${hm} : ferme pendant la visite${n ? " • " + escapeHTML(n) : ""}</span>`; }
+      if (st.status === "closed") { const n = openingNote(hours, new Date(st.arrive)); return `<span class="badge b-no">🔴 Fermé à ${hm}${n ? " • " + escapeHTML(n) : ""}</span>`; }
+      return `<span class="badge b-unk">⚪ Arrivée ${hm} • horaires inconnus : appelez avant</span>`;
+    }
+    function renderTrip() {
+      const list = gid("tripList"); if (!list) return;
+      const N = trip.stops.length;
+      gid("tripCount").textContent = N ? String(N) : "";
+      gid("tripCount").style.display = N ? "" : "none";
+      if (!N) { list.innerHTML = `<div class="sub">Aucune étape. Ajoutez un lieu avec les boutons ci-dessus, « ➕ Étape » dans la liste des lieux ou dans la fenêtre d'un lieu sur la carte.</div>`; }
+      else {
+        list.innerHTML = trip.stops.map((s, i) => {
+          const done = i < trip.done;
+          const st = !done && trip.res && trip.res.sched.items[i - trip.done];
+          const cur = trip.active && !trip.back && i === trip.done;
+          return `<div class="trip-row${done ? " trip-done" : ""}${cur ? " trip-cur" : ""}">
+            <span class="route-pin" style="background:${done ? "#34c759" : "#ff9500"};flex:none;">${done ? "✓" : i + 1}</span>
+            <div class="trip-main">
+              <b>${TRIP_ICON[s.cat] || "📍"} ${escapeHTML(s.name)}</b>
+              ${st ? `<div>${tripStatusHTML(s, st, s.hours)}</div>` : (s.hours ? `<div class="sub">🕒 ${escapeHTML(String(s.hours).slice(0, 60))}</div>` : "")}
+              ${done ? "" : `<label class="sub">Sur place <select onchange="tripSetDwell(${i},this.value)" aria-label="Durée sur place">${[0, 5, 10, 15, 20, 30, 45, 60, 90].map(m => `<option value="${m}"${tripDwell(s) === m ? " selected" : ""}>${m} min</option>`).join("")}</select></label>`}
+            </div>
+            ${done ? "" : `<div class="trip-btns"><button aria-label="Monter" onclick="tripMove(${i},-1)">▲</button><button aria-label="Descendre" onclick="tripMove(${i},1)">▼</button><button aria-label="Retirer" onclick="tripRemove(${i})">✕</button></div>`}
+          </div>`;
+        }).join("");
+      }
+      const sum = gid("tripSummary");
+      if (trip.res) {
+        const r = trip.res, bad = r.sched.items.filter(x => x.status === "closed").length, warn = r.sched.items.filter(x => x.status === "closing").length;
+        const km = fmtDist(r.totalM), dur = Math.round((r.sched.endAt - r.startMs) / 60000);
+        sum.innerHTML = `<div class="sub"><b>Départ ${hhmm(r.startMs)}</b> → ${trip.ret && r.sched.backAt ? "retour <b>" + hhmm(r.sched.backAt) + "</b>" : "fin <b>" + hhmm(r.sched.endAt) + "</b>"} • ${km} à parcourir • ${dur} min au total</div>` +
+          (bad ? `<div class="trip-warn">🔴 ${bad} lieu(x) fermé(s) à l'heure d'arrivée. Essayez « 🔀 Meilleur ordre » ou décalez le départ.</div>` :
+            warn ? `<div class="trip-warn" style="background:rgba(255,149,0,.14)">🟠 ${warn} lieu(x) ferme(nt) pendant votre visite.</div>` :
+              r.sched.items.some(x => x.status === "unknown") ? `<div class="sub">⚪ Certains lieux n'ont pas d'horaires dans OpenStreetMap : appelez avant de partir.</div>` :
+                `<div class="trip-ok">✅ Tous les lieux sont ouverts à l'heure d'arrivée.</div>`);
+      } else sum.innerHTML = N ? `<div class="sub">Touchez « Vérifier la tournée » pour calculer les trajets et contrôler les horaires.</div>` : "";
+      gid("tripReturn").checked = trip.ret;
+      gid("tripStart").value = trip.startHM || "";
+      const go = gid("tripGoBtn");
+      const all = trip.done >= N;
+      go.textContent = !N ? "▶ Démarrer" : trip.back ? "🏁 Tournée terminée" : trip.active ? (all ? (trip.ret ? "↩ Retour au départ" : "🏁 Terminer") : `✔ Étape ${trip.done + 1} faite → suivante`) : (trip.done > 0 ? `▶ Reprendre (étape ${Math.min(trip.done + 1, N)})` : "▶ Démarrer la tournée");
+      go.disabled = !N;
+    }
+    async function tripLeg(a, b) {
+      const o = [a.lon, a.lat];
+      let d;
+      try { d = await callValhalla(o, b.lat, b.lon, activeTransportTab === "car" ? 0 : getWc().maxSlope); }
+      catch { d = await callValhalla(o, b.lat, b.lon, activeTransportTab === "car" ? 0 : Math.max(12, getWc().maxSlope + 5)); }
+      const leg = d.trip.legs[0];
+      return { sec: d.trip.summary.time, len: Math.round(d.trip.summary.length * 1000), coords: decodePolyline6(leg.shape) };
+    }
+    async function tripCompute() {
+      const rem = trip.stops.slice(trip.done);
+      if (!rem.length) { setStatus("Ajoutez au moins une étape à la tournée.", "info"); return null; }
+      if (trip.busy) return null;
+      trip.busy = true; gid("tripCheckBtn").disabled = true;
+      setStatus("⏳ Calcul de la tournée et vérification des horaires…", "info");
+      try {
+        const o = getOriginCoordinate();
+        if (trip.done === 0 || !trip.origin) trip.origin = { lat: o[1], lon: o[0] };
+        const pts = [{ lat: o[1], lon: o[0] }, ...rem];
+        if (trip.ret && trip.origin) pts.push({ lat: trip.origin.lat, lon: trip.origin.lon });
+        const legs = [];
+        for (let i = 1; i < pts.length; i++) legs.push(await tripLeg(pts[i - 1], pts[i]));    // un par un : le serveur public Valhalla limite les rafales
+        const startMs = tripStartMs();
+        const sched = tripSchedule(startMs, rem, legs.map(l => l.sec), isOpenNow);
+        const coords = legs.flatMap(l => l.coords);
+        trip.res = { legs, sched, startMs, totalM: legs.reduce((s, l) => s + l.len, 0), coords };
+        tripSave(); renderTrip(); tripDrawLine(coords); tripDrawMarkers();
+        if (!trip.active) { const b = new maplibregl.LngLatBounds(coords[0], coords[0]); coords.forEach(c => b.extend(c)); map.fitBounds(b, window.innerWidth <= 768 ? { padding: { top: 110, bottom: sheetPad(), left: 36, right: 36 } } : { padding: { top: 80, bottom: 70, left: sidePad(), right: 80 } }); }
+        const bad = sched.items.filter(x => x.status === "closed").length;
+        setStatus(bad ? `⚠️ Tournée calculée : ${bad} lieu(x) fermé(s) à l'heure d'arrivée.` : "✅ Tournée calculée : horaires vérifiés.", bad ? "error" : "ok");
+        battOnTrip(trip.res);
+        return trip.res;
+      } catch (e) {
+        setStatus(navigator.onLine ? "❌ Tournée : " + (e && e.message || "calcul impossible") : "📴 Hors ligne : le calcul d'une nouvelle tournée demande une connexion.", "error");
+        return null;
+      } finally { trip.busy = false; gid("tripCheckBtn").disabled = false; }
+    }
+    async function tripOptimize() {
+      const rem = trip.stops.slice(trip.done);
+      if (rem.length < 2) { setStatus("Il faut au moins deux étapes pour optimiser l'ordre.", "info"); return; }
+      const o = getOriginCoordinate();
+      const speed = profile === "manual" ? 1.1 : 1.5;
+      const best = tripBestOrder({ lat: o[1], lon: o[0] }, rem, tripStartMs(), speed, isOpenNow, trip.ret, distanceMeters);
+      const same = best.order.every((k, i) => k === i);
+      trip.stops = trip.stops.slice(0, trip.done).concat(best.order.map(k => rem[k]));
+      trip.res = null; tripSave(); renderTrip(); tripDrawMarkers();
+      await tripCompute();
+      if (same) setStatus("✅ L'ordre actuel est déjà le meilleur.", "ok");
+    }
+    async function tripGo() {
+      const N = trip.stops.length; if (!N || trip.back) return;
+      if (!trip.active) { trip.active = true; }
+      else if (trip.done < N) trip.done++;       // « étape faite »
+      tripSave(); renderTrip();
+      if (trip.done >= N) {
+        if (trip.ret && trip.origin) { trip.back = true; renderTrip(); switchTab("map"); routeTo(trip.origin.lat, trip.origin.lon, "Retour au départ", { tripReturn: true }); }
+        else { trip.active = false; setStatus("🏁 Tournée terminée.", "ok"); renderTrip(); }
+        return;
+      }
+      const res = await tripCompute();            // ETA réévaluées depuis la position actuelle
+      const nx = trip.stops[trip.done];
+      const st = res && res.sched.items[0];
+      if (st && (st.status === "closed")) setStatus(`⚠️ « ${nx.name} » sera fermé à votre arrivée (${hhmm(st.arrive)}). Je lance quand même l'itinéraire.`, "error");
+      switchTab("map");
+      routeTo(nx.lat, nx.lon, nx.name, { tripIdx: trip.done });
+    }
+    function tripOnArrived() {
+      if (!trip.active || trip.back) { if (trip.back) { trip.active = false; trip.back = false; renderTrip(); setStatus("🏁 Tournée terminée : vous êtes de retour.", "ok"); } return; }
+      setStatus(`📍 Arrivé à l'étape ${trip.done + 1}. Touchez « Étape faite → suivante » quand vous repartez.`, "ok");
+    }
+    let _tripCoords = null;
+    function tripEnsureLayer() {
+      if (!map.getSource("trip-line")) {
+        map.addSource("trip-line", { type: "geojson", data: { type: "Feature", geometry: { type: "LineString", coordinates: _tripCoords || [] } } });
+        map.addLayer({ id: "trip-line-layer", type: "line", source: "trip-line", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#ff9500", "line-width": 5, "line-opacity": .85, "line-dasharray": [1.6, 1.2] } }, map.getLayer("route-line") ? "route-line" : undefined);
+      }
+    }
+    function tripDrawLine(coords) {
+      _tripCoords = coords;
+      if (!map.isStyleLoaded()) { map.once("idle", () => tripDrawLine(_tripCoords)); return; }
+      tripEnsureLayer();
+      map.getSource("trip-line").setData({ type: "Feature", geometry: { type: "LineString", coordinates: coords || [] } });
+    }
+    function tripDrawMarkers() {
+      trip.markers.forEach(m => m.remove()); trip.markers = [];
+      trip.stops.forEach((s, i) => {
+        const el = document.createElement("div"); el.className = "route-pin"; el.style.background = i < trip.done ? "#34c759" : "#ff9500"; el.textContent = i < trip.done ? "✓" : String(i + 1);
+        trip.markers.push(new maplibregl.Marker({ element: el }).setLngLat([s.lon, s.lat]).setPopup(new maplibregl.Popup({ offset: 14 }).setText(`Étape ${i + 1} : ${s.name}`)).addTo(map));
+      });
+    }
+    function tripSetStart(v) { trip.startHM = v || ""; trip.res = null; tripSave(); renderTrip(); }
+    function tripSetReturn(v) { trip.ret = !!v; trip.res = null; tripSave(); renderTrip(); tripDrawLine(null); }
+
+    // =====================================================================================
+    // 2) BATTERIE du fauteuil électrique : alerte A/R + recherche de recharge
+    // =====================================================================================
+    const BATT_KEY = "gps_pmr_batt_v1";
+    const batt = Object.assign({ pct: null, range: 40, reserve: 15 }, (() => { try { const o = JSON.parse(localStorage.getItem(BATT_KEY) || "{}"); return o && typeof o === "object" ? o : {}; } catch { return {}; } })());
+    let battLast = null, battCharge = null;
+    const battSave = () => { try { localStorage.setItem(BATT_KEY, JSON.stringify(batt)); } catch {} };
+    function battInit() {
+      gid("battPct").value = batt.pct == null ? "" : batt.pct;
+      gid("battRange").value = batt.range; gid("battReserve").value = batt.reserve;
+      battRender();
+    }
+    function battChanged() {
+      const p = parseFloat(gid("battPct").value), r = parseFloat(gid("battRange").value), s = parseFloat(gid("battReserve").value);
+      batt.pct = isNaN(p) ? null : Math.max(0, Math.min(100, p));
+      batt.range = r > 3 && r < 200 ? r : 40;
+      batt.reserve = s >= 0 && s <= 60 ? s : 15;
+      battSave(); battRender();
+    }
+    function battOnRoute(distM, ascentM, destLat, destLon) {
+      battLast = { km: distM / 1000, ascentM: ascentM || 0, tour: false, lat: destLat, lon: destLon, label: "Ce trajet" };
+      battRender();
+    }
+    function battOnTrip(res) {
+      const last = trip.stops[trip.stops.length - 1];
+      battLast = { km: res.totalM / 1000, ascentM: 0, tour: !!trip.ret, lat: last && last.lat, lon: last && last.lon, label: "Cette tournée" };
+      battRender();
+      fetchRouteElevation(res.coords).then(e => { if (e && battLast && battLast.label === "Cette tournée") { battLast.ascentM = e.ascent * (trip.ret ? 2 : 1); battRender(); } }).catch(() => {});
+    }
+    function battClear() { battLast = null; battRender(); }
+    function battResult() {
+      if (!battLast) return null;
+      return batteryRisk({ pct: batt.pct, rangeKm: batt.range, km: battLast.km, ascentM: battLast.ascentM, alreadyRoundTrip: battLast.tour, reservePct: batt.reserve });
+    }
+    function battHTML(r) {
+      const lab = battLast.label;
+      if (r.level === "unknown") return `<div class="sub">🔋 Indiquez votre niveau de batterie pour être alerté si l'aller-retour devient risqué.</div>`;
+      const rtTxt = battLast.tour ? `${lab} : ~${r.rt} % de batterie` : `Aller ~${r.one} % • aller-retour ~${r.rt} %`;
+      if (r.level === "ok") return `<div class="batt-box batt-ok">🔋 <b>Batterie suffisante</b> — ${rtTxt}. Il vous resterait ~${Math.max(0, r.remainRT)} % ${battLast.tour ? "en fin de tournée" : "après l'aller-retour"}.</div>`;
+      const danger = r.level === "danger";
+      const msg = r.remainOne < 5 ? `Même l'aller seul consomme ~${r.one} % : vous risquez la panne avant d'arriver.` :
+        `${rtTxt} pour ${batt.pct} % disponibles : il ne resterait que ~${Math.max(0, r.remainRT)} % (réserve conseillée ${batt.reserve} %).`;
+      return `<div class="batt-box ${danger ? "batt-danger" : "batt-warn"}">
+        <b>${danger ? "⛔ Batterie insuffisante" : "⚠️ Aller-retour risqué"}</b><div>${msg}</div>
+        <div class="sub">Portée aller-retour conseillée avec ${batt.pct} % : ~${r.maxKmRT} km (plat).</div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px;"><button class="primary" onclick="battFindCharge()">🔌 Trouver une recharge</button>
+        <a href="https://www.google.com/search?q=${encodeURIComponent("transport PMR à la demande " + (currentCommune || ""))}" target="_blank" rel="noopener" style="text-decoration:none;"><button>🚐 Transport PMR</button></a></div>
+        <div class="batt-charge"></div></div>`;
+    }
+    function battRender() {
+      const r = battResult();
+      document.querySelectorAll(".batt-slot").forEach(el => {
+        const sc = el.dataset.scope, isTour = battLast && battLast.label === "Cette tournée";
+        if (!r || !battLast || (sc === "trip" && !isTour) || (sc === "route" && isTour)) { el.innerHTML = el.dataset.empty ? `<div class="sub">Calculez un trajet ou une tournée : l'estimation s'affichera ici.</div>` : ""; return; }
+        el.innerHTML = battHTML(r);
+      });
+      const b = gid("battBadge"); if (b) { b.textContent = !r || r.level === "unknown" ? "" : r.level === "ok" ? "OK" : r.level === "warn" ? "⚠️" : "⛔"; b.style.display = b.textContent ? "" : "none"; }
+      if (battCharge) battPaintCharge();
+    }
+    function battChargeHTML() {
+      const c = battCharge; if (!c) return "";
+      if (c.loading) return `<div class="sub" style="margin-top:6px;">⏳ Recherche de prises et de lieux où recharger…</div>`;
+      const row = (x, tag) => `<div class="batt-item"><div><b>${escapeHTML(x.name)}</b> <span class="sub">${fmtDist(x.d)}</span><div class="sub">${tag}</div></div><button class="primary" style="padding:5px 10px;" data-lat="${x.lat}" data-lon="${x.lon}" data-name="${escapeHTML(x.name)}" onclick="battGo(this)">♿ Y aller</button></div>`;
+      let h = "";
+      if (c.sockets.length) h += `<div class="sub" style="font-weight:700;margin-top:8px;">🔌 PRISES SIGNALÉES (OpenStreetMap)</div>` + c.sockets.map(x => row(x, "Prise 230 V signalée • à vérifier sur place")).join("");
+      else h += `<div class="sub" style="margin-top:8px;">Aucune prise signalée dans OpenStreetMap à proximité (donnée souvent incomplète).</div>`;
+      if (c.ask.length) h += `<div class="sub" style="font-weight:700;margin-top:8px;">🙋 LIEUX OÙ DEMANDER UNE PRISE (sans garantie)</div>` + c.ask.map(x => row(x, escapeHTML(x.kind) + " accessible • demandez poliment, 30 min donnent peu de charge")).join("");
+      return h;
+    }
+    function battPaintCharge() { document.querySelectorAll(".batt-charge").forEach(el => { el.innerHTML = battChargeHTML(); }); }
+    function battGo(btn) { switchTab("map"); routeTo(+btn.dataset.lat, +btn.dataset.lon, btn.dataset.name); }
+    async function battFindCharge() {
+      const pos = currentPosition();
+      const lat = (battLast && battLast.lat) || (pos && pos.lat) || currentZoneCenter.lat, lon = (battLast && battLast.lon) || (pos && pos.lon) || currentZoneCenter.lon;
+      battCharge = { loading: true, sockets: [], ask: [] }; battPaintCharge();
+      const ask = allPlaces.filter(p => ["restaurant", "bar", "pharmacy", "admin", "medical", "market", "venue"].includes(p.cat) && p.access !== "no")
+        .map(p => ({ name: p.name, lat: +p.lat, lon: +p.lon, d: Math.min(distanceMeters(lat, lon, +p.lat, +p.lon), pos ? distanceMeters(pos.lat, pos.lon, +p.lat, +p.lon) : 1e9), kind: { restaurant: "Restaurant", bar: "Café/bar", pharmacy: "Pharmacie", admin: "Mairie/service public", medical: "Cabinet médical", market: "Commerce", venue: "Lieu public" }[p.cat], open: isOpenNow(p.hours) }))
+        .filter(x => x.d < 700 && x.open !== false).sort((a, b) => a.d - b.d).slice(0, 4);
+      let sockets = [];
+      try {
+        const ql = `[out:json][timeout:12];(nw["socket:schuko"](around:2000,${lat},${lon});nw["amenity"="charging_station"]["bicycle"="yes"](around:2000,${lat},${lon}););out center 40;`;
+        const json = await queryOverpass(ql, undefined, 12000);
+        sockets = ((json && json.elements) || []).map(e => { const la = e.lat ?? e.center?.lat, lo = e.lon ?? e.center?.lon, t = e.tags || {}; return la == null ? null : { name: t.name || t.operator || t["addr:street"] || "Prise 230 V", lat: la, lon: lo, d: distanceMeters(lat, lon, la, lo) }; })
+          .filter(Boolean).sort((a, b) => a.d - b.d).slice(0, 4);
+      } catch {}
+      battCharge = { loading: false, sockets, ask }; battPaintCharge();
+    }
+
+    // =====================================================================================
+    // 3) HORS LIGNE : pack ville (lieux, Accèslibre, lignes, gares) + tuiles de carte
+    // =====================================================================================
+    const IDB = {
+      db: null,
+      open() {
+        if (this.db) return this.db;
+        return this.db = new Promise((res, rej) => {
+          if (!window.indexedDB) return rej(new Error("no-idb"));
+          const rq = indexedDB.open("gpspmr_offline", 1);
+          rq.onupgradeneeded = () => rq.result.createObjectStore("packs", { keyPath: "id" });
+          rq.onsuccess = () => res(rq.result); rq.onerror = () => { this.db = null; rej(rq.error); };
+        });
+      },
+      async tx(mode, fn) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction("packs", mode), st = t.objectStore("packs"), r = fn(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); }); },
+      put(v) { return this.tx("readwrite", s => s.put(v)); },
+      del(id) { return this.tx("readwrite", s => s.delete(id)); },
+      all() { return this.tx("readonly", s => s.getAll()); }
+    };
+    let packBusy = false, packsMem = null;
+    async function packList(force) { if (packsMem && !force) return packsMem; try { packsMem = (await IDB.all()) || []; } catch { packsMem = []; } return packsMem; }
+    function packRadiusM(p) { return (p.radiusKm || 5) * 1000; }
+    async function packFor(lat, lon) {
+      const l = await packList();
+      return l.filter(p => distanceMeters(lat, lon, p.lat, p.lon) <= packRadiusM(p)).sort((a, b) => distanceMeters(lat, lon, a.lat, a.lon) - distanceMeters(lat, lon, b.lat, b.lon))[0] || null;
+    }
+    // Remplace les données de la zone par celles du pack quand le réseau est absent ou en échec
+    async function packApply(lat, lon, signal) {
+      const pk = await packFor(lat, lon);
+      if (!pk || (signal && signal.aborted)) return false;
+      osmPlaces = pk.osmPlaces || []; osmTramStops = pk.osmTramStops || []; osmBusStops = pk.osmBusStops || [];
+      if (pk.al && pk.al.length) { acceslibreRawItems = pk.al; lastAlCity = pk.city || lastAlCity; }
+      if (pk.tramFeatures && pk.tramFeatures.length) osmTramFeatures = pk.tramFeatures;
+      if (pk.busFeatures && pk.busFeatures.length) { osmBusFeatures = pk.busFeatures; try { renderBusLineFilters(); renderBusStops(); } catch {} }
+      if (pk.irigo) { try { saveCache("gps_pmr_irigo_v2", pk.irigo); if (pk.muni) saveCache("gps_pmr_muni_v2", pk.muni); angersLoadedOnce = false; loadAngersExtrasOnce(); } catch {} }
+      scheduleRebuild(0); renderMapSourcesAndLayers(); updateBusMapLayerSafe();
+      setStatus(`📴 Données du pack hors ligne « ${pk.city || pk.name} » (téléchargé le ${new Date(pk.ts).toLocaleDateString("fr-FR")}).`, "info");
+      return true;
+    }
+    function packProg(pct, txt) { const b = gid("packBar"), t = gid("packTxt"); if (b) { b.style.display = pct == null ? "none" : "block"; b.firstElementChild.style.width = Math.round(pct || 0) + "%"; } if (t) t.textContent = txt || ""; }
+    const lon2x = (lon, z) => Math.floor((lon + 180) / 360 * 2 ** z);
+    const lat2y = (lat, z) => { const r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 2 ** z); };
+    function tileUrls(tpl, lat, lon, rKm, zmin, zmax) {
+      const dLa = rKm / 111.32, dLo = rKm / (111.32 * Math.cos(lat * Math.PI / 180)), out = [];
+      for (let z = zmin; z <= zmax; z++) {
+        const x0 = lon2x(lon - dLo, z), x1 = lon2x(lon + dLo, z), y0 = lat2y(lat + dLa, z), y1 = lat2y(lat - dLa, z);
+        for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) out.push(tpl.replace("{z}", z).replace("{x}", x).replace("{y}", y));
+      }
+      return out;
+    }
+    async function packTiles(lat, lon, rKm, onProg) {
+      if (!(navigator.serviceWorker && navigator.serviceWorker.controller)) return { ok: false, n: 0, reason: "sw" };
+      const st = map.getStyle(); let urls = [];
+      for (const [id, src] of Object.entries(st.sources || {})) {
+        if (src.type !== "vector") continue;
+        let tpl = src.tiles && src.tiles[0], maxz = 14;
+        if (!tpl && src.url) { try { const tj = await (await fetchWithTimeout(src.url, {}, 8000)).json(); tpl = tj.tiles && tj.tiles[0]; if (tj.maxzoom) maxz = tj.maxzoom; } catch {} }
+        if (tpl) urls.push(...tileUrls(tpl, lat, lon, rKm, 5, Math.min(14, maxz)));
+      }
+      // police des étiquettes + pictogrammes : sans eux la carte hors ligne n'affiche pas les noms de rues
+      const fonts = new Set();
+      (st.layers || []).forEach(l => { const f = l.layout && l.layout["text-font"]; if (Array.isArray(f) && f.every(x => typeof x === "string")) fonts.add(f.join(",")); });
+      if (st.glyphs) fonts.forEach(f => ["0-255", "256-511"].forEach(r => urls.push(st.glyphs.replace("{fontstack}", encodeURIComponent(f)).replace("{range}", r))));
+      if (st.sprite && typeof st.sprite === "string") ["", "@2x"].forEach(s => [".json", ".png"].forEach(e => urls.push(st.sprite + s + e)));
+      urls.push(MAP_CLEAR_STYLE);
+      urls = [...new Set(urls)].slice(0, 2500);
+      let done = 0, ok = 0, i = 0;
+      const worker = async () => { while (i < urls.length) { const u = urls[i++]; try { const r = await fetch(u); if (r.ok) ok++; await r.arrayBuffer(); } catch {} onProg(++done, urls.length); } };
+      await Promise.all(Array.from({ length: 6 }, worker));
+      return { ok: ok > 0, n: ok, total: urls.length };
+    }
+    async function packDownload() {
+      if (packBusy) return;
+      if (!navigator.onLine) { setStatus("📴 Vous êtes hors ligne : le téléchargement d'un pack demande une connexion.", "error"); return; }
+      packBusy = true; gid("packBtn").disabled = true;
+      const c = map.getCenter(), lat = c.lat, lon = c.lng, big = gid("packSize").value === "big", rKm = big ? 9 : 5;
+      try {
+        packProg(2, "Recherche de la commune…");
+        const city = (await reverseGeocodeCommune(lat, lon)) || "Zone";
+        const pts = big ? [[0, 0], [0.04, 0], [-0.04, 0], [0, 0.06], [0, -0.06]] : [[0, 0]];
+        const merged = { places: new Map(), tram: new Map(), bus: new Map() }; let complete = true;
+        for (let i = 0; i < pts.length; i++) {
+          packProg(5 + 35 * i / pts.length, `Lieux, arrêts et gares (${i + 1}/${pts.length})…`);
+          const parsed = await fetchOverpassZoneSplit(lat + pts[i][0], lon + pts[i][1], new AbortController().signal, () => {});
+          if (!parsed) { complete = false; continue; }
+          parsed.places.forEach(p => merged.places.set(p.id, p)); parsed.tramStops.forEach(s => merged.tram.set(s.name.toLowerCase(), s)); parsed.busStops.forEach(s => merged.bus.set(s.name.toLowerCase() + s.lat.toFixed(3), s));
+          if (!parsed.complete) complete = false;
+        }
+        if (!merged.places.size && !merged.tram.size) throw new Error("OpenStreetMap n'a pas répondu : réessayez dans un instant.");
+        packProg(42, "Fiches Accèslibre…");
+        let al = []; try { al = await fetchAcceslibreForCommune(city); } catch {}
+        packProg(50, "Lignes de tram et de bus…");
+        let tramF = [], busF = [], irigo = null, muni = null;
+        if (isNearAngers(lat, lon)) { try { irigo = loadCache("gps_pmr_irigo_v2", 24 * 30); muni = loadCache("gps_pmr_muni_v2", 24 * 30); } catch {} }
+        else { try { await loadOsmLines("tram", lat, lon); await loadOsmLines("bus", lat, lon); tramF = osmTramFeatures; busF = osmBusFeatures; } catch {} }
+        packProg(62, "Ascenseurs et accueil des gares…");
+        const stations = [...merged.tram.values()].filter(s => s.isSncf), lifts = {};
+        try { const rows = await sncfLoadRows(); if (rows) stations.forEach(s => { const m = sncfRowsFor(rows.rows, s.name); if (m.length) lifts[normStation(s.name)] = m; }); } catch {}
+        packProg(66, "Carte (tuiles, polices, pictogrammes)…");
+        const tiles = await packTiles(lat, lon, rKm * 1.15, (d, t) => packProg(66 + 32 * d / t, `Carte : ${d}/${t} éléments…`));
+        const pack = { id: city.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + (big ? "g" : "v"), name: city + (big ? " (grande zone)" : ""), city, lat, lon, radiusKm: rKm, ts: Date.now(), complete,
+          osmPlaces: [...merged.places.values()], osmTramStops: [...merged.tram.values()], osmBusStops: [...merged.bus.values()], al, tramFeatures: tramF, busFeatures: busF, irigo, muni, lifts, liftsTs: Date.now(), tiles: { n: tiles.n, ok: tiles.ok, reason: tiles.reason || "" } };
+        await IDB.put(pack); await packList(true);
+        packProg(100, tiles.ok ? "✅ Pack enregistré." : "✅ Données enregistrées (carte non mémorisée, voir ci-dessous).");
+        renderPacks();
+        setStatus(`✅ Pack hors ligne « ${pack.name} » : ${pack.osmPlaces.length} lieux, ${pack.osmTramStops.length} stations${tiles.ok ? ", carte mémorisée" : ""}.`, "ok");
+      } catch (e) {
+        packProg(null, ""); setStatus("❌ Pack hors ligne : " + (e && e.message || "échec"), "error");
+        if (e && /quota|storage/i.test(e.name + e.message)) gid("packTxt").textContent = "Espace de stockage insuffisant sur l'appareil.";
+      } finally { packBusy = false; gid("packBtn").disabled = false; setTimeout(() => { if (!packBusy) packProg(null, gid("packTxt").textContent); }, 4000); }
+    }
+    async function packDelete(id) { try { await IDB.del(id); } catch {} await packList(true); renderPacks(); }
+    async function renderPacks() {
+      const el = gid("packList"); if (!el) return;
+      const l = await packList(true);
+      const swOk = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+      gid("packSwNote").textContent = swOk ? "" : "ℹ️ La carte (fond de plan) n'est mémorisée que si l'appli est servie en HTTPS avec son fichier sw.js. Les lieux, lignes et gares restent disponibles hors ligne dans tous les cas.";
+      el.innerHTML = l.length ? l.map(p => `<div class="batt-item"><div><b>📦 ${escapeHTML(p.name)}</b><div class="sub">${new Date(p.ts).toLocaleDateString("fr-FR")} • ${p.osmPlaces.length} lieux • ${p.osmTramStops.length} stations${p.al && p.al.length ? " • " + p.al.length + " fiches Accèslibre" : ""}${p.tiles && p.tiles.ok ? " • carte ✓" : " • carte ✗"}${p.complete === false ? " • incomplet" : ""}</div></div><div class="row" style="gap:4px;"><button onclick="packUpdate(${JSON.stringify(p.lat)},${JSON.stringify(p.lon)})" aria-label="Mettre à jour">↻</button><button onclick="packDelete('${escapeHTML(p.id)}')" aria-label="Supprimer">🗑</button></div></div>`).join("") : `<div class="sub">Aucun pack téléchargé.</div>`;
+    }
+    function packUpdate(lat, lon) { map.jumpTo({ center: [lon, lat] }); packDownload(); }
+
+    // =====================================================================================
+    // 4) GARES SNCF : accueil PMR (Assist'enGare) + ascenseurs (données ouvertes SNCF)
+    // =====================================================================================
+    let sncfMem = null, sncfInflight = null;
+    async function sncfLoadRows() {
+      if (sncfMem && Date.now() - sncfMem.ts < 30 * 60000) return sncfMem;
+      if (sncfInflight) return sncfInflight;
+      return sncfInflight = (async () => {
+        try {
+          const meta = await (await fetchWithTimeout("https://www.data.gouv.fr/api/1/datasets/equipements-delevatique-en-gare/", {}, 8000)).json();
+          const res = (meta.resources || []).filter(r => /json|csv/i.test(r.format || "")).sort((a, b) => (/json/i.test(b.format) ? 1 : 0) - (/json/i.test(a.format) ? 1 : 0));
+          for (const r of res.slice(0, 3)) {
+            try {
+              const txt = await (await fetchWithTimeout(r.url, {}, 15000)).text();
+              let rows = /json/i.test(r.format) || /^\s*[\[{]/.test(txt) ? JSON.parse(txt) : parseCsvLoose(txt);
+              if (rows && !Array.isArray(rows)) rows = rows.records || rows.results || rows.data || rows.features || [];
+              if (Array.isArray(rows) && rows.length) return sncfMem = { rows, ts: Date.now(), modified: r.last_modified || meta.last_modified || "" };
+            } catch {}
+          }
+        } catch {}
+        return null;
+      })().finally(() => { sncfInflight = null; });
+    }
+    function sncfStaticHTML() {
+      return `<div class="sncf-card">
+        <div class="sub" style="font-weight:700;">🚆 ACCUEIL & ASSISTANCE EN GARE (SNCF)</div>
+        <div style="font-size:12.5px;margin:3px 0;"><b>Assist'enGare</b> : réservez la prise en charge (accompagnement jusqu'au train, montée et descente en fauteuil). Réservez au moins <b>24 h avant</b> le départ et présentez-vous en gare <b>30 min avant</b>. Il remplace Accès Plus depuis janvier 2024.</div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;"><a href="tel:3212" style="text-decoration:none;"><button class="primary" style="font-size:12.5px;">📞 32 12</button></a>
+        <a href="https://garesetconnexions.sncf/fr/assistances-psh-pmr" target="_blank" rel="noopener" style="text-decoration:none;"><button style="font-size:12.5px;">🌐 Réserver en ligne ↗</button></a></div>
+        <div class="sub" style="font-size:11px;">Source : <a href="https://www.monparcourshandicap.gouv.fr/actualite/assistengare-la-nouvelle-plateforme-dassistance-pour-prendre-le-train" target="_blank" rel="noopener">monparcourshandicap.gouv.fr</a> — vérifiez les conditions sur le site SNCF.</div>
+        <div class="sncf-lifts sub" style="margin-top:6px;">🛗 Ascenseurs : chargement…</div></div>`;
+    }
+    async function sncfFill(s, box) {
+      box.innerHTML = sncfStaticHTML();
+      const out = box.querySelector(".sncf-lifts");
+      let rows = null, stale = "";
+      try { const d = await sncfLoadRows(); if (d) rows = sncfRowsFor(d.rows, s.name); } catch {}
+      if (!rows) {
+        try { const pk = await packFor(s.lat, s.lon); const k = pk && pk.lifts && pk.lifts[normStation(s.name)]; if (k) { rows = k; stale = pk.liftsTs; } } catch {}
+      }
+      if (!rows) { out.innerHTML = `🛗 <b>État des ascenseurs indisponible</b> pour cette gare (source SNCF non joignable ou gare non listée). Renseignez-vous auprès de l'accueil de la gare.`; return; }
+      const items = rows.map(sncfClassify), down = items.filter(x => x.state === "down").length, up = items.filter(x => x.state === "up").length;
+      out.innerHTML = `🛗 <b>${down ? `⚠️ ${down} équipement(s) en panne` : (up ? "✅ Équipements signalés en service" : "État non précisé")}</b>${up ? ` • ${up} en service` : ""}` +
+        `<div style="margin-top:3px;">${items.slice(0, 8).map(x => `<div class="sub">${x.state === "down" ? "🔴" : x.state === "up" ? "🟢" : "⚪"} ${escapeHTML(x.label)}${x.where ? " — " + escapeHTML(x.where) : ""}</div>`).join("")}</div>` +
+        `<div class="sub" style="font-size:11px;">${stale ? "Dernier état connu (pack hors ligne du " + new Date(stale).toLocaleDateString("fr-FR") + ")." : "Données ouvertes SNCF (data.gouv.fr), actualisées environ toutes les heures."} Information non contractuelle.</div>`;
+    }
+
+    // ---- initialisation de l'interface ----
+    renderTrip(); battInit(); renderPacks();
+    tripDrawMarkers();
+    window.addEventListener("online", () => { try { renderPacks(); } catch {} });
 
     map.on("load", () => {
       if (VIEWER_ID) { initViewer(); return; }
