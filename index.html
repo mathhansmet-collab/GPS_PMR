@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="GPS PMR" />
-  <title>GPS PMR — France • Navigation & Accessibilité</title>
+  <title>GPS PMR — France • Navigation & Pratiques PMR</title>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <style>
@@ -483,7 +483,7 @@
         <div id="routeSteps" style="max-height:200px; overflow-y:auto;"></div>
       </div>
 
-      <!-- CARTE TRANSPORT PMR ADAPTÉ (IrigoFlex à Angers, PAM / Transport PMR ailleurs) -->
+      <!-- CARTE TRANSPORT PMR ADAPTÉ -->
       <div id="irigoflexBox" class="irigoflex-box">
         <div class="row between">
           <span id="pmrTransportBadge" class="badge b-gov">🚐 TRANSPORT PMR ADAPTÉ</span>
@@ -497,21 +497,32 @@
       <button class="warn" onclick="reportObstacleAtCenter()">⚠️ Signaler un obstacle au centre de la carte</button>
     </div>
 
-    <!-- ONGLET 2 : PRATIQUES PMR -->
+    <!-- ONGLET 2 : PRATIQUES PMR (TOUTES LES PRATIQUES DANS TOUTE LA FRANCE) -->
     <div id="tabDirectory" class="scroll-area" style="display:none;">
-      <input id="dirSearch" placeholder="🔍 Chercher pharmacie, médecin, mairie, resto, rue…" oninput="renderDirectory()" />
+      <!-- Sélecteur de ville partout en France -->
+      <div class="card" style="padding:9px 10px;">
+        <div class="sub" style="font-weight:700; margin-bottom:5px;">🌍 EXPLORER UNE VILLE EN FRANCE</div>
+        <div class="row">
+          <input id="cityJumpInput" placeholder="Ex: Paris, Lyon, Nantes, Bordeaux…" style="background:var(--card2); padding:8px 10px;" onkeydown="if(event.key==='Enter') jumpToFrenchCity()" />
+          <button class="primary" style="white-space:nowrap; padding:8px 12px;" onclick="jumpToFrenchCity()">Explorer</button>
+        </div>
+      </div>
+
+      <input id="dirSearch" placeholder="🔍 Filtrer dans cette ville (lieu, rue, bar, salle, tram…)" oninput="renderDirectory()" />
 
       <div class="chip-wrap" id="dirCatChips">
         <button class="chip active" onclick="setDirCategory('all', this)">Tout</button>
         <button class="chip" onclick="setDirCategory('parking', this)">🅿️ Parkings</button>
         <button class="chip" onclick="setDirCategory('toilet', this)">🚻 Toilettes PMR</button>
+        <button class="chip" onclick="setDirCategory('tram', this)">🚊 Tram / Gares</button>
+        <button class="chip" onclick="setDirCategory('bus', this)">🚌 Bus</button>
+        <button class="chip" onclick="setDirCategory('restaurant', this)">🍽️ Restos</button>
+        <button class="chip" onclick="setDirCategory('bar', this)">🍻 Bars adaptés</button>
+        <button class="chip" onclick="setDirCategory('venue', this)">🎭 Salles adaptées</button>
         <button class="chip" onclick="setDirCategory('pharmacy', this)">💊 Pharmacies</button>
         <button class="chip" onclick="setDirCategory('medical', this)">🩺 Médecins</button>
         <button class="chip" onclick="setDirCategory('market', this)">🛒 Supermarchés</button>
         <button class="chip" onclick="setDirCategory('admin', this)">🏛️ Administrations</button>
-        <button class="chip" onclick="setDirCategory('restaurant', this)">🍽️ Restos</button>
-        <button class="chip" onclick="setDirCategory('bar', this)">🍻 Bars</button>
-        <button class="chip" onclick="setDirCategory('venue', this)">🎭 Spectacles</button>
       </div>
 
       <div class="chip-wrap" id="dirAccessChips">
@@ -539,13 +550,13 @@
   </aside>
 
   <script>
-    const DEFAULT_CENTER = [-0.5632, 47.4784]; // Angers par défaut avant le premier fix GPS
+    const DEFAULT_CENTER = [-0.5632, 47.4784];
     const ANGERS_CENTER = { lat: 47.4784, lon: -0.5632 };
     const TRAM_IDS = new Set(["A", "B", "C"]);
     const ACCESLIBRE_DATASET_URL =
       "https://www.data.gouv.fr/api/1/datasets/accessibilite-des-etablissements-recevant-du-public-erp-pour-les-personnes-en-situation-de-handicap/";
 
-    // Optionnel : colle ici ton URL et ta clé publique Supabase pour partager entre tous les utilisateurs de France
+    // Optionnel : colle ici ton URL et ta clé publique Supabase pour que tous les utilisateurs en France partagent les signalements
     const DEFAULT_SUPABASE_URL = "";
     const DEFAULT_SUPABASE_KEY = "";
 
@@ -557,7 +568,6 @@
     let currentRoute = null;
     let navIndex = 0;
 
-    // État Flèche de navigation GPS temps réel
     let isNavigating = false;
     let autoFollowCamera = true;
     let navArrowMarker = null;
@@ -582,7 +592,6 @@
     let autocompleteTimer = null;
     let autocompleteAbort = null;
 
-    // Données dynamiques France entière + cache mémoire par zone/commune
     let currentZoneCenter = { lat: DEFAULT_CENTER[1], lon: DEFAULT_CENTER[0] };
     let currentCommune = "";
     let lastFetchedZoneCenter = null;
@@ -590,8 +599,8 @@
     let zoneAbort = null;
     let acceslibreDatasetCSVId = null;
 
-    const zoneMemoryCache = new Map();       // tileKey -> { osmPlaces, osmTramStops, osmBusStops }
-    const acceslibreCommuneCache = new Map(); // communeLower -> items[]
+    const zoneMemoryCache = new Map();
+    const acceslibreCommuneCache = new Map();
 
     let angersMuniPlaces = [];
     let osmPlaces = [];
@@ -638,12 +647,11 @@
       if (isNavigating) autoFollowCamera = false;
     });
 
-    // Recharger automatiquement les lieux PMR quand on navigue ailleurs en France
     map.on("moveend", () => {
       if (isNavigating || simTimer) return;
-      if (map.getZoom() < 11.8) return;
+      if (map.getZoom() < 11.5) return;
       const c = map.getCenter();
-      if (lastFetchedZoneCenter && distanceMeters(lastFetchedZoneCenter.lat, lastFetchedZoneCenter.lon, c.lat, c.lng) < 900) {
+      if (lastFetchedZoneCenter && distanceMeters(lastFetchedZoneCenter.lat, lastFetchedZoneCenter.lon, c.lat, c.lng) < 950) {
         return;
       }
       clearTimeout(zoneFetchTimer);
@@ -685,7 +693,7 @@
       box.style.display = "block";
     }
 
-    async function fetchWithTimeout(url, options = {}, timeoutMs = 9000) {
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
       const ctrl = new AbortController();
       const id = setTimeout(() => ctrl.abort(), timeoutMs);
       try {
@@ -707,6 +715,30 @@
         if (!parsed || (Date.now() - parsed.ts) > maxAgeHours * 3600 * 1000) return null;
         return parsed.data;
       } catch { return null; }
+    }
+
+    // Explorer directement n'importe quelle ville de France depuis Pratiques PMR
+    async function jumpToFrenchCity() {
+      const query = (document.getElementById("cityJumpInput").value || "").trim();
+      if (!query) return;
+      setStatus(`⏳ Recherche de « ${query} » en France…`, "info");
+      try {
+        const res = await fetchWithTimeout(`https://data.geopf.fr/geocodage/search?q=${encodeURIComponent(query)}&limit=1`, {}, 6000);
+        const json = await res.json();
+        const feat = json.features?.[0];
+        if (!feat) {
+          setStatus(`❌ Ville ou lieu « ${query} » introuvable en France.`, "error");
+          return;
+        }
+        const [lon, lat] = feat.geometry.coordinates;
+        const cityLabel = feat.properties?.city || feat.properties?.name || query;
+        currentCommune = cityLabel;
+        document.getElementById("zoneCityBadge").textContent = `🇫🇷 ${cityLabel}`;
+        map.jumpTo({ center: [lon, lat], zoom: 14 });
+        await loadZoneData(lat, lon, true);
+      } catch {
+        setStatus("❌ Erreur lors de la recherche de la ville.", "error");
+      }
     }
 
     // MARK: - Flèche de navigation GPS temps réel
@@ -999,12 +1031,12 @@
       if (currentRoute) routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName);
     }
 
-    // MARK: - Passages en direct Irigo (quand l'utilisateur consulte Angers)
+    // MARK: - Passages en direct Irigo (Angers) + Info stations France
 
     async function fetchLivePassages(lat, lon, stopName, containerEl) {
       if (!containerEl) return;
       if (!isNearAngers(lat, lon)) {
-        containerEl.innerHTML = `<div class="sub">Horaires temps réel disponibles sur le réseau Irigo (Angers) ; station géolocalisée pour l'itinéraire PMR.</div>`;
+        containerEl.innerHTML = `<div class="sub">Station géolocalisée pour votre trajet PMR (horaires temps réel intégrés sur Angers Irigo).</div>`;
         return;
       }
       try {
@@ -1188,7 +1220,7 @@
       if (/(mairie|préfecture|prefecture|caf|cpam|assurance maladie|france travail|pôle emploi|impôts|finances publiques|trésor|tribunal|commissariat|gendarmerie|poste|administration|service public|hôtel de ville|ccas|mdph)/.test(text)) return "admin";
       if (/(restaurant|restauration|pizzeria|crêperie|creperie|bistrot|kebab|fast-food|sushi|traiteur)/.test(text)) return "restaurant";
       if (/(café|cafe|bar|pub|brasserie|discothèque|discotheque|salon de thé)/.test(text)) return "bar";
-      if (/(théâtre|theatre|cinéma|cinema|concert|spectacle|opéra|opera|musée|musee|salle des fêtes|centre culturel|auditorium|zénith)/.test(text)) return "venue";
+      if (/(théâtre|theatre|cinéma|cinema|concert|spectacle|opéra|opera|musée|musee|salle des fêtes|centre culturel|auditorium|zénith|zenith|arena|salle polyvalente|chabada|quai)/.test(text)) return "venue";
       if (/(toilettes|sanitaire|wc)/.test(text)) return "toilet";
       return null;
     }
@@ -1550,7 +1582,7 @@
 
       if (!isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon) || irigoBusLinesMeta.length === 0) {
         busLineFilter = "all";
-        titleEl.textContent = "Arrêts de bus OpenStreetMap autour de la zone affichée";
+        titleEl.textContent = `Arrêts de bus OpenStreetMap (${currentCommune || "France"})`;
         return;
       }
 
@@ -1795,7 +1827,6 @@
           isGPS: true, lat: userPos?.lat ?? currentZoneCenter.lat, lon: userPos?.lon ?? currentZoneCenter.lon
         });
       }
-      // Ajouter jusqu'à 3 lieux locaux les plus proches de l'utilisateur
       const icons = {
         parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭",
         pharmacy: "💊", medical: "🩺", market: "🛒", admin: "🏛️"
@@ -1847,7 +1878,6 @@
       const localHits = searchLocalPlaces(query);
       const [biasLon, biasLat] = getOriginCoordinate();
 
-      // IGN Géoplateforme + Photon OSM : couvrent toute la France
       const ignURL = `https://data.geopf.fr/geocodage/search?q=${encodeURIComponent(query)}&lat=${biasLat}&lon=${biasLon}&limit=6&autocomplete=1`;
       const photonURL = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${biasLat}&lon=${biasLon}&limit=5`;
 
@@ -2076,7 +2106,6 @@
       if (!isMap) renderDirectory();
     }
 
-    // Mode Nuit : interface sombre + plan conservé en clair pour une lecture optimale
     function toggleDarkMode() {
       isDark = !isDark;
       document.body.classList.toggle("dark", isDark);
@@ -2129,18 +2158,11 @@
         }
       });
 
-      // Fusionner transports locaux (Irigo si à Angers + OSM partout en France)
-      if (inAngers && irigoTramStops.length > 0) {
-        tramStops = [...irigoTramStops];
-      } else {
-        tramStops = [...osmTramStops];
-      }
+      if (inAngers && irigoTramStops.length > 0) tramStops = [...irigoTramStops];
+      else tramStops = [...osmTramStops];
 
-      if (inAngers && irigoBusStops.length > 0) {
-        busStops = [...irigoBusStops];
-      } else {
-        busStops = [...osmBusStops];
-      }
+      if (inAngers && irigoBusStops.length > 0) busStops = [...irigoBusStops];
+      else busStops = [...osmBusStops];
 
       allPlaces = merged;
       refreshPlaceDistances();
@@ -2166,7 +2188,6 @@
       zoneAbort = new AbortController();
       const signal = zoneAbort.signal;
 
-      // 1. Si cette zone est déjà en cache mémoire, affichage instantané (0 ms)
       if (!force && zoneMemoryCache.has(tileKey)) {
         const cached = zoneMemoryCache.get(tileKey);
         osmPlaces = cached.osmPlaces;
@@ -2177,7 +2198,6 @@
         setStatus("⏳ Chargement des lieux accessibles dans cette zone…", "info");
       }
 
-      // 2. Identifier la commune via IGN Reverse Geocoding (pour le badge + Accèslibre)
       const communePromise = reverseGeocodeCommune(lat, lon).then(city => {
         if (signal.aborted) return "";
         if (city) {
@@ -2187,8 +2207,8 @@
         return city;
       });
 
-      // 3. Requête Overpass compacte sur le bbox autour de (lat, lon) -> rapide partout en France
-      const osmPromise = fetchOverpassZone(lat, lon, signal).then(parsed => {
+      // Deux requêtes Overpass spécialisées en parallèle (POIs/Salles + Transports) pour éviter toute troncature
+      const osmPromise = fetchOverpassZoneSplit(lat, lon, signal).then(parsed => {
         if (signal.aborted || !parsed) return;
         osmPlaces = parsed.places;
         osmTramStops = parsed.tramStops;
@@ -2197,10 +2217,7 @@
         rebuildMergedPlacesAndRefreshUI();
       });
 
-      // 4. Communauté Supabase (rayon 10 km autour de la vue)
       const commPromise = loadCommunityData(lat, lon);
-
-      // 5. Bonus Angers (chargé une seule fois si la vue est sur Angers)
       const angersPromise = isNearAngers(lat, lon) ? loadAngersExtrasOnce() : Promise.resolve();
 
       await Promise.allSettled([osmPromise, commPromise, angersPromise]);
@@ -2217,7 +2234,7 @@
         }
       }
 
-      setStatus(`✅ Zone ${detectedCity || ""} prête (${allPlaces.length} lieux).`, "ok");
+      setStatus(`✅ Zone ${detectedCity || ""} prête (${allPlaces.length + tramStops.length} lieux).`, "ok");
     }
 
     let angersLoadedOnce = false;
@@ -2338,36 +2355,17 @@
       rebuildMergedPlacesAndRefreshUI();
     }
 
-    // Requête Overpass dynamique sur n'importe quelle ville de France (~3 km x 3 km, plafonnée à 450 éléments pour la vitesse)
-    async function fetchOverpassZone(lat, lon, signal) {
-      const dLat = 0.016, dLon = 0.023;
-      const bbox = `${(lat - dLat).toFixed(4)},${(lon - dLon).toFixed(4)},${(lat + dLat).toFixed(4)},${(lon + dLon).toFixed(4)}`;
-
-      const ql = `
-        [out:json][timeout:12][bbox:${bbox}];
-        (
-          nwr["amenity"~"^(toilets|restaurant|bar|pub|biergarten|nightclub|theatre|concert_hall|music_venue|cinema|arts_centre|events_venue|pharmacy|doctors|clinic|hospital|dentist|townhall|public_building|courthouse|post_office|parking_space)$"];
-          nwr["amenity"="parking"]["capacity:disabled"];
-          nwr["shop"~"^(supermarket|hypermarket|convenience)$"];
-          nwr["office"="government"];
-          node["railway"~"^(tram_stop|station|halt)$"];
-          node["highway"="bus_stop"];
-        );
-        out center qt 500;
-      `;
-
+    async function queryOverpass(ql, signal, timeoutMs = 10000) {
       const endpoints = [
         "https://overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
       ];
-
-      let data = null;
       for (const ep of endpoints) {
         if (signal?.aborted) return null;
         try {
           const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 9500);
+          const timer = setTimeout(() => ctrl.abort(), timeoutMs);
           if (signal) signal.addEventListener("abort", () => ctrl.abort(), { once: true });
 
           const res = await fetch(ep, {
@@ -2377,98 +2375,138 @@
             body: "data=" + encodeURIComponent(ql)
           });
           clearTimeout(timer);
-          if (res.ok) { data = await res.json(); break; }
+          if (res.ok) return await res.json();
         } catch {}
       }
-      if (!data || !data.elements) return null;
+      return null;
+    }
+
+    // Requête Overpass séparée (POIs & Salles sur rayon élargi + Transports dédiés) pour zéro troncature partout en France
+    async function fetchOverpassZoneSplit(lat, lon, signal) {
+      const bboxMed = `${(lat - 0.022).toFixed(4)},${(lon - 0.032).toFixed(4)},${(lat + 0.022).toFixed(4)},${(lon + 0.032).toFixed(4)}`;
+      const bboxLarge = `${(lat - 0.045).toFixed(4)},${(lon - 0.065).toFixed(4)},${(lat + 0.045).toFixed(4)},${(lon + 0.065).toFixed(4)}`;
+      const bboxSmall = `${(lat - 0.015).toFixed(4)},${(lon - 0.022).toFixed(4)},${(lat + 0.015).toFixed(4)},${(lon + 0.022).toFixed(4)}`;
+
+      const qlPOIs = `
+        [out:json][timeout:14];
+        (
+          nwr["amenity"~"^(toilets|restaurant|pharmacy|doctors|clinic|hospital|dentist|townhall|public_building|courthouse|post_office|parking_space)$"](${bboxMed});
+          nwr["amenity"="parking"]["capacity:disabled"](${bboxMed});
+          nwr["shop"~"^(supermarket|hypermarket|convenience)$"](${bboxMed});
+          nwr["office"="government"](${bboxMed});
+          nwr["amenity"~"^(bar|pub|biergarten|nightclub)$"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
+          nwr["amenity"~"^(theatre|concert_hall|music_venue|cinema|arts_centre|events_venue|community_centre)$"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
+          nwr["tourism"="museum"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
+        );
+        out center qt;
+      `;
+
+      const qlTransit = `
+        [out:json][timeout:10];
+        (
+          nwr["railway"~"^(tram_stop|station|halt)$"](${bboxLarge});
+          node["highway"="bus_stop"](${bboxSmall});
+        );
+        out center qt 350;
+      `;
+
+      const [poiData, transitData] = await Promise.all([
+        queryOverpass(qlPOIs, signal, 11000),
+        queryOverpass(qlTransit, signal, 9000)
+      ]);
 
       const places = [], tStops = [], bStops = [];
 
-      for (const el of data.elements) {
-        const elat = el.lat ?? el.center?.lat, elon = el.lon ?? el.center?.lon;
-        if (elat == null || elon == null) continue;
-        const t = el.tags || {};
-        const am = t.amenity, shop = t.shop, office = t.office;
-        const wc = (t.wheelchair || "").toLowerCase();
+      if (poiData?.elements) {
+        for (const el of poiData.elements) {
+          const elat = el.lat ?? el.center?.lat, elon = el.lon ?? el.center?.lon;
+          if (elat == null || elon == null) continue;
+          const t = el.tags || {};
+          const am = t.amenity, shop = t.shop, office = t.office, tourism = t.tourism;
+          const wc = (t.wheelchair || "").toLowerCase();
+          const addr = [t["addr:housenumber"], t["addr:street"]].filter(Boolean).join(" ") || t["addr:city"] || currentCommune || "France";
 
-        // Stations Tram / Métro / Gare
-        if (t.railway && ["tram_stop", "station", "halt"].includes(t.railway)) {
-          if (t.name) {
+          let access = "unknown", accessLabel = "À vérifier";
+          if (wc === "yes" || wc === "designated") { access = "yes"; accessLabel = "Accessible fauteuil"; }
+          else if (wc === "limited") { access = "limited"; accessLabel = "Accès partiel"; }
+          else if (wc === "no") { access = "no"; accessLabel = "Non accessible"; }
+
+          const toiletsPMR = t["toilets:wheelchair"] || null;
+          const toiletNote = toiletsPMR === "yes" ? "Toilettes PMR : Oui" : (toiletsPMR === "no" ? "Toilettes PMR : Non" : null);
+
+          if ((am === "parking_space" && t.disabled === "yes") || (am === "parking" && t["capacity:disabled"])) {
+            const cap = t["capacity:disabled"] ? `${t["capacity:disabled"]} place(s) PMR` : "Place réservée PMR";
+            places.push({
+              id: "osm_pk_" + el.id, cat: "parking",
+              name: t.name || t["addr:street"] || "Stationnement PMR",
+              address: addr, lat: elat, lon: elon,
+              access: "yes", accessLabel: "Stationnement PMR",
+              details: cap, toiletsPMR: null, features: ["🅿️ " + cap], isAcceslibre: false, isCommunityVerified: false, webUrl: null
+            });
+            continue;
+          }
+
+          let cat = null, fallbackName = "Lieu", typeLabel = "";
+          if (am === "toilets") {
+            if (access === "no" || access === "unknown") continue;
+            cat = "toilet"; fallbackName = "Toilettes PMR"; typeLabel = t.fee === "yes" ? "Payant" : "Public";
+          } else if (am === "restaurant") {
+            cat = "restaurant"; fallbackName = "Restaurant"; typeLabel = t.cuisine ? "Cuisine : " + t.cuisine : "Restaurant";
+          } else if (["bar", "pub", "biergarten", "nightclub"].includes(am)) {
+            cat = "bar"; fallbackName = "Bar adapté"; typeLabel = am.toUpperCase();
+          } else if (["theatre", "concert_hall", "music_venue", "cinema", "arts_centre", "events_venue", "community_centre"].includes(am) || tourism === "museum") {
+            cat = "venue"; fallbackName = "Salle / Spectacle"; typeLabel = tourism === "museum" ? "Musée" : translateVenueType(am);
+          } else if (am === "pharmacy") {
+            cat = "pharmacy"; fallbackName = "Pharmacie"; typeLabel = "Pharmacie";
+          } else if (["doctors", "clinic", "hospital", "dentist"].includes(am)) {
+            cat = "medical"; fallbackName = "Cabinet / Santé"; typeLabel = translateMedicalType(am);
+          } else if (shop) {
+            cat = "market"; fallbackName = "Supermarché / Alimentation"; typeLabel = shop === "supermarket" ? "Supermarché" : "Supérette / Alimentation";
+          } else if (["townhall", "public_building", "courthouse", "post_office"].includes(am) || office === "government") {
+            cat = "admin"; fallbackName = "Administration"; typeLabel = am === "post_office" ? "La Poste" : (am === "townhall" ? "Mairie" : "Service public");
+          }
+          if (!cat) continue;
+
+          places.push({
+            id: "osm_" + el.id, cat, name: t.name || fallbackName, address: addr,
+            lat: elat, lon: elon, access, accessLabel,
+            details: [typeLabel, toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • "),
+            toiletsPMR: cat === "toilet" ? "yes" : toiletsPMR,
+            features: toiletsPMR === "yes" ? ["🚻 WC PMR"] : [],
+            isAcceslibre: false, isCommunityVerified: false, webUrl: null
+          });
+        }
+      }
+
+      if (transitData?.elements) {
+        const seenT = new Set(), seenB = new Set();
+        for (const el of transitData.elements) {
+          const elat = el.lat ?? el.center?.lat, elon = el.lon ?? el.center?.lon;
+          if (elat == null || elon == null) continue;
+          const t = el.tags || {};
+          if (!t.name) continue;
+          const wc = (t.wheelchair || "").toLowerCase();
+          const acc = wc === "yes" || wc === "designated" ? true : (wc === "no" ? false : null);
+
+          if (t.railway && ["tram_stop", "station", "halt"].includes(t.railway)) {
+            const key = t.name.toLowerCase();
+            if (seenT.has(key)) continue;
+            seenT.add(key);
             tStops.push({
               name: t.name, lat: elat, lon: elon,
               lines: t.station === "subway" ? ["Métro"] : (t.railway === "station" ? ["Gare"] : ["Tram"]),
-              accessible: wc === "yes" || wc === "designated" ? true : (wc === "no" ? false : null),
-              precision: t.description || "", dist: 0
+              accessible: acc, precision: t.description || "", dist: 0
             });
-          }
-          continue;
-        }
-
-        // Arrêts de bus
-        if (t.highway === "bus_stop") {
-          if (t.name) {
+          } else if (t.highway === "bus_stop") {
+            const key = `${t.name.toLowerCase()}_${elat.toFixed(3)}`;
+            if (seenB.has(key)) continue;
+            seenB.add(key);
             bStops.push({
               name: t.name, lat: elat, lon: elon, lines: [],
-              accessible: wc === "yes" || wc === "designated" ? true : (wc === "no" ? false : null),
-              precision: t.tactile_paving === "yes" ? "Bande podotactile présente" : "", dist: 0
+              accessible: acc, precision: t.tactile_paving === "yes" ? "Bande podotactile présente" : "", dist: 0
             });
           }
-          continue;
         }
-
-        const addr = [t["addr:housenumber"], t["addr:street"]].filter(Boolean).join(" ") || t["addr:city"] || currentCommune || "France";
-
-        let access = "unknown", accessLabel = "À vérifier";
-        if (wc === "yes" || wc === "designated") { access = "yes"; accessLabel = "Accessible fauteuil"; }
-        else if (wc === "limited") { access = "limited"; accessLabel = "Accès partiel"; }
-        else if (wc === "no") { access = "no"; accessLabel = "Non accessible"; }
-
-        const toiletsPMR = t["toilets:wheelchair"] || null;
-        const toiletNote = toiletsPMR === "yes" ? "Toilettes PMR : Oui" : (toiletsPMR === "no" ? "Toilettes PMR : Non" : null);
-
-        if ((am === "parking_space" && t.disabled === "yes") || (am === "parking" && t["capacity:disabled"])) {
-          const cap = t["capacity:disabled"] ? `${t["capacity:disabled"]} place(s) PMR` : "Place réservée PMR";
-          places.push({
-            id: "osm_pk_" + el.id, cat: "parking",
-            name: t.name || t["addr:street"] || "Stationnement PMR",
-            address: addr, lat: elat, lon: elon,
-            access: "yes", accessLabel: "Stationnement PMR",
-            details: cap, toiletsPMR: null, features: ["🅿️ " + cap], isAcceslibre: false, isCommunityVerified: false, webUrl: null
-          });
-          continue;
-        }
-
-        let cat = null, fallbackName = "Lieu", typeLabel = "";
-        if (am === "toilets") {
-          if (access === "no" || access === "unknown") continue;
-          cat = "toilet"; fallbackName = "Toilettes PMR"; typeLabel = t.fee === "yes" ? "Payant" : "Public";
-        } else if (am === "restaurant") {
-          cat = "restaurant"; fallbackName = "Restaurant"; typeLabel = t.cuisine ? "Cuisine : " + t.cuisine : "Restaurant";
-        } else if (["bar", "pub", "biergarten", "nightclub"].includes(am)) {
-          if (access === "no" || access === "unknown") continue;
-          cat = "bar"; fallbackName = "Bar adapté"; typeLabel = am.toUpperCase();
-        } else if (["theatre", "concert_hall", "music_venue", "cinema", "arts_centre", "events_venue"].includes(am)) {
-          if (access === "no" || access === "unknown") continue;
-          cat = "venue"; fallbackName = "Salle / Spectacle"; typeLabel = translateVenueType(am);
-        } else if (am === "pharmacy") {
-          cat = "pharmacy"; fallbackName = "Pharmacie"; typeLabel = "Pharmacie";
-        } else if (["doctors", "clinic", "hospital", "dentist"].includes(am)) {
-          cat = "medical"; fallbackName = "Cabinet / Santé"; typeLabel = translateMedicalType(am);
-        } else if (shop) {
-          cat = "market"; fallbackName = "Supermarché / Alimentation"; typeLabel = shop === "supermarket" ? "Supermarché" : "Supérette / Alimentation";
-        } else if (["townhall", "public_building", "courthouse", "post_office"].includes(am) || office === "government") {
-          cat = "admin"; fallbackName = "Administration"; typeLabel = am === "post_office" ? "La Poste" : (am === "townhall" ? "Mairie" : "Service public");
-        }
-        if (!cat) continue;
-
-        places.push({
-          id: "osm_" + el.id, cat, name: t.name || fallbackName, address: addr,
-          lat: elat, lon: elon, access, accessLabel,
-          details: [typeLabel, toiletNote, t["wheelchair:description"]].filter(Boolean).join(" • "),
-          toiletsPMR: cat === "toilet" ? "yes" : toiletsPMR,
-          features: toiletsPMR === "yes" ? ["🚻 WC PMR"] : [],
-          isAcceslibre: false, isCommunityVerified: false, webUrl: null
-        });
       }
 
       return { places, tramStops: tStops, busStops: bStops };
@@ -2477,7 +2515,8 @@
     function translateVenueType(am) {
       return {
         theatre: "Théâtre", concert_hall: "Salle de concert", music_venue: "Salle de musique",
-        cinema: "Cinéma", arts_centre: "Centre culturel", events_venue: "Salle de spectacles"
+        cinema: "Cinéma", arts_centre: "Centre culturel", events_venue: "Salle de spectacles",
+        community_centre: "Salle polyvalente"
       }[am] || "Spectacle / Culture";
     }
 
@@ -2489,10 +2528,10 @@
     }
 
     function updateGlobalStats() {
-      const counts = { parking: 0, toilet: 0, pharmacy: 0, medical: 0, restaurant: 0 };
+      const counts = { parking: 0, toilet: 0, restaurant: 0, bar: 0, venue: 0, pharmacy: 0 };
       allPlaces.forEach(p => { if (counts[p.cat] != null) counts[p.cat]++; });
       document.getElementById("globalStats").textContent =
-        `${counts.parking} parkings • ${counts.toilet} toilettes • ${counts.restaurant} restos • ${counts.pharmacy} pharmacies • ${counts.medical} santé`;
+        `${counts.parking} parkings • ${counts.restaurant} restos • ${counts.bar} bars • ${counts.venue} salles • ${tramStops.length} gares/tram`;
     }
 
     function colorForPlace(p) {
@@ -2855,24 +2894,76 @@
 
     function renderDirectory() {
       const q = (document.getElementById("dirSearch").value || "").trim().toLowerCase();
-      const filtered = allPlaces.filter(p => {
+
+      // Construire la vue unifiée de toutes les pratiques PMR (lieux + gares/tram + bus)
+      let items = [];
+
+      if (dirCategory === "tram") {
+        items = tramStops.map(s => ({
+          id: "tr_" + s.name, cat: "tram", name: s.name,
+          address: (s.lines && s.lines.length ? `Lignes ${s.lines.join(", ")}` : "Station / Gare") + (currentCommune ? ` • ${currentCommune}` : ""),
+          lat: s.lat, lon: s.lon, dist: s.dist,
+          access: s.accessible === true ? "yes" : (s.accessible === false ? "no" : "unknown"),
+          accessLabel: s.accessible === true ? "Accessible PMR" : (s.accessible === false ? "Non accessible" : "À vérifier"),
+          details: s.precision || "", features: [], rawTramStop: s
+        }));
+      } else if (dirCategory === "bus") {
+        items = busStops.map(s => ({
+          id: "bs_" + s.name, cat: "bus", name: "Arrêt " + s.name,
+          address: (s.lines && s.lines.length ? `Lignes ${s.lines.slice(0, 6).join(", ")}` : "Arrêt de bus") + (currentCommune ? ` • ${currentCommune}` : ""),
+          lat: s.lat, lon: s.lon, dist: s.dist,
+          access: s.accessible === true ? "yes" : (s.accessible === false ? "no" : "unknown"),
+          accessLabel: s.accessible === true ? "Accessible PMR" : (s.accessible === false ? "Non accessible" : "À vérifier"),
+          details: s.precision || "", features: [], rawBusStop: s
+        }));
+      } else {
+        items = [...allPlaces];
+        if (dirCategory === "all") {
+          // Inclure Tram/Gares dans "Tout" (et Bus si recherche texte active)
+          tramStops.forEach(s => {
+            items.push({
+              id: "tr_" + s.name, cat: "tram", name: s.name,
+              address: (s.lines && s.lines.length ? `Lignes ${s.lines.join(", ")}` : "Station / Gare"),
+              lat: s.lat, lon: s.lon, dist: s.dist,
+              access: s.accessible === true ? "yes" : (s.accessible === false ? "no" : "unknown"),
+              accessLabel: s.accessible === true ? "Accessible PMR" : (s.accessible === false ? "Non accessible" : "À vérifier"),
+              details: s.precision || "", features: [], rawTramStop: s
+            });
+          });
+          if (q.length >= 2) {
+            busStops.forEach(s => {
+              items.push({
+                id: "bs_" + s.name, cat: "bus", name: "Arrêt " + s.name,
+                address: (s.lines && s.lines.length ? `Lignes ${s.lines.slice(0, 5).join(", ")}` : "Arrêt de bus"),
+                lat: s.lat, lon: s.lon, dist: s.dist,
+                access: s.accessible === true ? "yes" : (s.accessible === false ? "no" : "unknown"),
+                accessLabel: s.accessible === true ? "Accessible PMR" : (s.accessible === false ? "Non accessible" : "À vérifier"),
+                details: s.precision || "", features: [], rawBusStop: s
+              });
+            });
+          }
+          items.sort((a, b) => a.dist - b.dist);
+        }
+      }
+
+      const filtered = items.filter(p => {
         if (dirCategory !== "all" && p.cat !== dirCategory) return false;
         if (dirAccess !== "all" && p.access !== dirAccess) return false;
         if (q && !`${p.name} ${p.address} ${p.details} ${(p.features || []).join(" ")}`.toLowerCase().includes(q)) return false;
         return true;
       });
 
-      const shown = filtered.slice(0, 70);
+      const shown = filtered.slice(0, 75);
       document.getElementById("dirSummary").textContent =
-        filtered.length > 70
-          ? `${filtered.length} résultats (70 plus proches affichés — affinez la recherche)`
-          : `${filtered.length} lieu(x) répertorié(s) dans la zone`;
+        filtered.length > 75
+          ? `${filtered.length} résultats sur ${currentCommune || "la zone"} (75 plus proches affichés)`
+          : `${filtered.length} lieu(x) répertorié(s) sur ${currentCommune || "la zone"}`;
 
       const listEl = document.getElementById("dirList");
       listEl.innerHTML = "";
       const icons = {
-        parking: "🅿️", toilet: "🚻", restaurant: "🍽️", bar: "🍻", venue: "🎭",
-        pharmacy: "💊", medical: "🩺", market: "🛒", admin: "🏛️"
+        parking: "🅿️", toilet: "🚻", tram: "🚊", bus: "🚌", restaurant: "🍽️",
+        bar: "🍻", venue: "🎭", pharmacy: "💊", medical: "🩺", market: "🛒", admin: "🏛️"
       };
 
       const frag = document.createDocumentFragment();
@@ -2881,6 +2972,7 @@
         const icon = icons[p.cat] || "📍";
         const distLabel = p.dist >= 1000 ? (p.dist / 1000).toFixed(1) + " km" : p.dist + " m";
         const featsHTML = (p.features || []).slice(0, 5).map(f => `<span class="b-feat">${escapeHTML(f)}</span>`).join("");
+        const isVotable = !["parking", "tram", "bus"].includes(p.cat);
 
         const card = document.createElement("div");
         card.className = "dir-item";
@@ -2896,7 +2988,7 @@
           </div>
           <div class="sub">${escapeHTML(p.address)}${p.details ? " • " + escapeHTML(p.details) : ""}</div>
           ${featsHTML ? `<div style="display:flex;flex-wrap:wrap;gap:4px;">${featsHTML}</div>` : ""}
-          ${p.cat !== "parking" ? `
+          ${isVotable ? `
             <div class="vote-bar">
               <button class="vote-btn v-yes">🟢 Accessible</button>
               <button class="vote-btn v-lim">🟠 Partiel</button>
@@ -2908,12 +3000,17 @@
             <button style="flex:1;padding:6px;" class="primary go-btn">♿ Y aller</button>
           </div>
         `;
-        if (p.cat !== "parking") {
+        if (isVotable) {
           card.querySelector(".v-yes").addEventListener("click", () => votePlaceAccessibility(p.id, "yes"));
           card.querySelector(".v-lim").addEventListener("click", () => votePlaceAccessibility(p.id, "limited"));
           card.querySelector(".v-no").addEventListener("click", () => votePlaceAccessibility(p.id, "no"));
         }
-        card.querySelector(".see-btn").addEventListener("click", () => { map.flyTo({ center: [p.lon, p.lat], zoom: 16.5 }); openPlacePopup(p); });
+        card.querySelector(".see-btn").addEventListener("click", () => {
+          map.flyTo({ center: [p.lon, p.lat], zoom: 16.5 });
+          if (p.rawTramStop) openTramStopPopup(p.rawTramStop);
+          else if (p.rawBusStop) openBusStopPopup(p.rawBusStop);
+          else openPlacePopup(p);
+        });
         card.querySelector(".go-btn").addEventListener("click", () => {
           switchTab("map");
           routeTo(p.lat, p.lon, p.name, { isParkingRoute: p.cat === "parking" });
