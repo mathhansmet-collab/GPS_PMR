@@ -15,6 +15,10 @@
   <link rel="preconnect" href="https://overpass-api.de" crossorigin />
   <link rel="preconnect" href="https://data.angers.fr" crossorigin />
   <link rel="preconnect" href="https://data.geopf.fr" crossorigin />
+  <link rel="preconnect" href="https://overpass.kumi.systems" crossorigin />
+  <link rel="preconnect" href="https://tabular-api.data.gouv.fr" crossorigin />
+  <link rel="preconnect" href="https://valhalla1.openstreetmap.de" crossorigin />
+  <link rel="preconnect" href="https://api.open-meteo.com" crossorigin />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css'" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" onerror="document.write('<script src=&quot;https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js&quot;><\/script>')"></script>
   <style>
@@ -2450,6 +2454,9 @@
 
       try {
         if (!acceslibreDatasetCSVId) {
+          try { const c = JSON.parse(localStorage.getItem("gps_pmr_al_id") || "null"); if (c && c.id && Date.now() - c.ts < 7 * 864e5) acceslibreDatasetCSVId = c.id; } catch {}
+        }
+        if (!acceslibreDatasetCSVId) {
           const metaRes = await fetchWithTimeout(ACCESLIBRE_DATASET_URL, {}, 6500);
           if (metaRes.ok) {
             const meta = await metaRes.json();
@@ -2458,6 +2465,7 @@
             );
             csvRes.sort((a, b) => (a.extras?.["analysis:parsing:finished_at"] ? 0 : 1) - (b.extras?.["analysis:parsing:finished_at"] ? 0 : 1));
             acceslibreDatasetCSVId = csvRes[0]?.id || null;
+            if (acceslibreDatasetCSVId) { try { localStorage.setItem("gps_pmr_al_id", JSON.stringify({ id: acceslibreDatasetCSVId, ts: Date.now() })); } catch {} }
           }
         }
 
@@ -2465,6 +2473,7 @@
           let rows = [];
           const baseUrl = `https://tabular-api.data.gouv.fr/api/resources/${acceslibreDatasetCSVId}/data/?commune__exact=${encodeURIComponent(communeName)}&page_size=200`;
           const r1 = await fetchWithTimeout(baseUrl, {}, 6500);
+          if (!r1.ok) { try { localStorage.removeItem("gps_pmr_al_id"); } catch {} acceslibreDatasetCSVId = null; }
           if (r1.ok) {
             const j1 = await r1.json();
             rows = (j1.data || []).slice();
@@ -3673,6 +3682,13 @@
     // MARK: - Géolocalisation GPS (Partout en France)
 
     function initGeolocation() {
+      try {                                              // dernière position connue : on charge la zone sans attendre le GPS
+        const lp = JSON.parse(localStorage.getItem("gps_pmr_lastpos") || "null");
+        if (lp && isFinite(lp.lat) && isFinite(lp.lon) && Date.now() - lp.ts < 14 * 864e5 && !VIEWER_ID) {
+          map.jumpTo({ center: [lp.lon, lp.lat], zoom: 14.8 });
+          loadZoneData(lp.lat, lp.lon, false);
+        }
+      } catch {}
       if (!navigator.geolocation) {
         document.getElementById("gpsStatusLabel").textContent = "GPS non supporté";
         loadZoneData(DEFAULT_CENTER[1], DEFAULT_CENTER[0], false);
@@ -3699,6 +3715,7 @@
           if (isFirstFix && selectedOrigin.isGPS && !isNavigating) {
             map.flyTo({ center: [lon, lat], zoom: 14.8, speed: 1.8 });
             loadZoneData(lat, lon, false);
+            try { localStorage.setItem("gps_pmr_lastpos", JSON.stringify({ lat: Math.round(lat * 1e4) / 1e4, lon: Math.round(lon * 1e4) / 1e4, ts: Date.now() })); } catch {}
           }
         },
         () => {
@@ -3919,7 +3936,14 @@
     let lastAlCity = "";
     const communeMemo = new Map();
 
+    let zoneInFlight = "";
     async function loadZoneData(lat, lon, force = false) {
+      const flightKey = `${lat.toFixed(2)}_${lon.toFixed(2)}`;
+      if (!force && zoneInFlight === flightKey) return;       // même zone déjà en cours de chargement
+      zoneInFlight = flightKey;
+      try { await _loadZoneData(lat, lon, force); } finally { if (zoneInFlight === flightKey) zoneInFlight = ""; }
+    }
+    async function _loadZoneData(lat, lon, force = false) {
       currentZoneCenter = { lat, lon };
       lastFetchedZoneCenter = { lat, lon };
 
@@ -4148,15 +4172,27 @@
       };
       const onAbort = () => ctrls.forEach(c => c.abort());
       if (signal) signal.addEventListener("abort", onAbort, { once: true });
-      try {
-        return await Promise.any([attempt(endpoints[0]), attempt(endpoints[1])]);
-      } catch {
-        if (signal?.aborted) return null;
-        try { return await attempt(endpoints[2]); } catch { return null; }
-      } finally {
-        ctrls.forEach(c => c.abort());                      // coupe la requête perdante
-        if (signal) signal.removeEventListener("abort", onAbort);
-      }
+      return await new Promise(resolve => {
+        let settled = false, started = 0, failed = 0, hedge = null;
+        const finish = v => {
+          if (settled) return; settled = true; clearTimeout(hedge);
+          ctrls.forEach(c => c.abort());                          // coupe les requêtes perdantes
+          if (signal) signal.removeEventListener("abort", onAbort);
+          resolve(v);
+        };
+        const start = i => {
+          started++;
+          attempt(endpoints[i]).then(finish, () => {
+            if (settled) return;
+            if (signal?.aborted) return finish(null);
+            failed++;
+            if (started === 1) start(1);                          // le 1er a échoué vite : on enchaîne tout de suite
+            else if (failed >= 2 && started === 2) { started++; attempt(endpoints[2]).then(finish, () => finish(null)); }
+          });
+        };
+        start(0);
+        hedge = setTimeout(() => { if (!settled && started === 1) start(1); }, 1200);
+      });
     }
 
     async function fetchOverpassZoneSplit(lat, lon, signal, onUpdate) {
@@ -4168,10 +4204,10 @@
       const qlEssential = `
         [out:json][timeout:12];
         (
-          nwr["amenity"~"^(toilets|pharmacy|doctors|clinic|hospital|dentist|townhall|public_building|courthouse|post_office|parking_space)$"](${bboxMed});
-          nwr["amenity"="parking"]["capacity:disabled"](${bboxMed});
-          nwr["shop"~"^(supermarket|hypermarket|convenience)$"](${bboxMed});
-          nwr["office"="government"](${bboxMed});
+          nw["amenity"~"^(toilets|pharmacy|doctors|clinic|hospital|dentist|townhall|public_building|courthouse|post_office|parking_space)$"](${bboxMed});
+          nw["amenity"="parking"]["capacity:disabled"](${bboxMed});
+          nw["shop"~"^(supermarket|hypermarket|convenience)$"](${bboxMed});
+          nw["office"="government"](${bboxMed});
         );
         out center qt;
       `;
@@ -4179,10 +4215,10 @@
       const qlLeisure = `
         [out:json][timeout:14];
         (
-          nwr["amenity"="restaurant"](${bboxMed});
-          nwr["amenity"~"^(bar|pub|biergarten|nightclub)$"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
-          nwr["amenity"~"^(theatre|concert_hall|music_venue|cinema|arts_centre|events_venue|community_centre)$"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
-          nwr["tourism"="museum"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
+          nw["amenity"="restaurant"](${bboxMed});
+          nw["amenity"~"^(bar|pub|biergarten|nightclub)$"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
+          nw["amenity"~"^(theatre|concert_hall|music_venue|cinema|arts_centre|events_venue|community_centre)$"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
+          nw["tourism"="museum"]["wheelchair"~"^(yes|designated|limited)$"](${bboxLarge});
         );
         out center qt;
       `;
@@ -4190,7 +4226,7 @@
       const qlTransit = `
         [out:json][timeout:10];
         (
-          nwr["railway"~"^(tram_stop|station|halt)$"](${bboxLarge});
+          nw["railway"~"^(tram_stop|station|halt)$"](${bboxLarge});
           node["highway"="bus_stop"](${bboxSmall});
         );
         out center qt 350;
@@ -6783,12 +6819,29 @@
 
 
     // =====================================================================================
-    // RÉSEAUX DE TRANSPORT PARTOUT EN FRANCE (OpenStreetMap) : tram / métro automatiquement, bus à la demande
+    // RÉSEAUX DE TRANSPORT PARTOUT EN FRANCE (OpenStreetMap) + accessibilité fauteuil des lignes
     // =====================================================================================
     let osmTramFeatures = [], osmBusFeatures = [];
     const osmLinesCache = new Map();               // "tram|tuile" ou "bus|tuile" → features
-    let osmLinesAbort = { tram: null, bus: null }, osmLinesCover = { tram: null, bus: null };
-    function relToFeature(rel, def) {
+    let osmLinesAbort = { tram: null, bus: null };
+    const ACC_UI = {
+      yes: { cls: "b-yes", label: "♿ Ligne accessible" },
+      limited: { cls: "b-lim", label: "🟠 Partiellement accessible" },
+      no: { cls: "b-no", label: "🔴 Peu accessible" },
+      unknown: { cls: "b-unk", label: "⚠️ Accessibilité à vérifier" }
+    };
+    const wcState = v => { v = (v || "").toLowerCase(); return v === "yes" || v === "designated" ? "yes" : v === "limited" ? "limited" : v === "no" ? "no" : null; };
+    // Accessibilité d'une ligne OSM : tag de la relation, sinon part d'arrêts accessibles parmi ceux qui sont renseignés
+    function accFromCounts(c, relTag) {
+      const rt = wcState(relTag);
+      if (rt) return { acc: rt, txt: "Indiqué par OpenStreetMap pour la ligne entière." };
+      const known = c.yes + c.limited + c.no;
+      if (known < 3) return { acc: "unknown", txt: known ? `Seulement ${known} arrêt(s) renseigné(s) dans OpenStreetMap.` : "Aucun arrêt renseigné dans OpenStreetMap." };
+      const share = (c.yes + 0.5 * c.limited) / known;
+      const acc = share >= 0.8 ? "yes" : share >= 0.4 ? "limited" : "no";
+      return { acc, txt: `${c.yes} arrêt(s) accessible(s) sur ${known} renseigné(s) le long de la ligne (OpenStreetMap).` };
+    }
+    function relToFeature(rel, def, stopGrid) {
       const lines = [];
       for (const m of rel.members || []) {
         if (m.type !== "way" || !Array.isArray(m.geometry) || m.geometry.length < 2) continue;
@@ -6799,37 +6852,90 @@
       if (!lines.length) return null;
       const t = rel.tags || {};
       const col = /^#[0-9a-f]{3,8}$/i.test(t.colour || "") ? t.colour : def;
-      return { type: "Feature", properties: { color: col, shortName: t.ref || "", name: t.name || "" }, geometry: { type: "MultiLineString", coordinates: lines } };
+      // arrêts renseignés à moins de ~40 m du tracé
+      const near = new Set();
+      for (const pts of lines) for (let i = 0; i < pts.length; i++) {
+        const a = pts[i], b = pts[i + 1];
+        const samples = b ? [a, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]] : [a];
+        for (const s of samples) {
+          const ci = Math.floor(s[1] / 0.0005), cj = Math.floor(s[0] / 0.0007);
+          for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+            const arr = stopGrid.get((ci + di) + "," + (cj + dj)); if (!arr) continue;
+            for (const st of arr) if (!near.has(st) && distanceMeters(s[1], s[0], st.lat, st.lon) <= 40) near.add(st);
+          }
+        }
+      }
+      const c = { yes: 0, limited: 0, no: 0 };
+      near.forEach(st => { c[st.s]++; });
+      const r = accFromCounts(c, t.wheelchair);
+      return { type: "Feature", properties: { color: col, shortName: t.ref || "", name: t.name || "", acc: r.acc, accTxt: r.txt, osm: 1 }, geometry: { type: "MultiLineString", coordinates: lines } };
     }
     async function loadOsmLines(kind, lat, lon) {
       if (isNearAngers(lat, lon)) return;                           // Angers : données Irigo, plus précises
-      const cov = osmLinesCover[kind], reach = kind === "tram" ? 4000 : 900;
-      if (cov && distanceMeters(cov.lat, cov.lon, lat, lon) < reach) return;          // déjà couvert
       const key = kind + "|" + lat.toFixed(2) + "_" + lon.toFixed(2);
       const apply = f => { if (kind === "tram") osmTramFeatures = f; else osmBusFeatures = f; renderMapSourcesAndLayers(); updateBusMapLayerSafe(); };
-      if (osmLinesCache.has(key)) { osmLinesCover[kind] = { lat, lon }; apply(osmLinesCache.get(key)); return; }
+      if (osmLinesCache.has(key)) { apply(osmLinesCache.get(key)); return; }
       if (osmLinesAbort[kind]) osmLinesAbort[kind].abort();
       const ctrl = osmLinesAbort[kind] = new AbortController();
       const bb = (dl, dn) => `${(lat - dl).toFixed(4)},${(lon - dn).toFixed(4)},${(lat + dl).toFixed(4)},${(lon + dn).toFixed(4)}`;
       const ql = kind === "tram"
-        ? `[out:json][timeout:20];rel["route"~"^(tram|subway|light_rail)$"](${bb(0.06, 0.09)});out geom qt 80;`
-        : `[out:json][timeout:25];rel["route"="bus"](${bb(0.025, 0.036)});out geom qt 140;`;
+        ? `[out:json][timeout:20];rel["route"~"^(tram|subway|light_rail)$"](${bb(0.06, 0.09)});out geom qt 80;nw["railway"~"^(tram_stop|station|halt)$"]["wheelchair"](${bb(0.06, 0.09)});out center qt 700;`
+        : `[out:json][timeout:25];rel["route"="bus"](${bb(0.025, 0.036)});out geom qt 140;node["highway"="bus_stop"]["wheelchair"](${bb(0.025, 0.036)});out qt 1200;`;
       const json = await queryOverpass(ql, ctrl.signal, kind === "tram" ? 16000 : 20000);
       if (!json || ctrl.signal.aborted) return;
+      const grid = new Map();
+      for (const el of json.elements) {
+        if (el.type === "relation") continue;
+        const la = el.lat ?? el.center?.lat, lo = el.lon ?? el.center?.lon, s = wcState(el.tags && el.tags.wheelchair);
+        if (la == null || lo == null || !s) continue;
+        const k = Math.floor(la / 0.0005) + "," + Math.floor(lo / 0.0007), arr = grid.get(k);
+        const st = { lat: la, lon: lo, s };
+        if (arr) arr.push(st); else grid.set(k, [st]);
+      }
       const seen = new Map();
       for (const el of json.elements) {
-        const f = relToFeature(el, kind === "tram" ? "#5856d6" : "#ff9500"); if (!f) continue;
+        if (el.type !== "relation") continue;
+        const f = relToFeature(el, kind === "tram" ? "#5856d6" : "#ff9500", grid); if (!f) continue;
         const k = (el.tags && (el.tags.ref || el.tags.name) || el.id) + "|" + f.properties.color;
         const old = seen.get(k);
         if (!old || f.geometry.coordinates.length > old.geometry.coordinates.length) seen.set(k, f);   // une seule direction par ligne
       }
       const feats = [...seen.values()];
       if (osmLinesCache.size > 12) osmLinesCache.clear();
-      osmLinesCache.set(key, feats); osmLinesCover[kind] = { lat, lon };
+      osmLinesCache.set(key, feats);
       if (kind === "tram") { if (!isNearAngers(currentZoneCenter.lat, currentZoneCenter.lon)) apply(feats); }
       else apply(feats);
     }
     function updateBusMapLayerSafe() { try { if (map.getSource("bus-lines")) updateBusMapLayer(); } catch {} }
+
+    // Angers : accessibilité d'une ligne déduite des arrêts Irigo (« non renseigné » ≠ « non accessible »)
+    function angersLineAcc(shortName, isTram) {
+      const stops = (isTram ? irigoTramStops : irigoBusStops).filter(s => (s.lines || []).includes(shortName));
+      if (stops.length < 2) return { acc: "unknown", txt: "Peu d'arrêts renseignés pour cette ligne." };
+      const yes = stops.filter(s => s.accessible === true).length, r = yes / stops.length;
+      return { acc: r >= 0.9 ? "yes" : r >= 0.5 ? "limited" : "unknown", txt: `${yes} arrêt(s) sur ${stops.length} signalé(s) accessible(s) par Irigo.` };
+    }
+    function openLinePopup(lngLat, p, isTram) {
+      let acc = p.acc, txt = p.accTxt;
+      if (!acc) { const r = angersLineAcc(p.shortName, isTram); acc = r.acc; txt = r.txt; }
+      const ui = ACC_UI[acc] || ACC_UI.unknown;
+      const box = document.createElement("div");
+      box.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;max-width:250px;">
+        <div style="font-weight:700;font-size:14px;">${isTram ? "🚊" : "🚌"} ${p.shortName ? `<span class="line-pill" style="background:${escapeHTML(p.color || "#888")};">${escapeHTML(p.shortName)}</span> ` : ""}${escapeHTML(p.name || (isTram ? "Ligne de tram" : "Ligne de bus"))}</div>
+        <div><span class="badge ${ui.cls}">${ui.label}</span></div>
+        <div class="sub">${escapeHTML(txt || "")}</div>
+        <div class="sub">Vérifiez toujours auprès du réseau : une rampe ou un véhicule peut être indisponible.</div></div>`;
+      new maplibregl.Popup({ closeButton: true }).setLngLat(lngLat).setDOMContent(box).addTo(map);
+    }
+    map.on("click", e => {
+      const lay = ["tram-lines", "bus-lines-layer"].filter(id => map.getLayer(id));
+      if (!lay.length) return;
+      const blockers = ["pois-layer", "parkings-unclustered", "parkings-clusters", "tram-stops-layer", "bus-stops-layer", "works-layer"].filter(id => map.getLayer(id));
+      const r = 7, bbox = [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
+      if (blockers.length && map.queryRenderedFeatures(bbox, { layers: blockers }).length) return;
+      const f = map.queryRenderedFeatures(bbox, { layers: lay })[0];
+      if (f) openLinePopup(e.lngLat, f.properties, f.layer.id === "tram-lines");
+    });
 
     map.on("load", () => {
       if (VIEWER_ID) { initViewer(); return; }
