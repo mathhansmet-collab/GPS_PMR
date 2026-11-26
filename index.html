@@ -427,8 +427,7 @@
     }
     .wc-field { display: flex; flex-direction: column; gap: 3px; }
     /* ===== Mode nuit : interface sombre + carte assombrie (filtre sur le canevas, marqueurs et popups intacts) ===== */
-    body.night-map .maplibregl-canvas { will-change: filter; filter: invert(1) hue-rotate(180deg) brightness(0.88) contrast(0.92) saturate(0.85); }
-    body.night-map { background: #0b0d10; }
+    /* La carte reste TOUJOURS en mode clair : aucun filtre/inversion en thème sombre (seuls les panneaux passent en verre sombre). */
     body.dark .nav-hud { background: #0b0d10; border-color: rgba(255,255,255,0.18); }
     body.dark .nav-eta { background: #0b0d10; border: 1px solid rgba(255,255,255,0.18); }
     body.dark .nav-hud.off-route { background: #8a3f05; }
@@ -4183,10 +4182,14 @@
       if (!isMap) renderDirectory();
     }
 
+    // Choix manuel Jour/Nuit : PRIORITAIRE sur la batterie et le thème système (null = automatique)
+    let userManualTheme = null;   // "day" | "night" | null
     function toggleDarkMode() {
-      isDark = !isDark;
-      document.getElementById("darkModeBtn").setAttribute("aria-pressed", String(isDark));
-      try { localStorage.setItem("gps_pmr_dark", isDark ? "1" : "0"); } catch {}
+      const nowDark = document.body.classList.contains("dark");
+      userManualTheme = nowDark ? "day" : "night";
+      isDark = userManualTheme === "night";
+      try { localStorage.setItem("gps_pmr_theme", userManualTheme); } catch {}
+      if (isNavigating) nightOverride = null;     // le choix du bouton reprend la main sur le réglage temporaire du guidage
       refreshTheme();
     }
 
@@ -4216,7 +4219,11 @@
         st.lowBatt = st.supported && st.level <= THRESHOLD && !st.charging;
         render();
       }
-      function toggle() { st.manual = !st.manual; lsSet("gps_pmr_eco", st.manual ? "1" : "0"); render(); }
+      function toggle() {
+        st.manual = !st.manual; lsSet("gps_pmr_eco", st.manual ? "1" : "0");
+        if (st.manual && typeof userManualTheme !== "undefined" && userManualTheme) { userManualTheme = null; try { localStorage.removeItem("gps_pmr_theme"); } catch {} }
+        render();
+      }
       function init() {
         st.manual = lsGet("gps_pmr_eco") === "1";
         try {
@@ -4244,10 +4251,17 @@
 
     // Thème effectif = choix manuel (🌓) OU nuit automatique pendant le guidage (modifiable par le bouton 🌙)
     function refreshTheme() {
-      const night = (isNavigating && nightOverride !== null) ? nightOverride : (isDark || EcoGlass.active() || (isNavigating && autoNight));
+      const night = (isNavigating && nightOverride !== null) ? nightOverride
+        : (userManualTheme ? userManualTheme === "night" : (isDark || EcoGlass.active() || (isNavigating && autoNight)));
       document.body.classList.toggle("dark", night);
-      document.body.classList.toggle("night-map", night);
       document.body.classList.toggle("eco-glass-mode", night);
+      const dm = document.getElementById("darkModeBtn");
+      if (dm) {
+        dm.setAttribute("aria-pressed", String(night));
+        const ic = dm.querySelector(".ico"); if (ic) ic.textContent = night ? "🌙" : "☀️";
+        dm.title = (night ? "Mode nuit actif" : "Mode jour actif") + " — cliquer pour basculer (N)";
+        dm.setAttribute("aria-label", night ? "Mode nuit actif. Passer en mode jour" : "Mode jour actif. Passer en mode nuit");
+      }
       const b = document.getElementById("hudNight");
       if (b) { b.textContent = night ? "☀️" : "🌙"; b.setAttribute("aria-pressed", String(night)); }
       const meta = document.querySelector('meta[name="theme-color"]');
@@ -6208,11 +6222,9 @@
     // Préférences mémorisées
     (function restoreUiPrefs() {
       const g = k => { try { return localStorage.getItem(k); } catch { return null; } };
-      if (g("gps_pmr_dark") === "1") {
-        isDark = true;
-        document.getElementById("darkModeBtn").setAttribute("aria-pressed", "true");
-        refreshTheme();
-      }
+      const th = g("gps_pmr_theme") || (g("gps_pmr_dark") === "1" ? "night" : null);
+      if (th === "day" || th === "night") { userManualTheme = th; isDark = th === "night"; }
+      refreshTheme();
       if (g("gps_pmr_sb_collapsed") === "1" && !isMobileLayout()) toggleSidebar(true);
       const lg = g("gps_pmr_legend");
       if (lg === "1" || (lg === null)) document.getElementById("legend").classList.add("collapsed");
