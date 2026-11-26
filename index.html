@@ -231,7 +231,18 @@
     }
     .line-filter-btn.selected { color: #fff; border-color: transparent; }
 
-    #tripCard > summary, #battCard > summary, #packCard > summary { list-style: none; }
+    details:not(.maplibregl-ctrl-attrib) > summary { list-style: none; display: flex; align-items: center; gap: 6px; padding: 7px 0; margin: -7px 0; border-radius: 10px; }   /* zone de toucher élargie sans agrandir la carte */
+    details:not(.maplibregl-ctrl-attrib) > summary::-webkit-details-marker { display: none; }
+    /* Flèche de dépliage : pointe vers le bas (replié) et se retourne vers le haut (déplié) */
+    details:not(.maplibregl-ctrl-attrib) > summary::after {
+      content: ""; margin-left: auto; flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(0,122,255,0.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23007aff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center / 14px no-repeat;
+      transition: transform .2s ease;
+    }
+    details:not(.maplibregl-ctrl-attrib)[open] > summary::after { transform: rotate(180deg); }
+    details:not(.maplibregl-ctrl-attrib) > summary:focus-visible { outline: 2px solid #007aff; outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) { details:not(.maplibregl-ctrl-attrib) > summary::after { transition: none; } }
+    @media (pointer: coarse) { details:not(.maplibregl-ctrl-attrib) > summary { padding: 9px 0; margin: -9px 0; } details:not(.maplibregl-ctrl-attrib) > summary::after { width: 30px; height: 30px; } }
     .trip-row { display: flex; gap: 8px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--border); }
     .trip-row:last-child { border-bottom: 0; }
     .trip-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
@@ -541,7 +552,7 @@
     .fav-pin { width: 26px; height: 26px; border-radius: 50%; background: #f59e0b; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.35); cursor: pointer; }
     .map-menu button { width: 100%; margin-top: 6px; }
     #routeBox { position: static; z-index: auto; box-shadow: none; order: -2; }
-    #plannerCard { order: -4; } #lastRouteBox { order: -3; } #placesCard { order: -1; }
+    #plannerCard { order: -4; } #placesCard { order: -1; }
     #routeBox > .row.between:first-child { position: sticky; top: 0; z-index: 5; background: var(--card); padding: 6px 0; border-bottom: 1px solid var(--border); }
     @media (pointer: coarse) { .place-acts button { width: 44px; height: 44px; } .sug-star { width: 44px; height: 44px; } }
 
@@ -879,7 +890,7 @@
 
       <!-- TOURNÉE MULTI-ÉTAPES -->
       <details class="card" id="tripCard">
-        <summary class="sub" style="cursor:pointer;font-weight:700;">🧭 Tournée : plusieurs étapes <span id="tripCount" class="badge b-gov" style="display:none;"></span></summary>
+        <summary class="sub" style="cursor:pointer;font-weight:700;">🧭 Trajets : plusieurs étapes <span id="tripCount" class="badge b-gov" style="display:none;"></span></summary>
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
           <div class="sub">Ex. pharmacie, puis supermarché, puis retour. L'appli vérifie que chaque lieu est <b>ouvert à l'heure où vous y arrivez</b>.</div>
           <div class="chip-wrap">
@@ -896,11 +907,11 @@
           <div id="tripSummary"></div>
           <div class="row" style="gap:6px;flex-wrap:wrap;">
             <button onclick="tripOptimize()">🔀 Meilleur ordre</button>
-            <button id="tripCheckBtn" class="primary" onclick="tripCompute()">✅ Vérifier la tournée</button>
+            <button id="tripCheckBtn" class="primary" onclick="tripCompute()">✅ Vérifier le trajet</button>
           </div>
           <div class="row" style="gap:6px;">
-            <button id="tripGoBtn" class="go" style="flex:1;" onclick="tripGo()">▶ Démarrer la tournée</button>
-            <button onclick="tripClear()" aria-label="Vider la tournée">🗑</button>
+            <button id="tripGoBtn" class="go" style="flex:1;" onclick="tripGo()">▶ Démarrer le trajet</button>
+            <button onclick="tripClear()" aria-label="Vider le trajet">🗑</button>
           </div>
           <div class="batt-slot" data-scope="trip"></div>
         </div>
@@ -1039,13 +1050,6 @@
           <button id="proposalGoBtn" class="go" style="flex:1; font-size:13px;">🚗 M'y garer</button>
           <button id="proposalSeeBtn" style="padding:8px 12px; font-size:13px;">📍 Voir</button>
           <button onclick="clearParkingProposal()" style="padding:8px 10px; font-size:12px;" aria-label="Masquer la place PMR proposée">✕</button>
-        </div>
-      </div>
-
-      <div id="lastRouteBox" class="card" style="display:none;">
-        <div class="row between">
-          <span class="sub">↩ Dernier itinéraire : <b id="lastRouteName"></b></span>
-          <button class="primary" style="font-size:12.5px;" onclick="restoreLastRoute()">Reprendre</button>
         </div>
       </div>
 
@@ -3284,7 +3288,6 @@
           meta: document.getElementById("routeMeta").textContent
         }}));
       } catch {}
-      refreshLastRouteBox();
     }
 
     function readLastRoute() {
@@ -3293,16 +3296,6 @@
         if (!raw || Date.now() - raw.ts > 24 * 3600 * 1000) return null;
         return raw.data;
       } catch { return null; }
-    }
-
-    function refreshLastRouteBox() {
-      const box = document.getElementById("lastRouteBox");
-      if (!box) return;
-      const d = readLastRoute();
-      const routeVisible = document.getElementById("routeBox").style.display !== "none";
-      if (!d || routeVisible || isNavigating) { box.style.display = "none"; return; }
-      document.getElementById("lastRouteName").textContent = d.destName;
-      box.style.display = "block";
     }
 
     // Reprend le dernier itinéraire SANS réseau (le guidage fonctionne ensuite entièrement en local)
@@ -3332,7 +3325,6 @@
       document.getElementById("routeSteps").innerHTML = d.steps.map(s => `<div class="step-item">${escapeHTML(s.instruction)} (${s.distance} m)</div>`).join("");
       document.getElementById("routeElevationBar").innerHTML = "";
       document.getElementById("routeBox").style.display = "block";
-      document.getElementById("lastRouteBox").style.display = "none";
       if (currentRoute.analysis) renderAlerts(currentRoute); else document.getElementById("routeHazardsBar").innerHTML = "";
 
       const bounds = d.coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(d.coords[0], d.coords[0]));
@@ -3672,7 +3664,7 @@
         container.querySelector("button").before(box);
         sncfFill(s, box);
       }
-      const tb = document.createElement("button"); tb.textContent = "➕ Ajouter à la tournée"; tb.style.width = "100%";
+      const tb = document.createElement("button"); tb.textContent = "➕ Ajouter au trajet"; tb.style.width = "100%";
       tb.addEventListener("click", () => tripAdd({ name: s.name, lat: s.lat, lon: s.lon, cat: "" }));
       container.firstElementChild.appendChild(tb);
       new maplibregl.Popup().setLngLat([Number(s.lon), Number(s.lat)]).setDOMContent(container).addTo(map);
@@ -5026,7 +5018,7 @@
             </div>
           ` : ""}
           <button class="primary go-route-btn" style="margin-top:4px;width:100%;">♿ Calculer l'itinéraire</button>
-          <button class="trip-add-btn" style="width:100%;">➕ Ajouter à la tournée</button>
+          <button class="trip-add-btn" style="width:100%;">➕ Ajouter au trajet</button>
         </div>
       `;
       const popup = new maplibregl.Popup().setLngLat([Number(p.lon), Number(p.lat)]).setDOMContent(container).addTo(map);
@@ -5199,7 +5191,7 @@
           <div class="row" style="margin-top:2px;">
             <button style="flex:1;padding:6px;" class="see-btn">📍 Voir</button>
             <button style="flex:1;padding:6px;" class="primary go-btn">♿ Y aller</button>
-            <button style="flex:0 0 auto;padding:6px 10px;" class="trip-btn" aria-label="Ajouter à la tournée" title="Ajouter à la tournée">➕ Étape</button>
+            <button style="flex:0 0 auto;padding:6px 10px;" class="trip-btn" aria-label="Ajouter au trajet" title="Ajouter au trajet">➕ Étape</button>
           </div>
         `;
         if (isVotable) {
@@ -5348,7 +5340,6 @@
 
         document.getElementById("routeSteps").innerHTML = steps.map(s => `<div class="step-item">${escapeHTML(s.instruction)} (${s.distance} m)</div>`).join("");
         document.getElementById("routeBox").style.display = "block";
-        document.getElementById("lastRouteBox").style.display = "none";
 
         // Dénivelé + Batterie + IrigoFlex + Météo sol glissant + Toilettes PMR sur le tracé
         if (!options.isReroute) {
@@ -5364,7 +5355,11 @@
         if (!options.isReroute && !options.isParkingRoute) addHistory(lat, lon, name, false);
         return true;
       } catch (err) {
-        setStatus(navigator.onLine ? "❌ " + err.message : "📴 Hors ligne : calcul impossible. Utilisez « Dernier itinéraire » s'il est disponible.", "error");
+        if (!navigator.onLine && !options.isReroute && !options.isParkingRoute) {      // hors ligne : on recharge le tracé enregistré s'il s'agit du même lieu
+          const d = readLastRoute();
+          if (d && geoDist(d.destLat, d.destLon, lat, lon) < 40) { restoreLastRoute(); return true; }
+        }
+        setStatus(navigator.onLine ? "❌ " + err.message : "📴 Hors ligne : impossible de calculer ce trajet.", "error");
         return false;
       }
     }
@@ -5588,7 +5583,6 @@
       releaseWakeLock();
       document.body.classList.remove("nav-mode");   // réaffiche les menus
       setTimeout(drawAltLines, 80);
-      refreshLastRouteBox();
       if (!wasNavigating) return;
       if (live.active && live.auto && live.status !== "arrived") stopLiveShare();
 
@@ -7599,11 +7593,11 @@
     function tripAdd(p) {
       if (!p || p.lat == null || p.lon == null) return false;
       const lat = +p.lat, lon = +p.lon;
-      if (trip.stops.length >= 6) { setStatus("⚠️ 6 étapes maximum par tournée.", "error"); return false; }
-      if (trip.stops.some(s => (s.id && p.id && s.id === p.id) || (Math.abs(s.lat - lat) < 2e-5 && Math.abs(s.lon - lon) < 2e-5))) { setStatus("Cette étape est déjà dans la tournée.", "info"); return false; }
+      if (trip.stops.length >= 6) { setStatus("⚠️ 6 étapes maximum par trajet.", "error"); return false; }
+      if (trip.stops.some(s => (s.id && p.id && s.id === p.id) || (Math.abs(s.lat - lat) < 2e-5 && Math.abs(s.lon - lon) < 2e-5))) { setStatus("Cette étape est déjà dans le trajet.", "info"); return false; }
       trip.stops.push({ id: p.id || "", name: p.name, lat, lon, cat: p.cat || "", hours: p.hours || "" });
       trip.res = null; tripSave(); tripOpenCard(); renderTrip(); tripDrawMarkers();
-      setStatus(`➕ « ${p.name} » ajouté à la tournée (${trip.stops.length}).`, "ok");
+      setStatus(`➕ « ${p.name} » ajouté au trajet (${trip.stops.length}).`, "ok");
       return true;
     }
     function tripRemove(i) { trip.stops.splice(i, 1); if (trip.done > i) trip.done--; trip.res = null; tripSave(); renderTrip(); tripDrawMarkers(); tripDrawLine(null); }
@@ -7676,12 +7670,12 @@
             warn ? `<div class="trip-warn" style="background:rgba(255,149,0,.14)">🟠 ${warn} lieu(x) ferme(nt) pendant votre visite.</div>` :
               r.sched.items.some(x => x.status === "unknown") ? `<div class="sub">⚪ Certains lieux n'ont pas d'horaires dans OpenStreetMap : appelez avant de partir.</div>` :
                 `<div class="trip-ok">✅ Tous les lieux sont ouverts à l'heure d'arrivée.</div>`);
-      } else sum.innerHTML = N ? `<div class="sub">Touchez « Vérifier la tournée » pour calculer les trajets et contrôler les horaires.</div>` : "";
+      } else sum.innerHTML = N ? `<div class="sub">Touchez « Vérifier le trajet » pour calculer les trajets et contrôler les horaires.</div>` : "";
       gid("tripReturn").checked = trip.ret;
       gid("tripStart").value = trip.startHM || "";
       const go = gid("tripGoBtn");
       const all = trip.done >= N;
-      go.textContent = !N ? "▶ Démarrer" : trip.back ? "🏁 Tournée terminée" : trip.active ? (all ? (trip.ret ? "↩ Retour au départ" : "🏁 Terminer") : `✔ Étape ${trip.done + 1} faite → suivante`) : (trip.done > 0 ? `▶ Reprendre (étape ${Math.min(trip.done + 1, N)})` : "▶ Démarrer la tournée");
+      go.textContent = !N ? "▶ Démarrer" : trip.back ? "🏁 Lieux terminés" : trip.active ? (all ? (trip.ret ? "↩ Retour au départ" : "🏁 Terminer") : `✔ Étape ${trip.done + 1} faite → suivante`) : (trip.done > 0 ? `▶ Reprendre (étape ${Math.min(trip.done + 1, N)})` : "▶ Démarrer");
       go.disabled = !N;
     }
     async function tripLeg(a, b) {
@@ -7694,10 +7688,10 @@
     }
     async function tripCompute() {
       const rem = trip.stops.slice(trip.done);
-      if (!rem.length) { setStatus("Ajoutez au moins une étape à la tournée.", "info"); return null; }
+      if (!rem.length) { setStatus("Ajoutez au moins un lieu.", "info"); return null; }
       if (trip.busy) return null;
       trip.busy = true; gid("tripCheckBtn").disabled = true;
-      setStatus("⏳ Calcul de la tournée et vérification des horaires…", "info");
+      setStatus("⏳ Calcul de l'itinéraire et vérification des horaires…", "info");
       try {
         const o = getOriginCoordinate();
         if (trip.done === 0 || !trip.origin) trip.origin = { lat: o[1], lon: o[0] };
@@ -7712,11 +7706,11 @@
         tripSave(); renderTrip(); tripDrawLine(coords); tripDrawMarkers();
         if (!trip.active) { const b = new maplibregl.LngLatBounds(coords[0], coords[0]); coords.forEach(c => b.extend(c)); map.fitBounds(b, window.innerWidth <= 768 ? { padding: { top: 110, bottom: sheetPad(), left: 36, right: 36 } } : { padding: { top: 80, bottom: 70, left: sidePad(), right: 80 } }); }
         const bad = sched.items.filter(x => x.status === "closed").length;
-        setStatus(bad ? `⚠️ Tournée calculée : ${bad} lieu(x) fermé(s) à l'heure d'arrivée.` : "✅ Tournée calculée : horaires vérifiés.", bad ? "error" : "ok");
+        setStatus(bad ? `⚠️ Itinéraire calculé : ${bad} lieu(x) fermé(s) à l'heure d'arrivée.` : "✅ Itinéraire calculé : horaires vérifiés.", bad ? "error" : "ok");
         battOnTrip(trip.res);
         return trip.res;
       } catch (e) {
-        setStatus(navigator.onLine ? "❌ Tournée : " + (e && e.message || "calcul impossible") : "📴 Hors ligne : le calcul d'une nouvelle tournée demande une connexion.", "error");
+        setStatus(navigator.onLine ? "❌ Trajet : " + (e && e.message || "calcul impossible") : "📴 Hors ligne : le calcul d'un nouvel itinéraire demande une connexion.", "error");
         return null;
       } finally { trip.busy = false; gid("tripCheckBtn").disabled = false; }
     }
@@ -7739,7 +7733,7 @@
       tripSave(); renderTrip();
       if (trip.done >= N) {
         if (trip.ret && trip.origin) { trip.back = true; renderTrip(); switchTab("map"); routeTo(trip.origin.lat, trip.origin.lon, "Retour au départ", { tripReturn: true }); }
-        else { trip.active = false; setStatus("🏁 Tournée terminée.", "ok"); renderTrip(); }
+        else { trip.active = false; setStatus("🏁 Parcours terminé.", "ok"); renderTrip(); }
         return;
       }
       const res = await tripCompute();            // ETA réévaluées depuis la position actuelle
@@ -7750,7 +7744,7 @@
       routeTo(nx.lat, nx.lon, nx.name, { tripIdx: trip.done });
     }
     function tripOnArrived() {
-      if (!trip.active || trip.back) { if (trip.back) { trip.active = false; trip.back = false; renderTrip(); setStatus("🏁 Tournée terminée : vous êtes de retour.", "ok"); } return; }
+      if (!trip.active || trip.back) { if (trip.back) { trip.active = false; trip.back = false; renderTrip(); setStatus("🏁 Parcours terminé : vous êtes de retour.", "ok"); } return; }
       setStatus(`📍 Arrivé à l'étape ${trip.done + 1}. Touchez « Étape faite → suivante » quand vous repartez.`, "ok");
     }
     let _tripCoords = null;
@@ -7801,9 +7795,9 @@
     }
     function battOnTrip(res) {
       const last = trip.stops[trip.stops.length - 1];
-      battLast = { km: res.totalM / 1000, ascentM: 0, tour: !!trip.ret, lat: last && last.lat, lon: last && last.lon, label: "Cette tournée" };
+      battLast = { km: res.totalM / 1000, ascentM: 0, tour: !!trip.ret, lat: last && last.lat, lon: last && last.lon, label: "Ces lieux" };
       battRender();
-      fetchRouteElevation(res.coords).then(e => { if (e && battLast && battLast.label === "Cette tournée") { battLast.ascentM = e.ascent * (trip.ret ? 2 : 1); battRender(); } }).catch(() => {});
+      fetchRouteElevation(res.coords).then(e => { if (e && battLast && battLast.label === "Ces lieux") { battLast.ascentM = e.ascent * (trip.ret ? 2 : 1); battRender(); } }).catch(() => {});
     }
     function battClear() { battLast = null; battRender(); }
     function battResult() {
@@ -7814,7 +7808,7 @@
       const lab = battLast.label;
       if (r.level === "unknown") return `<div class="sub">🔋 Indiquez votre niveau de batterie pour être alerté si l'aller-retour devient risqué.</div>`;
       const rtTxt = battLast.tour ? `${lab} : ~${r.rt} % de batterie` : `Aller ~${r.one} % • aller-retour ~${r.rt} %`;
-      if (r.level === "ok") return `<div class="batt-box batt-ok">🔋 <b>Batterie suffisante</b> — ${rtTxt}. Il vous resterait ~${Math.max(0, r.remainRT)} % ${battLast.tour ? "en fin de tournée" : "après l'aller-retour"}.</div>`;
+      if (r.level === "ok") return `<div class="batt-box batt-ok">🔋 <b>Batterie suffisante</b> — ${rtTxt}. Il vous resterait ~${Math.max(0, r.remainRT)} % ${battLast.tour ? "en fin de parcours" : "après l'aller-retour"}.</div>`;
       const danger = r.level === "danger";
       const msg = r.remainOne < 5 ? `Même l'aller seul consomme ~${r.one} % : vous risquez la panne avant d'arriver.` :
         `${rtTxt} pour ${batt.pct} % disponibles : il ne resterait que ~${Math.max(0, r.remainRT)} % (réserve conseillée ${batt.reserve} %).`;
@@ -7828,8 +7822,8 @@
     function battRender() {
       const r = battResult();
       document.querySelectorAll(".batt-slot").forEach(el => {
-        const sc = el.dataset.scope, isTour = battLast && battLast.label === "Cette tournée";
-        if (!r || !battLast || (sc === "trip" && !isTour) || (sc === "route" && isTour)) { el.innerHTML = el.dataset.empty ? `<div class="sub">Calculez un trajet ou une tournée : l'estimation s'affichera ici.</div>` : ""; return; }
+        const sc = el.dataset.scope, isTour = battLast && battLast.label === "Ces lieux";
+        if (!r || !battLast || (sc === "trip" && !isTour) || (sc === "route" && isTour)) { el.innerHTML = el.dataset.empty ? `<div class="sub">Calculez un trajet ou une liste de lieux : l'estimation s'affichera ici.</div>` : ""; return; }
         el.innerHTML = battHTML(r);
       });
       const b = gid("battBadge"); if (b) { b.textContent = !r || r.level === "unknown" ? "" : r.level === "ok" ? "OK" : r.level === "warn" ? "⚠️" : "⛔"; b.style.display = b.textContent ? "" : "none"; }
@@ -8414,7 +8408,6 @@
       { const c = document.getElementById("bgAudioChk"); if (c) { c.checked = bgAudioEnabled; if (NATIVE && c.closest("label")) c.closest("label").style.display = "none"; } }
       updateProfileUI();
       updateNetworkBadge();
-      refreshLastRouteBox();
       updateOfflineStatus();
       initGeolocation();
     });
