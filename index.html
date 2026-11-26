@@ -8066,7 +8066,8 @@
 
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     const voice = { rec: null, field: null, on: false, finalT: "", cur: "", alts: [], prevVal: "", prevPh: "", err: null, cancel: false, to: null,
-                    speaking: false, lastAct: 0, raf: 0, an: null, stream: null, actx: null, token: 0 };
+                    speaking: false, lastAct: 0, raf: 0, an: null, stream: null, actx: null, token: 0,
+                    meterTried: false, meterAt: 0, startedAt: 0, ev: { audio: false, sound: false, speech: false } };
     const fieldId = f => f === "origin" ? "originInput" : "destInput";
 
     // ---- Panneau d'écoute façon assistant vocal : 4 points colorés qui se transforment en barres quand on parle ----
@@ -8075,7 +8076,7 @@
       gid("voiceTitle").textContent = field === "origin" ? "Dites le point de départ" : "Dites la destination";
       gid("voiceText").textContent = "Je vous écoute…";
       gid("voiceText").classList.remove("err");
-      gid("voiceHint2").style.display = "block";
+      gid("voiceHint2").textContent = "Par exemple : « de la gare à la mairie »"; gid("voiceHint2").style.display = "block";
       const done = gid("voiceDone"); done.textContent = "Terminer"; done.dataset.mode = "done";
       ov.hidden = false;
       try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch {}
@@ -8090,37 +8091,48 @@
       gid("voiceHint2").style.display = "none";
       const done = gid("voiceDone"); done.textContent = retry ? "Réessayer" : "Terminer"; done.dataset.mode = retry ? "retry" : "done";
     }
-    // Animation : niveau réel du micro sur ordinateur ; sur téléphone, animée par les signaux « parole détectée » du navigateur
+    // Animation : volume réel de la voix (5 bandes de fréquences) ; si la mesure n'est pas possible, signaux « parole détectée »
     function voiceViz(run) {
       cancelAnimationFrame(voice.raf);
       const bars = [...document.querySelectorAll("#voiceViz i")];
       if (!run) { bars.forEach(b => { b.style.height = ""; }); return; }
       const ph = bars.map(() => Math.random() * 6.28);
-      let cur = 0;
+      const cur = bars.map(() => 0);
       const tick = t => {
         const speaking = voice.speaking || Date.now() - voice.lastAct < 700;
-        const target = voice.an ? voice.an.read() : (speaking ? 0.45 + 0.55 * Math.abs(Math.sin(t / 140)) : 0.02);
-        cur += (target - cur) * 0.35;
+        const m = voice.an ? voice.an.read() : null;
         bars.forEach((b, i) => {
-          const wave = speaking || voice.an ? 0.5 + 0.5 * Math.sin(t / 105 + ph[i] * 2) : 0.5 + 0.5 * Math.sin(t / 420 + i * 0.9);
-          b.style.height = (10 + cur * 56 * (0.35 + 0.65 * wave) + (speaking || voice.an ? 0 : wave * 3)).toFixed(1) + "px";
+          let target, idle = false;
+          if (m) target = m[i];
+          else if (speaking) target = 0.3 + 0.7 * Math.abs(Math.sin(t / 130 + ph[i] * 2));
+          else { target = 0; idle = true; }
+          cur[i] += (target - cur[i]) * (target > cur[i] ? 0.6 : 0.22);                // monte vite, retombe doucement
+          const breathe = idle || (m && cur[i] < 0.05) ? 2.5 * (0.5 + 0.5 * Math.sin(t / 450 + i * 0.9)) : 0;
+          b.style.height = (10 + cur[i] * 58 + breathe).toFixed(1) + "px";
         });
         voice.raf = requestAnimationFrame(tick);
       };
       voice.raf = requestAnimationFrame(tick);
     }
+    // Mesure du volume désactivée automatiquement 7 jours si elle gêne la dictée sur cet appareil
+    const meterOff = () => { try { const v = +localStorage.getItem("gps_pmr_meter"); return v > 0 && Date.now() - v < 7 * 864e5; } catch { return false; } };
     async function voiceMeterStart(token) {
-      // Sur téléphone, le micro est réservé à la reconnaissance : on n'ouvre pas un 2e accès (risque de coupure)
-      if ((window.matchMedia && matchMedia("(pointer: coarse)").matches) || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return;
+      if (meterOff() || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || voice.an || voice.meterTried) return;
+      voice.meterTried = true;
       try {
-        const st = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true } });
         if (!voice.on || voice.token !== token) { st.getTracks().forEach(t => t.stop()); return; }
         const AC = window.AudioContext || window.webkitAudioContext;
-        const actx = new AC(), an = actx.createAnalyser(); an.fftSize = 512;
+        const actx = new AC(), an = actx.createAnalyser(); an.fftSize = 256; an.smoothingTimeConstant = 0.5;
         actx.createMediaStreamSource(st).connect(an);
-        const buf = new Uint8Array(an.fftSize);
-        voice.stream = st; voice.actx = actx;
-        voice.an = { read() { an.getByteTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; s += x * x; } return Math.min(1, Math.sqrt(s / buf.length) * 6); } };
+        if (actx.state === "suspended") actx.resume().catch(() => {});
+        const f = new Uint8Array(an.frequencyBinCount), bands = [[1, 3], [3, 6], [6, 10], [10, 15], [15, 21]];
+        voice.stream = st; voice.actx = actx; voice.meterAt = Date.now();
+        voice.an = { read() {
+          an.getByteFrequencyData(f);
+          const v = bands.map(([x, y]) => { let s = 0; for (let i = x; i < y && i < f.length; i++) s += f[i]; return Math.min(1, (s / (y - x) / 255) * 2.4); });
+          return [v[1], v[3], Math.max(...v), v[2], v[0]];                          // grave au bord, médium au centre
+        } };
       } catch {}
     }
     function voiceMeterStop() {
@@ -8153,13 +8165,16 @@
       const rec = new SpeechRec();
       rec.lang = "fr-FR"; rec.interimResults = true; rec.maxAlternatives = 3; rec.continuous = false;
       const token = ++voice.token;
-      Object.assign(voice, { rec, field, on: true, finalT: "", cur: "", alts: [], err: null, cancel: false, speaking: false, lastAct: 0,
-                             prevVal: input.value, prevPh: input.placeholder });
+      Object.assign(voice, { rec, field, on: true, finalT: "", cur: "", alts: [], err: null, cancel: false, speaking: false, lastAct: 0, meterTried: false,
+                             startedAt: Date.now(), ev: { audio: false, sound: false, speech: false }, prevVal: input.value, prevPh: input.placeholder });
+      if (!isNavigating) cancelSpeech();                                                  // pas de voix de synthèse pendant l'écoute
+      try { if (navigator.audioSession) navigator.audioSession.type = "play-and-record"; } catch {}   // iOS : session audio réglée pour le micro
       input.value = ""; input.placeholder = "🎙️ Je vous écoute…";
       gid("suggestionsBox").style.display = "none";
       const arm = ms => { clearTimeout(voice.to); voice.to = setTimeout(() => { try { rec.stop(); } catch {} }, ms); };   // jamais de micro ouvert pour rien
-      rec.onaudiostart = () => { if (voice.token === token) gid("voiceText").textContent = "Parlez maintenant…"; };
-      rec.onspeechstart = rec.onsoundstart = () => { voice.speaking = true; voice.lastAct = Date.now(); };
+      rec.onaudiostart = () => { if (voice.token !== token) return; voice.ev.audio = true; gid("voiceText").textContent = "Parlez maintenant…"; setTimeout(() => voiceMeterStart(token), 250); };
+      rec.onsoundstart = () => { voice.ev.sound = true; voice.speaking = true; voice.lastAct = Date.now(); };
+      rec.onspeechstart = () => { voice.ev.speech = true; voice.speaking = true; voice.lastAct = Date.now(); };
       rec.onspeechend = () => { voice.speaking = false; };
       rec.onresult = e => {
         const text = Array.from(e.results).map(r => r[0].transcript).join(" ").replace(/\s+/g, " ").trim();   // reconstruit à chaque fois : pas de doublons
@@ -8174,7 +8189,9 @@
         clearTimeout(voice.to);
         if (voice.token !== token) return;
         const T = (voice.finalT || voice.cur || input.value).trim(), err = voice.err, cancelled = voice.cancel;
+        const quick = Date.now() - voice.startedAt < 3500, meterWas = !!voice.meterTried;
         voice.on = false; voice.rec = null; voice.speaking = false; voiceUI(false); voiceMeterStop();
+        try { if (navigator.audioSession) navigator.audioSession.type = isNavigating ? "playback" : "auto"; } catch {}
         input.placeholder = voice.prevPh;
         if (cancelled) { voiceOverlayHide(); return; }
         if (err && err !== "aborted" && err !== "no-speech") {
@@ -8182,7 +8199,20 @@
           const msg = { "not-allowed": "Micro refusé : autorisez le micro pour ce site dans les réglages du navigateur.", "service-not-allowed": "Dictée désactivée : sur iPhone, activez-la dans Réglages › Général › Clavier › Activer la dictée. (Elle ne fonctionne pas dans l'application ajoutée à l'écran d'accueil : ouvrez le site dans Safari.)", "network": "La reconnaissance vocale demande une connexion internet.", "audio-capture": "Aucun micro détecté." }[err] || "La dictée a échoué (" + err + ").";
           voiceViz(false); voiceMsg(msg, true, err !== "not-allowed" && err !== "service-not-allowed"); setStatus("🎙️ " + msg, "error"); return;
         }
-        if (!T) { input.value = voice.prevVal; voiceViz(false); voiceMsg("Je n'ai rien entendu. Parlez près du micro.", true, true); return; }
+        if (!T) {
+          input.value = voice.prevVal; voiceViz(false);
+          const d = `micro ouvert : ${voice.ev.audio ? "oui" : "non"} · son capté : ${voice.ev.sound || voice.ev.speech ? "oui" : "non"}`;
+          if (meterWas && !(voice.ev.sound || voice.ev.speech)) {   // rien capté alors que la mesure du volume était active : on la désactive
+            try { localStorage.setItem("gps_pmr_meter", String(Date.now())); } catch {}
+            voiceMsg("Je n'ai rien entendu. Par précaution, j'ai désactivé la mesure du volume (l'animation suivra quand même votre voix) : réessayez en parlant près du micro.", true, true);
+          } else if (!voice.ev.audio) {
+            voiceMsg("Le micro ne s'est pas ouvert. Vérifiez qu'aucune autre application n'utilise le micro, puis réessayez.", true, true);
+          } else if (!(voice.ev.sound || voice.ev.speech)) {
+            voiceMsg("Micro ouvert, mais aucun son reçu. Avec des appareils auditifs ou des écouteurs Bluetooth, le téléphone peut utiliser leur micro : parlez-leur de plus près ou déconnectez-les.", true, true);
+          } else voiceMsg("Je n'ai pas compris. Réessayez en parlant distinctement.", true, true);
+          const h = gid("voiceHint2"); h.textContent = "(" + d + ")"; h.style.display = "block";
+          return;
+        }
         voiceViz(false); voiceMsg("Recherche de « " + T + " »…", false, false);
         try { await voiceHandle(T, field, voice.alts); } finally { if (!voice.on) voiceOverlayHide(); }
       };
@@ -8193,6 +8223,8 @@
         voiceMeterStart(token);
       } catch (e) { voice.on = false; voice.rec = null; voiceUI(false); voiceOverlayHide(); input.value = voice.prevVal; input.placeholder = voice.prevPh; setStatus("🎙️ Impossible de démarrer le micro.", "error"); }
     }
+    // Micros affichés seulement sur téléphone / tablette : sur ordinateur le clavier suffit
+    const voiceDeviceOk = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "") || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) || (window.matchMedia && matchMedia("(pointer: coarse)").matches);
     async function voiceResolve(field, text, alts) {
       if (text === "GPS") {
         applyPickedSuggestion("origin", { isGPS: true, lat: userPos?.lat ?? currentZoneCenter.lat, lon: userPos?.lon ?? currentZoneCenter.lon });
@@ -8250,7 +8282,7 @@
         else if (res) setStatus(`Aucun lieu trouvé pour « ${q} ».`, "error");
       }
     }
-    if (SpeechRec) document.querySelectorAll(".mic-btn").forEach(b => { b.hidden = false; });
+    if (SpeechRec && voiceDeviceOk()) document.querySelectorAll(".mic-btn").forEach(b => { b.hidden = false; });
 
     // ---- Réglage de la voix pendant le guidage : appui = vitesse, appui long = changer de voix ----
     (function () {
@@ -8362,20 +8394,6 @@
     function gpsHealthError(err) {
       if (err && err.code === 1) speakFR("La localisation est refusée. Le guidage ne peut plus suivre votre position.", true);
     }
-
-    // ---- Premier toucher : prépare la voix et le son silencieux (iOS / Chrome exigent un geste de l'utilisateur) ----
-    (function unlockOnFirstGesture() {
-      const unlock = () => {
-        ["pointerdown", "keydown", "touchstart"].forEach(e => document.removeEventListener(e, unlock, true));
-        try { const s = window.speechSynthesis; if (s) { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; s.speak(u); } } catch {}
-        if (NATIVE || !bgAudioEnabled) return;
-        try {                                                         // l'élément <audio> est « débloqué » : il pourra être relancé sans nouveau geste
-          if (!keepAliveAudio) { keepAliveUrl = makeSilentWavUrl(); keepAliveAudio = new Audio(keepAliveUrl); keepAliveAudio.loop = true; keepAliveAudio.setAttribute("playsinline", ""); }
-          if (!isNavigating) { keepAliveAudio.muted = true; const p = keepAliveAudio.play(); const back = () => { try { keepAliveAudio.pause(); keepAliveAudio.muted = false; } catch {} }; if (p && p.then) p.then(back, back); else back(); }
-        } catch {}
-      };
-      ["pointerdown", "keydown", "touchstart"].forEach(e => document.addEventListener(e, unlock, { capture: true, passive: true }));
-    })();
 
     // ---- Installation sur iPhone : pas de bouton automatique dans Safari, on explique la marche à suivre (1 seule fois) ----
     (function iosInstallHint() {
