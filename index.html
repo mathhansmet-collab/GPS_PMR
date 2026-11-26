@@ -4262,11 +4262,11 @@
     // Interroge deux miroirs Overpass EN PARALLÈLE (le plus rapide gagne), puis un 3e en secours
     async function queryOverpass(ql, signal, timeoutMs = 10000) {
       const endpoints = [
-        "https://overpass-api.de/api/interpreter",
-        "https://overpass.kumi.systems/api/interpreter",
+        "https://overpass-api.de/api/interpreter",                 // instance principale (FOSSGIS), souvent saturée
+        "https://overpass.private.coffee/api/interpreter",         // listées sur le wiki OSM (état vérifié en nov. 2026)
+        "https://ovp.dresel.systems/api/interpreter",              // instance Europe, gratuite (4 requêtes parallèles max)
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
-        "https://overpass.private.coffee/api/interpreter",
-        "https://overpass.openstreetmap.fr/api/interpreter"
+        "https://overpass.kumi.systems/api/interpreter"            // ancien miroir, gardé en dernier recours
       ];
       if (signal?.aborted) return null;
       const body = "data=" + encodeURIComponent(ql);
@@ -7374,7 +7374,12 @@
     // =====================================================================================
     const TRIP_KEY = "gps_pmr_trip_v1";
     const trip = Object.assign({ stops: [], ret: true, done: 0, startHM: "", origin: null, active: false, back: false, res: null, markers: [], busy: false },
-      (() => { try { const o = JSON.parse(localStorage.getItem(TRIP_KEY) || "{}"); return o && typeof o === "object" && Array.isArray(o.stops) ? { stops: o.stops.slice(0, 6), ret: o.ret !== false, done: o.done | 0, startHM: o.startHM || "", origin: o.origin || null } : {}; } catch { return {}; } })());
+      (() => { try { const o = JSON.parse(localStorage.getItem(TRIP_KEY) || "{}"); 
+        if (!o || typeof o !== "object" || !Array.isArray(o.stops)) return {};
+        const okPt = s => s && isFinite(s.lat) && isFinite(s.lon) && Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180 && typeof s.name === "string";
+        const stops = o.stops.filter(okPt).slice(0, 6).map(s => ({ id: String(s.id || ""), name: s.name, lat: +s.lat, lon: +s.lon, cat: String(s.cat || ""), hours: String(s.hours || ""), dwell: s.dwell != null && isFinite(s.dwell) ? +s.dwell : undefined }));
+        return { stops, ret: o.ret !== false, done: Math.max(0, Math.min(stops.length, o.done | 0)), startHM: /^\d{1,2}:\d{2}$/.test(o.startHM || "") ? o.startHM : "", origin: okPt({ ...o.origin, name: "o" }) ? { lat: +o.origin.lat, lon: +o.origin.lon } : null };
+      } catch { return {}; } })());
     trip.res = null; trip.markers = []; trip.busy = false; trip.active = false; trip.back = false;
     const tripSave = () => { try { localStorage.setItem(TRIP_KEY, JSON.stringify({ stops: trip.stops, ret: trip.ret, done: trip.done, startHM: trip.startHM, origin: trip.origin })); } catch {} };
     const TRIP_ICON = { pharmacy: "💊", market: "🛒", medical: "🩺", admin: "🏛️", restaurant: "🍽️", bar: "🍻", venue: "🎭", toilet: "🚻", parking: "🅿️" };
@@ -7570,7 +7575,7 @@
     // 2) BATTERIE du fauteuil électrique : alerte A/R + recherche de recharge
     // =====================================================================================
     const BATT_KEY = "gps_pmr_batt_v1";
-    const batt = Object.assign({ pct: null, range: 40, reserve: 15 }, (() => { try { const o = JSON.parse(localStorage.getItem(BATT_KEY) || "{}"); return o && typeof o === "object" ? o : {}; } catch { return {}; } })());
+    const batt = Object.assign({ pct: null, range: 40, reserve: 15 }, (() => { try { const o = JSON.parse(localStorage.getItem(BATT_KEY) || "{}"); if (!o || typeof o !== "object") return {}; const r = {}; if (isFinite(o.pct) && o.pct !== null && o.pct >= 0 && o.pct <= 100) r.pct = +o.pct; if (o.range > 3 && o.range < 200) r.range = +o.range; if (isFinite(o.reserve) && o.reserve !== null && o.reserve >= 0 && o.reserve <= 60) r.reserve = +o.reserve; return r; } catch { return {}; } })());
     let battLast = null, battCharge = null;
     const battSave = () => { try { localStorage.setItem(BATT_KEY, JSON.stringify(batt)); } catch {} };
     function battInit() {
@@ -7729,6 +7734,7 @@
       if (packBusy) return;
       if (!navigator.onLine) { setStatus("📴 Vous êtes hors ligne : le téléchargement d'un pack demande une connexion.", "error"); return; }
       packBusy = true; gid("packBtn").disabled = true;
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch {}   // évite que le navigateur efface le pack quand l'espace manque
       const c = map.getCenter(), lat = c.lat, lon = c.lng, big = gid("packSize").value === "big", rKm = big ? 9 : 5;
       try {
         packProg(2, "Recherche de la commune…");
