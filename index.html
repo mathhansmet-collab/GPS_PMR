@@ -634,6 +634,130 @@
     .viewer-card.help { background: #dc2626; color: #fff; } .viewer-card.arrived { background: #16a34a; color: #fff; } .viewer-card.stale { background: #b45309; color: #fff; }
     .viewer-card a { text-decoration: none; }
     body.viewer .sidebar, body.viewer .floating-right, body.viewer .legend, body.viewer .sb-open, body.viewer .help-fab, body.viewer .nav-hud, body.viewer .nav-side, body.viewer .nav-eta { display: none !important; }
+
+    /* =====================================================================
+       LIQUID GLASS — deux thèmes pilotés par variables
+       • Jour « Cristal Clair » : verre translucide + flou (batterie > 30 %)
+       • Éco « Faux Liquid Glass OLED » (.eco-glass-mode) : AUCUN backdrop-filter,
+         dégradé opaque sombre + bordures directionnelles statiques
+       ===================================================================== */
+    :root {
+      --lg-card-bg: rgba(255,255,255,0.75);
+      --lg-card-border: 1px solid rgba(255,255,255,0.8);
+      --lg-card-shadow: 0 8px 28px rgba(31,38,80,0.12), 0 1px 3px rgba(31,38,80,0.08);
+      --lg-blur: blur(16px) saturate(160%);
+      --lg-radius: 24px; --lg-radius-s: 18px;
+      --lg-gap: 20px; --lg-pad: 16px; --lg-touch: 48px;
+      --lg-sel-bg: linear-gradient(180deg, rgba(10,132,255,0.30), rgba(10,132,255,0.16));
+      --lg-sel-border: 1px solid rgba(10,132,255,0.55);
+      --lg-sel-text: #003f8f;
+      --lg-sub: #4a4a52;            /* 8,6:1 sur blanc  (AAA) */
+      --lg-accent: #0050c8;         /* 7,4:1 sur blanc  (AAA) */
+      --lg-warn-bg: #ffd60a; --lg-warn-text: #000; --lg-warn-border: 2px solid #000;
+      --lg-sos-bg: #c4161c; --lg-sos-text: #fff; --lg-sos-border: 2px solid #fff;
+      --lg-fx: background-color .3s ease, border-color .3s ease, box-shadow .3s ease, color .3s ease;
+    }
+    body.eco-glass-mode {
+      --lg-card-bg: linear-gradient(145deg, rgba(20,29,48,0.95), rgba(9,13,22,0.98));
+      --lg-card-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 16px rgba(0,0,0,0.5);
+      --lg-blur: none;
+      --lg-sel-bg: linear-gradient(180deg, rgba(64,156,255,0.34), rgba(64,156,255,0.18));
+      --lg-sel-border: 1px solid rgba(120,185,255,0.75);
+      --lg-sel-text: #cfe6ff;
+      --lg-sub: #c4c8d4;            /* 10,7:1 sur #0d1424 (AAA) */
+      --lg-accent: #6cb6ff;         /* 8,3:1 (AAA) */
+      --lg-warn-bg: rgba(255,214,10,0.12); --lg-warn-text: #ffd60a; --lg-warn-border: 1.5px solid #ffd60a;
+      --lg-sos-bg: rgba(255,107,107,0.14); --lg-sos-text: #ff8a80; --lg-sos-border: 1.5px solid #ff6b6b;
+      --sub: var(--lg-sub);
+    }
+    body:not(.eco-glass-mode) { --sub: var(--lg-sub); }
+
+    /* Surfaces : panneau, cartes, blocs */
+    .sidebar, .route-planner, .mode-shell, .card, .pill-bar, .legend {
+      transition: var(--lg-fx);
+    }
+    .sidebar {
+      gap: var(--lg-gap); padding: var(--lg-pad);
+      border-radius: 28px;
+      background: rgba(255,255,255,0.62); border: var(--lg-card-border);
+      -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%);
+      box-shadow: 0 16px 44px rgba(31,38,80,0.20);
+    }
+    .scroll-area { gap: var(--lg-gap); padding: 2px 2px 6px 0; }
+    .route-planner, .mode-shell, #placesCard, .scroll-area > .card, #routeBox {
+      background: var(--lg-card-bg); border: var(--lg-card-border); border-radius: var(--lg-radius);
+      box-shadow: var(--lg-card-shadow);
+      -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
+    }
+    .route-planner, .mode-shell { padding: var(--lg-pad); gap: 12px; }
+    .scroll-area > .card, #placesCard { padding: var(--lg-pad); }
+    #placesCard { gap: 10px; }
+    .mode-shell { order: -3; }
+
+    /* Éco : plus aucun flou nulle part, bordures directionnelles statiques */
+    body.eco-glass-mode .sidebar,
+    body.eco-glass-mode .route-planner, body.eco-glass-mode .mode-shell,
+    body.eco-glass-mode #placesCard, body.eco-glass-mode .scroll-area > .card, body.eco-glass-mode #routeBox,
+    body.eco-glass-mode .pill-bar, body.eco-glass-mode .legend, body.eco-glass-mode .nav-hud {
+      -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    }
+    body.eco-glass-mode .sidebar {
+      background: linear-gradient(145deg, rgba(20,29,48,0.95), rgba(9,13,22,0.98));
+      border: 1px solid transparent;
+      border-top: 1px solid rgba(255,255,255,0.22); border-left: 1px solid rgba(255,255,255,0.14);
+      border-bottom: 1px solid rgba(0,0,0,0.6); border-right: 1px solid rgba(0,0,0,0.35);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 30px rgba(0,0,0,0.55);
+    }
+    body.eco-glass-mode .route-planner, body.eco-glass-mode .mode-shell,
+    body.eco-glass-mode #placesCard, body.eco-glass-mode .scroll-area > .card, body.eco-glass-mode #routeBox {
+      border: 1px solid transparent;
+      border-top: 1px solid rgba(255,255,255,0.22); border-left: 1px solid rgba(255,255,255,0.14);
+      border-bottom: 1px solid rgba(0,0,0,0.6); border-right: 1px solid rgba(0,0,0,0.35);
+    }
+    body.eco-glass-mode .pill-bar, body.eco-glass-mode .legend {
+      background: linear-gradient(145deg, rgba(20,29,48,0.97), rgba(9,13,22,0.99));
+    }
+    body.eco-glass-mode .field-box, body.eco-glass-mode .tabs, body.eco-glass-mode .seg,
+    body.eco-glass-mode .segmented button { background: rgba(255,255,255,0.06); }
+    body.eco-glass-mode .field-box input { background: transparent; }
+
+    /* Sélection : pilules de verre teinté bleu vibrant */
+    .mode-tabs-4 button.active-wc, .mode-tabs-4 button.active-car, .mode-tabs-4 button.active-bus, .mode-tabs-4 button.active-tram,
+    .segmented button.active, .seg button.active, .tabs button.active {
+      background: var(--lg-sel-bg); border: var(--lg-sel-border); color: var(--lg-sel-text);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 2px 8px rgba(10,132,255,0.25);
+      border-radius: 999px;
+    }
+    .mode-tabs-4 button.active-car { --lg-sel-text: var(--lg-sel-text); }
+    .mode-tabs-4 button, .segmented button, .seg button, .tabs button { transition: var(--lg-fx); border-radius: 999px; }
+    .mode-tabs-4 { border-radius: 999px; padding: 5px; }
+    .segmented button { background: rgba(120,120,128,0.12); border: 1px solid transparent; }
+    body.eco-glass-mode .segmented button { background: rgba(255,255,255,0.07); }
+
+    /* Boutons d'urgence */
+    button.warn { background: var(--lg-warn-bg); color: var(--lg-warn-text); border: var(--lg-warn-border); border-radius: 18px; }
+    button.sos-btn { background: var(--lg-sos-bg); color: var(--lg-sos-text); border: var(--lg-sos-border); border-radius: 18px; }
+    body.eco-glass-mode button.warn, body.eco-glass-mode button.sos-btn { box-shadow: inset 0 1px 0 rgba(255,255,255,0.10); }
+    button.warn, button.sos-btn { font-weight: 800; }
+
+    /* Lisibilité : textes secondaires contrastés */
+    .sub { color: var(--lg-sub); }
+    #profileHint { color: var(--lg-sub); font-weight: 600; font-size: 13px; line-height: 1.4; }
+
+    /* Zones tactiles ≥ 48 px : boutons et accordéons du panneau */
+    .sidebar button, .sidebar .chip { min-height: var(--lg-touch); }
+    .sidebar .clear-btn, .sidebar .mic-btn, .sidebar .star-fld, .sidebar .swap-btn { min-height: 44px !important; }
+    .field-box .clear-btn, .field-box .mic-btn { width: 44px; height: 44px; }
+    .field-box { padding: 2px 6px 2px 12px; min-height: var(--lg-touch); }
+    .sidebar details > summary { min-height: var(--lg-touch); display: flex; align-items: center; padding: 0; margin: 0; }
+    .sidebar details > summary::after { margin-left: auto; }
+    .sidebar input:not([type=checkbox]):not([type=file]) { min-height: var(--lg-touch); }
+    .mode-tabs-4 button { min-height: 56px; }
+    @media (max-width: 768px) {
+      .sidebar, body.large-mode .sidebar { padding: 6px 14px 14px; gap: 18px; }
+      .sidebar .scroll-area { padding-bottom: 16px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .sidebar, .route-planner, .mode-shell, .card, button { transition: none !important; } }
   </style>
 </head>
 <body>
@@ -678,6 +802,7 @@
       <button id="layersBtn" class="pill-bar" onclick="toggleLayersPanel()" aria-expanded="false" aria-controls="layerToggles" aria-label="Afficher ou masquer les filtres de la carte" title="Filtres (C)"><span class="ico"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" aria-hidden="true" style="vertical-align:-0.15em"><path d="M3 4.5h18l-7 8.2v6.3l-4 2v-8.3z" fill="#007aff" stroke="#007aff" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="lbl">Filtres</span></button>
       <button id="largeModeBtn" class="pill-bar" onclick="toggleLargeMode()" aria-pressed="false" aria-label="Activer le mode gros boutons et grand texte" title="Grand format (L)"><span class="ico">👁️</span><span class="lbl">Grand format</span></button>
       <button id="darkModeBtn" class="pill-bar" onclick="toggleDarkMode()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit" title="Jour / Nuit (N)"><span class="ico">🌓</span><span class="lbl">Jour / Nuit</span></button>
+      <button id="ecoBtn" class="pill-bar" onclick="toggleEcoGlass()" aria-pressed="false" aria-label="Mode éco-batterie : verre sombre sans flou" title="Éco-batterie (verre OLED sans flou)"><span class="ico">🔋</span><span class="lbl">Éco</span></button>
       <button class="pill-bar" onclick="recenterOnStart()" aria-label="Recentrer la carte sur ma position actuelle" title="Ma position (G)"><span class="ico">🎯</span><span class="lbl">Ma position</span></button>
       <button class="pill-bar" onclick="refreshCurrentZone(true)" aria-label="Actualiser les lieux de cette zone" title="Actualiser la zone (R)"><span class="ico">🔄</span><span class="lbl">Cette zone</span></button>
       <button id="installBtn" class="pill-bar install-btn" onclick="installApp()" aria-label="Installer l'application sur cet appareil" title="Installer l'application"><span class="ico">📲</span><span class="lbl">Installer</span></button>
@@ -952,21 +1077,6 @@
         <a id="arrivedSms" href="#" style="text-decoration:none;"><button class="go" style="width:100%;margin-top:8px;">✅ Prévenir <span id="arrivedName"></span> : bien arrivé</button></a>
       </div>
 
-      <!-- FAVORIS + HISTORIQUE -->
-      <div class="card" id="placesCard">
-        <div class="row places-head">
-          <div class="seg" role="tablist" aria-label="Mes lieux">
-            <button id="plTabFav" role="tab" class="active" onclick="showPlacesTab('fav')">⭐ Favoris<span class="cnt" id="favCount"></span></button>
-            <button id="plTabHist" role="tab" onclick="showPlacesTab('hist')">🕘 Récents<span class="cnt" id="histCount"></span></button>
-          </div>
-          <button id="placesToggle" onclick="togglePlacesCard()" aria-expanded="true" aria-label="Replier ou déplier mes lieux">▾</button>
-        </div>
-        <input id="placesFilter" type="search" placeholder="🔎 Filtrer mes lieux…" aria-label="Filtrer mes lieux" oninput="renderPlaces()" />
-        <div id="placesBody" role="list"></div>
-        <div class="places-foot" id="placesFoot"></div>
-        <input type="file" id="placesImport" accept="application/json,.json" style="display:none" onchange="importPlaces(this)" />
-      </div>
-
       <!-- 4 ONGLETS : FAUTEUIL | VOITURE | BUS | TRAMWAY -->
       <div class="mode-shell">
         <div class="mode-tabs-4" role="tablist" aria-label="Mode de déplacement">
@@ -1036,6 +1146,21 @@
           <input id="tramSearchInput" placeholder="🔍 Chercher une station ou gare…" aria-label="Chercher une station ou gare" oninput="debouncedTramSearch()" style="background:var(--card2); padding:8px 10px;" />
           <div id="tramStationsList" style="display:flex; flex-direction:column; gap:7px; max-height:220px; overflow-y:auto;"></div>
         </div>
+      </div>
+
+      <!-- FAVORIS + HISTORIQUE -->
+      <div class="card" id="placesCard">
+        <div class="row places-head">
+          <div class="seg" role="tablist" aria-label="Mes lieux">
+            <button id="plTabFav" role="tab" class="active" onclick="showPlacesTab('fav')">⭐ Favoris<span class="cnt" id="favCount"></span></button>
+            <button id="plTabHist" role="tab" onclick="showPlacesTab('hist')">🕘 Récents<span class="cnt" id="histCount"></span></button>
+          </div>
+          <button id="placesToggle" onclick="togglePlacesCard()" aria-expanded="true" aria-label="Replier ou déplier mes lieux">▾</button>
+        </div>
+        <input id="placesFilter" type="search" placeholder="🔎 Filtrer mes lieux…" aria-label="Filtrer mes lieux" oninput="renderPlaces()" />
+        <div id="placesBody" role="list"></div>
+        <div class="places-foot" id="placesFoot"></div>
+        <input type="file" id="placesImport" accept="application/json,.json" style="display:none" onchange="importPlaces(this)" />
       </div>
 
       <!-- PROPOSITION AUTOMATIQUE PARKING PMR (VOITURE) -->
@@ -4065,11 +4190,64 @@
       refreshTheme();
     }
 
+
+    // =====================================================================
+    // EcoGlass — thème économe : batterie ≤ 30 % (hors charge), mode sombre du système
+    // ou bouton manuel 🔋  →  classe .eco-glass-mode (verre OLED sans backdrop-filter).
+    // navigator.getBattery() n'existe pas sur iOS Safari / Firefox : on retombe alors sur
+    // prefers-color-scheme: dark et sur le bouton manuel.
+    // =====================================================================
+    const EcoGlass = (() => {
+      const THRESHOLD = 0.30;
+      const st = { battery: null, level: 1, charging: true, supported: false, manual: false, sysDark: false, lowBatt: false };
+      const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+      const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+      function active() { return !!(st.manual || st.lowBatt || st.sysDark); }
+      function render() {
+        const b = document.getElementById("ecoBtn");
+        if (b) {
+          b.setAttribute("aria-pressed", String(st.manual));
+          const why = st.manual ? "forcé manuellement" : st.lowBatt ? "batterie ≤ 30 %" : st.sysDark ? "thème sombre du système" : "désactivé";
+          b.title = "Éco-batterie : " + why;
+        }
+        if (typeof refreshTheme === "function") refreshTheme();
+      }
+      function recompute() {
+        st.lowBatt = st.supported && st.level <= THRESHOLD && !st.charging;
+        render();
+      }
+      function toggle() { st.manual = !st.manual; lsSet("gps_pmr_eco", st.manual ? "1" : "0"); render(); }
+      function init() {
+        st.manual = lsGet("gps_pmr_eco") === "1";
+        try {
+          const mq = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
+          if (mq) {
+            st.sysDark = mq.matches;
+            const on = e => { st.sysDark = e.matches; render(); };
+            mq.addEventListener ? mq.addEventListener("change", on) : (mq.addListener && mq.addListener(on));
+          }
+        } catch {}
+        if (navigator.getBattery) {
+          navigator.getBattery().then(bat => {
+            st.battery = bat; st.supported = true;
+            const upd = () => { st.level = bat.level; st.charging = bat.charging; recompute(); };
+            bat.addEventListener("levelchange", upd);
+            bat.addEventListener("chargingchange", upd);
+            upd();
+          }).catch(() => render());
+        }
+        render();
+      }
+      return { init, toggle, active, state: st };
+    })();
+    function toggleEcoGlass() { EcoGlass.toggle(); }
+
     // Thème effectif = choix manuel (🌓) OU nuit automatique pendant le guidage (modifiable par le bouton 🌙)
     function refreshTheme() {
-      const night = (isNavigating && nightOverride !== null) ? nightOverride : (isDark || (isNavigating && autoNight));
+      const night = (isNavigating && nightOverride !== null) ? nightOverride : (isDark || EcoGlass.active() || (isNavigating && autoNight));
       document.body.classList.toggle("dark", night);
       document.body.classList.toggle("night-map", night);
+      document.body.classList.toggle("eco-glass-mode", night);
       const b = document.getElementById("hudNight");
       if (b) { b.textContent = night ? "☀️" : "🌙"; b.setAttribute("aria-pressed", String(night)); }
       const meta = document.querySelector('meta[name="theme-color"]');
@@ -6026,6 +6204,7 @@
     // Fermer le panneau des couches en touchant la carte
     map.on("click", () => { if (isMobileLayout()) toggleLayersPanel(false); });
 
+    EcoGlass.init();
     // Préférences mémorisées
     (function restoreUiPrefs() {
       const g = k => { try { return localStorage.getItem(k); } catch { return null; } };
