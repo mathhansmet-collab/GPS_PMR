@@ -1,12 +1,23 @@
-// sw.js — cache hors-ligne de GPS PMR (à placer dans le même dossier que gps-pmr.html, servi en HTTPS)
-const APP_CACHE = "gpspmr-app-v2";
+// sw.js — PWA GPS PMR : coque installable + cache hors ligne (à placer à côté de index.html, servi en HTTPS)
+const APP_CACHE = "gpspmr-app-v3";
 const TILE_CACHE = "gpspmr-tiles-v1";
 const TILE_HOSTS = ["tiles.openfreemap.org"];
 const LIB_HOSTS = ["unpkg.com"];
 const MAX_TILES = 8000;
 
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
+// v3 : coque de l'application préchargée → l'application s'ouvre même sans réseau une fois installée (PWA installable)
+const SHELL = ["./", "index.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
+self.addEventListener("install", event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(APP_CACHE);
+    await Promise.all(SHELL.map(u => cache.add(u).catch(() => {})));      // un fichier manquant n'empêche pas l'installation
+    await self.skipWaiting();
+  })());
+});
+self.addEventListener("activate", event => event.waitUntil((async () => {
+  for (const k of await caches.keys()) if (k.startsWith("gpspmr-app-") && k !== APP_CACHE) await caches.delete(k);   // anciennes versions
+  await self.clients.claim();
+})()));
 
 // v2 : les paquets hors ligne (tuiles, polices, pictogrammes) passent par le même cache de tuiles
 async function trim(cacheName, max) {
