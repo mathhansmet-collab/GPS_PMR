@@ -120,7 +120,23 @@
     .field-box input:focus, .field-box input:focus-visible { outline: none; box-shadow: none; }
     .field-box input { min-width: 0; text-overflow: ellipsis; flex: 1 1 auto; }
     .field-box input:placeholder-shown ~ .clear-btn, .field-box input:placeholder-shown ~ .star-fld { display: none; }
-    .voice-hint { margin-top: 6px; padding: 6px 10px; border-radius: 10px; background: rgba(255,59,48,.10); }
+    .voice-overlay { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,.38); display: flex; align-items: flex-end; justify-content: center; animation: vFade .18s ease-out; }
+    .voice-overlay[hidden] { display: none; }
+    @keyframes vFade { from { opacity: 0; } to { opacity: 1; } }
+    .voice-sheet { width: min(560px, 100%); background: var(--card2, #fff); color: var(--text, #111); border-radius: 26px 26px 0 0; padding: 22px 20px calc(18px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 40px rgba(0,0,0,.25); text-align: center; animation: vUp .22s ease-out; }
+    @keyframes vUp { from { transform: translateY(40px); } to { transform: none; } }
+    @media (min-width: 769px) { .voice-overlay { align-items: center; } .voice-sheet { border-radius: 26px; padding-bottom: 20px; } }
+    .voice-title { font-size: 14px; font-weight: 700; color: var(--sub, #555); letter-spacing: .02em; }
+    .voice-text { font-size: 22px; font-weight: 600; line-height: 1.3; min-height: 58px; margin: 10px 4px 4px; display: flex; align-items: center; justify-content: center; word-break: break-word; }
+    .voice-text.err { font-size: 16px; color: #d93025; font-weight: 600; }
+    .voice-viz { height: 76px; display: flex; align-items: center; justify-content: center; gap: 9px; }
+    .voice-viz i { display: block; width: 11px; height: 11px; border-radius: 6px; background: #4285f4; transition: height .05s linear; }
+    .voice-viz i:nth-child(2) { background: #ea4335; } .voice-viz i:nth-child(3) { background: #fbbc05; } .voice-viz i:nth-child(4) { background: #34a853; } .voice-viz i:nth-child(5) { background: #4285f4; }
+    .voice-hint2 { font-size: 13px; color: var(--sub, #555); margin-top: 2px; }
+    .voice-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .voice-actions button { flex: 1; min-height: 50px; border-radius: 14px; border: 1px solid var(--border, rgba(0,0,0,.12)); background: var(--card, #f2f2f7); color: var(--text, #111); font-size: 16px; font-weight: 700; }
+    .voice-actions button.primary { background: #007aff; color: #fff; border-color: #007aff; }
+    @media (prefers-reduced-motion: reduce) { .voice-overlay, .voice-sheet { animation: none; } }
     .sug-item.kbd { background: rgba(0,122,255,0.12); }
     .swap-btn {
       width: 36px; height: 60px; padding: 0; border-radius: 12px;
@@ -621,6 +637,18 @@
       <div id="hudNext" class="hud-next"></div>
     </div>
   </div>
+  <div id="voiceOverlay" class="voice-overlay" hidden onclick="if(event.target===this)voiceCancel()">
+    <div class="voice-sheet" role="dialog" aria-modal="true" aria-labelledby="voiceTitle">
+      <div id="voiceTitle" class="voice-title">Dites la destination</div>
+      <div id="voiceText" class="voice-text" role="status" aria-live="polite">Je vous écoute…</div>
+      <div id="voiceViz" class="voice-viz" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <div id="voiceHint2" class="voice-hint2">Par exemple : « de la gare à la mairie »</div>
+      <div class="voice-actions">
+        <button type="button" onclick="voiceCancel()">Annuler</button>
+        <button id="voiceDone" type="button" class="primary" data-mode="done" onclick="voiceDonePress()">Terminer</button>
+      </div>
+    </div>
+  </div>
   <div id="navSide" class="nav-side">
     <button id="hudRecenter" onclick="enableFollowCamera()" aria-label="Recentrer la carte sur ma position">🎯</button>
     <button id="hudRepeat" onclick="repeatCurrentInstruction()" aria-label="Répéter la consigne vocale">🔁</button>
@@ -846,7 +874,6 @@
           <button class="swap-btn" aria-label="Inverser le départ et l'arrivée" onclick="swapOriginAndDest()">⇅</button>
         </div>
 
-        <div id="voiceHint" class="sub voice-hint" role="status" aria-live="polite" style="display:none;">🎙️ Parlez : « de la gare à la mairie » ou « aller à la pharmacie ». Touchez le micro pour terminer.</div>
         <div id="suggestionsBox" class="suggestions-list" style="display:none;" role="listbox" aria-label="Suggestions d'adresses"></div>
       </div>
 
@@ -8038,60 +8065,133 @@
     }
 
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const voice = { rec: null, field: null, on: false, finalT: "", alts: [], prevVal: "", prevPh: "", err: null, cancel: false, to: null };
+    const voice = { rec: null, field: null, on: false, finalT: "", cur: "", alts: [], prevVal: "", prevPh: "", err: null, cancel: false, to: null,
+                    speaking: false, lastAct: 0, raf: 0, an: null, stream: null, actx: null, token: 0 };
     const fieldId = f => f === "origin" ? "originInput" : "destInput";
+
+    // ---- Panneau d'écoute façon assistant vocal : 4 points colorés qui se transforment en barres quand on parle ----
+    function voiceOverlayShow(field) {
+      const ov = gid("voiceOverlay"); if (!ov) return;
+      gid("voiceTitle").textContent = field === "origin" ? "Dites le point de départ" : "Dites la destination";
+      gid("voiceText").textContent = "Je vous écoute…";
+      gid("voiceText").classList.remove("err");
+      gid("voiceHint2").style.display = "block";
+      const done = gid("voiceDone"); done.textContent = "Terminer"; done.dataset.mode = "done";
+      ov.hidden = false;
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch {}
+      voiceViz(true);
+    }
+    function voiceOverlayHide() {
+      const ov = gid("voiceOverlay"); if (ov) ov.hidden = true;
+      voiceViz(false); voiceMeterStop();
+    }
+    function voiceMsg(text, isErr, retry) {
+      gid("voiceText").textContent = text; gid("voiceText").classList.toggle("err", !!isErr);
+      gid("voiceHint2").style.display = "none";
+      const done = gid("voiceDone"); done.textContent = retry ? "Réessayer" : "Terminer"; done.dataset.mode = retry ? "retry" : "done";
+    }
+    // Animation : niveau réel du micro sur ordinateur ; sur téléphone, animée par les signaux « parole détectée » du navigateur
+    function voiceViz(run) {
+      cancelAnimationFrame(voice.raf);
+      const bars = [...document.querySelectorAll("#voiceViz i")];
+      if (!run) { bars.forEach(b => { b.style.height = ""; }); return; }
+      const ph = bars.map(() => Math.random() * 6.28);
+      let cur = 0;
+      const tick = t => {
+        const speaking = voice.speaking || Date.now() - voice.lastAct < 700;
+        const target = voice.an ? voice.an.read() : (speaking ? 0.45 + 0.55 * Math.abs(Math.sin(t / 140)) : 0.02);
+        cur += (target - cur) * 0.35;
+        bars.forEach((b, i) => {
+          const wave = speaking || voice.an ? 0.5 + 0.5 * Math.sin(t / 105 + ph[i] * 2) : 0.5 + 0.5 * Math.sin(t / 420 + i * 0.9);
+          b.style.height = (10 + cur * 56 * (0.35 + 0.65 * wave) + (speaking || voice.an ? 0 : wave * 3)).toFixed(1) + "px";
+        });
+        voice.raf = requestAnimationFrame(tick);
+      };
+      voice.raf = requestAnimationFrame(tick);
+    }
+    async function voiceMeterStart(token) {
+      // Sur téléphone, le micro est réservé à la reconnaissance : on n'ouvre pas un 2e accès (risque de coupure)
+      if ((window.matchMedia && matchMedia("(pointer: coarse)").matches) || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return;
+      try {
+        const st = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!voice.on || voice.token !== token) { st.getTracks().forEach(t => t.stop()); return; }
+        const AC = window.AudioContext || window.webkitAudioContext;
+        const actx = new AC(), an = actx.createAnalyser(); an.fftSize = 512;
+        actx.createMediaStreamSource(st).connect(an);
+        const buf = new Uint8Array(an.fftSize);
+        voice.stream = st; voice.actx = actx;
+        voice.an = { read() { an.getByteTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; s += x * x; } return Math.min(1, Math.sqrt(s / buf.length) * 6); } };
+      } catch {}
+    }
+    function voiceMeterStop() {
+      voice.an = null;
+      try { if (voice.stream) voice.stream.getTracks().forEach(t => t.stop()); } catch {}
+      try { if (voice.actx) voice.actx.close(); } catch {}
+      voice.stream = null; voice.actx = null;
+    }
     function voiceUI(on, field) {
       document.querySelectorAll(".mic-btn").forEach(b => { const act = on && b.dataset.field === field; b.classList.toggle("listening", act); b.setAttribute("aria-pressed", act ? "true" : "false"); });
-      const h = gid("voiceHint"); if (h) h.style.display = on ? "block" : "none";
     }
-    function voiceRestore(field) {
-      const input = gid(fieldId(field));
-      if (!input.value.trim() || input.value === "") input.value = voice.prevVal;
-      input.placeholder = voice.prevPh || input.placeholder;
+    function voiceFinish() { if (voice.on && voice.rec) { try { voice.rec.stop(); } catch {} } }
+    function voiceCancel() {
+      if (voice.on && voice.rec) { voice.cancel = true; try { voice.rec.abort(); } catch {} }
+      else { const i = gid(fieldId(voice.field || "dest")); if (i && voice.prevPh) i.placeholder = voice.prevPh; }
+      voiceOverlayHide(); voiceUI(false);
+    }
+    function voiceDonePress() {
+      const b = gid("voiceDone");
+      if (b.dataset.mode === "retry") voiceStart(voice.field || "dest"); else voiceFinish();
     }
     function voiceStart(field) {
       if (!SpeechRec) { setStatus("🎙️ La dictée vocale n'est pas disponible sur ce navigateur. Utilisez le micro du clavier.", "info"); return; }
       if (voice.on) {
-        if (voice.field === field) { try { voice.rec.stop(); } catch {} return; }       // 2e appui : on termine la phrase
+        if (voice.field === field) { voiceFinish(); return; }                           // 2e appui sur le même micro : on termine la phrase
         voice.cancel = true; try { voice.rec.abort(); } catch {}
-        setTimeout(() => voiceStart(field), 200); return;
+        setTimeout(() => voiceStart(field), 250); return;
       }
       const input = gid(fieldId(field));
       const rec = new SpeechRec();
       rec.lang = "fr-FR"; rec.interimResults = true; rec.maxAlternatives = 3; rec.continuous = false;
-      Object.assign(voice, { rec, field, on: true, finalT: "", alts: [], err: null, cancel: false, prevVal: input.value, prevPh: input.placeholder });
+      const token = ++voice.token;
+      Object.assign(voice, { rec, field, on: true, finalT: "", cur: "", alts: [], err: null, cancel: false, speaking: false, lastAct: 0,
+                             prevVal: input.value, prevPh: input.placeholder });
       input.value = ""; input.placeholder = "🎙️ Je vous écoute…";
       gid("suggestionsBox").style.display = "none";
+      const arm = ms => { clearTimeout(voice.to); voice.to = setTimeout(() => { try { rec.stop(); } catch {} }, ms); };   // jamais de micro ouvert pour rien
+      rec.onaudiostart = () => { if (voice.token === token) gid("voiceText").textContent = "Parlez maintenant…"; };
+      rec.onspeechstart = rec.onsoundstart = () => { voice.speaking = true; voice.lastAct = Date.now(); };
+      rec.onspeechend = () => { voice.speaking = false; };
       rec.onresult = e => {
-        let interim = "";
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const r = e.results[i];
-          if (r.isFinal) { voice.finalT += r[0].transcript; voice.alts = Array.from(r).map(a => a.transcript); }
-          else interim += r[0].transcript;
-        }
-        input.value = (voice.finalT + interim).trim();
+        const text = Array.from(e.results).map(r => r[0].transcript).join(" ").replace(/\s+/g, " ").trim();   // reconstruit à chaque fois : pas de doublons
+        voice.cur = text; voice.lastAct = Date.now();
+        const last = e.results[e.results.length - 1];
+        if (last && last.isFinal) { voice.finalT = text; voice.alts = Array.from(last).map(a => a.transcript); }
+        input.value = text; if (text) gid("voiceText").textContent = "« " + text + " »";
+        arm(8000);
       };
       rec.onerror = e => { voice.err = e.error || "error"; };
-      rec.onend = () => {
+      rec.onend = async () => {
         clearTimeout(voice.to);
-        const T = (voice.finalT || input.value).trim(), err = voice.err, cancelled = voice.cancel;
-        voice.on = false; voice.rec = null; voiceUI(false);
+        if (voice.token !== token) return;
+        const T = (voice.finalT || voice.cur || input.value).trim(), err = voice.err, cancelled = voice.cancel;
+        voice.on = false; voice.rec = null; voice.speaking = false; voiceUI(false); voiceMeterStop();
         input.placeholder = voice.prevPh;
-        if (cancelled) { return; }
+        if (cancelled) { voiceOverlayHide(); return; }
         if (err && err !== "aborted" && err !== "no-speech") {
           input.value = voice.prevVal;
-          const msg = { "not-allowed": "🎙️ Micro refusé : autorisez le micro pour ce site dans les réglages du navigateur.", "service-not-allowed": "🎙️ Dictée désactivée : sur iPhone, activez-la dans Réglages › Général › Clavier › Activer la dictée.", "network": "🎙️ La reconnaissance vocale demande une connexion internet.", "audio-capture": "🎙️ Aucun micro détecté." }[err] || "🎙️ La dictée a échoué (" + err + "). Réessayez ou utilisez le clavier.";
-          setStatus(msg, "error"); return;
+          const msg = { "not-allowed": "Micro refusé : autorisez le micro pour ce site dans les réglages du navigateur.", "service-not-allowed": "Dictée désactivée : sur iPhone, activez-la dans Réglages › Général › Clavier › Activer la dictée. (Elle ne fonctionne pas dans l'application ajoutée à l'écran d'accueil : ouvrez le site dans Safari.)", "network": "La reconnaissance vocale demande une connexion internet.", "audio-capture": "Aucun micro détecté." }[err] || "La dictée a échoué (" + err + ").";
+          voiceViz(false); voiceMsg(msg, true, err !== "not-allowed" && err !== "service-not-allowed"); setStatus("🎙️ " + msg, "error"); return;
         }
-        if (!T) { input.value = voice.prevVal; setStatus("🎙️ Je n'ai rien entendu. Réessayez en parlant près du micro.", "info"); return; }
-        voiceHandle(T, field, voice.alts);
+        if (!T) { input.value = voice.prevVal; voiceViz(false); voiceMsg("Je n'ai rien entendu. Parlez près du micro.", true, true); return; }
+        voiceViz(false); voiceMsg("Recherche de « " + T + " »…", false, false);
+        try { await voiceHandle(T, field, voice.alts); } finally { if (!voice.on) voiceOverlayHide(); }
       };
       try {
-        rec.start(); voiceUI(true, field);
+        rec.start(); voiceUI(true, field); voiceOverlayShow(field);
         try { navigator.vibrate && navigator.vibrate(15); } catch {}
-        setStatus("🎙️ Je vous écoute… dites par exemple « de la gare à la mairie ».", "info");
-        voice.to = setTimeout(() => { try { rec.stop(); } catch {} }, 12000);   // arrêt automatique : ni batterie ni micro ouverts pour rien
-      } catch (e) { voice.on = false; voice.rec = null; voiceUI(false); input.value = voice.prevVal; input.placeholder = voice.prevPh; setStatus("🎙️ Impossible de démarrer le micro.", "error"); }
+        arm(10000);
+        voiceMeterStart(token);
+      } catch (e) { voice.on = false; voice.rec = null; voiceUI(false); voiceOverlayHide(); input.value = voice.prevVal; input.placeholder = voice.prevPh; setStatus("🎙️ Impossible de démarrer le micro.", "error"); }
     }
     async function voiceResolve(field, text, alts) {
       if (text === "GPS") {
@@ -8122,7 +8222,8 @@
       if (p.origin) { const ok = await voiceResolve("origin", p.origin, field === "origin" ? alts : []); if (!ok && p.dest) return; }
       if (p.dest) await voiceResolve("dest", p.dest, field === "dest" ? alts : []);
     }
-    document.addEventListener("visibilitychange", () => { if (document.hidden && voice.on) { voice.cancel = true; try { voice.rec.abort(); } catch {} } });
+    document.addEventListener("visibilitychange", () => { if (document.hidden && voice.on) voiceCancel(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && gid("voiceOverlay") && !gid("voiceOverlay").hidden) voiceCancel(); });
 
     // ---- Clavier : flèches, Entrée (premier résultat), Échap ----
     async function onAddressKey(e, field) {
