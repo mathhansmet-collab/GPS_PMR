@@ -358,6 +358,42 @@
       border: 2.5px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.35);
     }
     .pk-pin { padding: 3px 8px; border-radius: 999px; font: 700 12px/1.2 system-ui, sans-serif; color: #fff; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.35); border: 2px solid #fff; }
+    /* ===== Confort & accessibilité ===== */
+    body.txt-xl .sub { font-size: 17px; } body.txt-xl button { font-size: 18px; min-height: 54px; } body.txt-xl input, body.txt-xl select { font-size: 18px; min-height: 48px; }
+    body.txt-xl .step-item { font-size: 17.5px; } body.txt-xl .badge { font-size: 15px; } body.txt-xl .chip { font-size: 16px; } body.txt-xl h1 { font-size: 26px; }
+    body.txt-xl .hud-dist { font-size: 46px; } body.txt-xl .hud-instr { font-size: 24px; } body.txt-xl .hud-next { font-size: 19px; } body.txt-xl .nav-eta { font-size: 20px; }
+    body.txt-xl .nav-side button { width: 76px; height: 76px; font-size: 32px; } body.txt-xl .pk-actions button { font-size: 22px; min-height: 68px; }
+    body.big-btn button { min-height: 56px; font-size: 17px; padding: 12px 16px; } body.big-btn .nav-side button { width: 72px; height: 72px; font-size: 30px; }
+    body.hc { --bg: #ffffff; --card: #ffffff; --card2: #ffffff; --text: #000000; --sub: #111111; --border: #000000; }
+    body.hc.dark { --bg: #000000; --card: #000000; --card2: #000000; --text: #ffffff; --sub: #ffffff; --border: #ffffff; }
+    body.hc button, body.hc input, body.hc select { border: 2px solid var(--text) !important; }
+    body.hc .sub { color: var(--text); } body.hc .badge { border: 2px solid currentColor; font-weight: 800; }
+    body.hc .primary, body.hc .go { background: #0030c8 !important; color: #fff !important; } body.hc.dark .primary, body.hc.dark .go { background: #ffeb00 !important; color: #000 !important; }
+    body.hc .nav-hud, body.hc .nav-eta { background: #000; color: #fff; border: 3px solid #ffeb00; }
+    body.one-hand.nav-mode .nav-side { top: auto; bottom: calc(96px + env(safe-area-inset-bottom)); transform: none; display: grid; grid-template-columns: repeat(2, auto); gap: 10px; }
+    body.one-left .nav-side { right: auto; left: 12px; }
+    @media (max-width: 768px) { body.one-hand:not(.nav-mode) .floating-right { top: auto; bottom: calc(var(--sheet-h, 52dvh) + 10px); } }
+    .cmd-mic.listening { background: #ef4444 !important; color: #fff; animation: navPulse 1.2s infinite ease-out; }
+    .nav-side .cmd-mic { background: #fff; }
+    .simple-bar { display: none; }
+    body.simple:not(.nav-mode) .simple-bar:not([hidden]) { display: flex; }
+    body.simple .sidebar, body.simple .floating-right, body.simple .legend { display: none !important; }
+    .simple-bar { position: fixed; z-index: 48; left: 0; right: 0; bottom: 0; flex-direction: column; gap: 10px; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); background: var(--bg); color: var(--text); border-top: 2px solid var(--border); border-radius: 22px 22px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,.3); max-width: 640px; margin: 0 auto; }
+    .simple-row { display: flex; gap: 8px; } .simple-row input { flex: 1; font-size: 22px; min-height: 64px; border-radius: 16px; padding: 0 16px; border: 2px solid var(--border); background: var(--card2); color: var(--text); }
+    .simple-row button { min-width: 72px; font-size: 30px; border-radius: 16px; border: none; background: #007aff; color: #fff; }
+    .simple-list { display: flex; flex-direction: column; gap: 6px; max-height: 30dvh; overflow: auto; }
+    .simple-list button { text-align: left; min-height: 56px; font-size: 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--card2); color: var(--text); padding: 8px 14px; }
+    .simple-sum { font-size: 18px; font-weight: 700; } .simple-go { min-height: 84px; font-size: 32px; font-weight: 800; border: none; border-radius: 22px; background: #16a34a; color: #fff; }
+    .simple-go[hidden] { display: none; } .simple-foot { display: flex; gap: 8px; } .simple-foot button { flex: 1; min-height: 48px; font-size: 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--card2); color: var(--text); }
+    .detour-bar { position: fixed; z-index: 49; left: 50%; transform: translateX(-50%); bottom: calc(150px + env(safe-area-inset-bottom)); width: min(460px, calc(100% - 24px)); background: #14171c; color: #fff; border: 2px solid #f59e0b; border-radius: 18px; padding: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+    .detour-bar[hidden] { display: none; } .detour-bar.stuck { border-color: #ef4444; bottom: calc(230px + env(safe-area-inset-bottom)); }
+    .pk-row { display: flex; gap: 8px; margin-top: 8px; } .pk-row button { flex: 1; min-height: 52px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; background: #334155; color: #fff; cursor: pointer; } .pk-row button.go { background: #16a34a; }
+    .cf-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; } .cf-row input[type=checkbox] { width: 26px; height: 26px; } .cf-row select { min-height: 44px; font-size: 16px; }
+    .cf-sep { height: 10px; } #comfortDlg button, #tutoDlg button, #helpObsDlg button { min-height: 48px; margin-top: 6px; }
+    .route-bar { margin: 6px 0; } .conf-row { display: flex; align-items: center; gap: 6px; font-size: 13px; } .conf-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex: none; }
+    .ps-box { border-top: 1px solid var(--border); padding-top: 6px; margin-top: 2px; } .ps-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 2px 0; }
+    .ps-ok { color: #1f8a3c; } .ps-warn { color: #c96a00; } .ps-bad { color: #d92d20; } .ps-unk { color: #6b7280; font-weight: 600; }
+    button.sos-big { border: none; cursor: pointer; font: inherit; text-align: center; } .sos-big.amber { background: #d97706; color: #fff; }
     .pk-pin.parked { background: #7c3aed; font-size: 13px; }
     .nav-toast { display: none; position: fixed; z-index: 46; left: 50%; transform: translateX(-50%); top: calc(96px + env(safe-area-inset-top)); width: min(520px, calc(100% - 24px)); background: rgba(20,23,28,.94); color: #fff; font: 600 14px/1.3 system-ui, sans-serif; padding: 10px 14px; border-radius: 14px; text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
     .pk-actions { position: fixed; z-index: 47; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom)); width: min(440px, calc(100% - 24px)); flex-direction: column; gap: 10px; }
@@ -856,6 +892,7 @@
       .toolbar.menu-open .tb-menu {
         display: flex; flex-direction: column; gap: 4px; position: absolute; top: calc(100% + 10px); right: 0; z-index: 30;
         min-width: 230px; padding: 10px; border-radius: 24px;
+        max-height: calc(100dvh - var(--sheet-h, 52dvh) - 78px - env(safe-area-inset-top, 0px)); overflow-y: auto; overscroll-behavior: contain;
         background: var(--lg-card-bg); border: var(--lg-card-border); box-shadow: var(--lg-card-shadow);
         -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
       }
@@ -1108,6 +1145,55 @@
       <div id="hudNext" class="hud-next"></div>
     </div>
   </div>
+  <div id="detourBar" class="detour-bar" hidden role="alert">
+    <div id="detourTxt"></div>
+    <div class="pk-row"><button type="button" class="go" onclick="detourTake()">↪ Prendre le détour</button><button type="button" onclick="detourClear()">Ignorer</button></div>
+  </div>
+  <div id="stuckBar" class="detour-bar stuck" hidden role="alert">
+    <div>⏸️ Vous êtes à l'arrêt depuis un moment. Besoin d'aide ?</div>
+    <div class="pk-row"><button type="button" class="go" onclick="quickAlert('stuck')">🚧 Je suis bloqué → prévenir</button><button type="button" onclick="stuckDismiss()">Tout va bien</button></div>
+  </div>
+  <div id="simpleBar" class="simple-bar" hidden aria-label="Mode simplifié">
+    <div class="simple-row">
+      <input id="simpleInput" type="text" placeholder="Où allez-vous ?" autocomplete="off" aria-label="Destination" />
+      <button type="button" class="cmd-mic" onclick="cmdListen()" aria-label="Parler : dire la destination ou « y aller »">🎙️</button>
+    </div>
+    <div id="simpleList" class="simple-list"></div>
+    <div id="simpleSummary" class="simple-sum" aria-live="polite"></div>
+    <button id="simpleGo" type="button" class="simple-go" hidden>▶ Y aller</button>
+    <div class="simple-foot"><button type="button" onclick="openSos()">🆘 SOS</button><button type="button" onclick="openComfort()">🧩 Réglages</button></div>
+  </div>
+  <dialog id="comfortDlg" class="big-dlg" aria-labelledby="cfTitle">
+    <div class="row between"><h2 id="cfTitle">🧩 Confort & accessibilité</h2><button onclick="closeComfort()" aria-label="Fermer">✕</button></div>
+    <label class="cf-row"><span>Taille du texte</span><select id="cfText" onchange="a11yFromForm()"><option value="0">Normale</option><option value="1">Grande</option><option value="2">Très grande</option></select></label>
+    <label class="cf-row"><span>Contraste élevé</span><input id="cfHc" type="checkbox" onchange="a11yFromForm()"></label>
+    <label class="cf-row"><span>Boutons plus gros</span><input id="cfBig" type="checkbox" onchange="a11yFromForm()"></label>
+    <label class="cf-row"><span>Mode une main (boutons à portée du pouce)</span><input id="cfOne" type="checkbox" onchange="a11yFromForm()"></label>
+    <label class="cf-row"><span>Main utilisée</span><select id="cfHand" onchange="a11yFromForm()"><option value="r">Droite</option><option value="l">Gauche</option></select></label>
+    <label class="cf-row"><span>Mode très simplifié (destination + « Y aller »)</span><input id="cfSimple" type="checkbox" onchange="a11yFromForm()"></label>
+    <div class="cf-sep"></div>
+    <button type="button" class="cmd-mic" onclick="closeComfort();cmdListen()">🎙️ Essayer la commande vocale</button>
+    <div class="sub">Dites par exemple : « emmène-moi à la mairie », « y aller », « répète », « arrête », « place occupée », « je suis garé », « retour à ma voiture », « détour », « partage mon trajet », « mode simple », « plus gros », « contraste », « SOS ». Raccourci clavier : V.</div>
+    <div class="cf-sep"></div>
+    <button type="button" onclick="comfortDownloadCity()">⬇️ Télécharger ma ville pour l'utiliser sans réseau</button>
+    <button type="button" onclick="closeComfort();openTuto()">❓ Revoir le tutoriel</button>
+    <button type="button" onclick="closeComfort();openHelpObstacle()">⚠️ Comment signaler un obstacle</button>
+  </dialog>
+  <dialog id="tutoDlg" class="big-dlg" aria-labelledby="tutoTitle">
+    <h2 id="tutoTitle"></h2><p id="tutoBody" style="font-size:16px;line-height:1.45;"></p>
+    <div id="tutoDots" class="sub" aria-hidden="true" style="text-align:center;letter-spacing:4px;"></div>
+    <div class="row" style="margin-top:10px;"><button type="button" onclick="closeTuto()">Passer</button><button id="tutoPrev" type="button" onclick="tutoStep(-1)">‹ Retour</button><button id="tutoNext" type="button" class="primary" onclick="tutoStep(1)">Suivant ›</button></div>
+  </dialog>
+  <dialog id="helpObsDlg" class="big-dlg" aria-labelledby="hoTitle">
+    <div class="row between"><h2 id="hoTitle">⚠️ Signaler un obstacle</h2><button onclick="this.closest('dialog').close()" aria-label="Fermer">✕</button></div>
+    <ol style="font-size:15px;line-height:1.5;padding-left:20px;">
+      <li>Placez la carte (le centre) sur l'obstacle, ou rendez-vous à côté : « Trottoir barré / Travaux » le signale à votre position.</li>
+      <li>Appuyez sur <b>« ⚠️ Signaler un obstacle »</b> (sous l'itinéraire).</li>
+      <li>Choisissez le type (véhicule, travaux, bordure haute…), une précision si besoin et la durée.</li>
+      <li>Validez : les trajets des autres utilisateurs évitent l'endroit. Le signalement expire seul ; vous pouvez le déclarer « libéré » plus tard.</li>
+    </ol>
+    <button type="button" class="primary" onclick="this.closest('dialog').close();reportObstacleAtCenter()">⚠️ Signaler maintenant</button>
+  </dialog>
   <div id="navToast" class="nav-toast" role="status" aria-live="polite"></div>
   <div id="pkActions" class="pk-actions" style="display:none;">
     <button id="pkOccBtn" type="button" class="pk-occ" hidden onclick="pkOccupiedNext()">🚫 Place occupée → Suivante</button>
@@ -1138,6 +1224,7 @@
   </div>
   <div id="navSide" class="nav-side">
     <button id="hudRecenter" onclick="enableFollowCamera()" aria-label="Recentrer la carte sur ma position">🎯</button>
+    <button id="hudCmd" class="cmd-mic" onclick="cmdListen()" aria-label="Commande vocale : dire place occupée, je suis garé, répète, arrête…">🎙️</button>
     <button id="hudRepeat" onclick="repeatCurrentInstruction()" aria-label="Répéter la consigne vocale">🔁</button>
     <button id="hudNight" onclick="toggleNightDuringGuidance()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit">🌙</button>
     <button id="hudRate" aria-label="Vitesse de la voix (appui long : changer de voix)" title="Appui : vitesse • appui long : changer de voix" style="font-size:15px;font-weight:800;">1,2×</button>
@@ -1164,6 +1251,8 @@
       <button id="recenterBtn" class="pill-bar tb-locate" onclick="recenterOnStart()" aria-label="Recentrer la carte sur ma position actuelle" title="Ma position (G)"><span class="ico">🎯</span><span class="lbl">Ma position</span></button>
       <div class="tb-menu" id="tbMenu" role="group" aria-label="Réglages">
         <button id="largeModeBtn" class="pill-bar" onclick="toggleLargeMode()" aria-pressed="false" aria-label="Activer le mode gros boutons et grand texte" title="Grand format (L)"><span class="ico">👁️</span><span class="lbl">Grand format</span></button>
+        <button id="comfortBtn" class="pill-bar" onclick="openComfort()" aria-label="Confort et accessibilité : texte, contraste, une main, mode simple" title="Confort & accessibilité"><span class="ico">🧩</span><span class="lbl">Confort</span></button>
+        <button id="helpBtn" class="pill-bar" onclick="openTuto()" aria-label="Aide : comment utiliser l'application" title="Aide / tutoriel"><span class="ico">❓</span><span class="lbl">Aide</span></button>
         <button id="darkModeBtn" class="pill-bar" onclick="toggleDarkMode()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit" title="Jour / Nuit (N)"><span class="ico">🌓</span><span class="lbl">Jour / Nuit</span></button>
         <button id="ecoBtn" class="pill-bar" onclick="toggleEcoGlass()" aria-pressed="false" aria-label="Mode éco-batterie : verre sombre sans flou" title="Éco-batterie (verre OLED sans flou)"><span class="ico">🔋</span><span class="lbl">Éco</span></button>
         <button class="pill-bar" onclick="refreshCurrentZone(true)" aria-label="Actualiser les lieux de cette zone" title="Actualiser la zone (R)"><span class="ico">🔄</span><span class="lbl">Cette zone</span></button>
@@ -1214,6 +1303,8 @@
     <div class="row between"><h2 id="sosTitle">🆘 Besoin d'aide</h2><button onclick="closeSos()" aria-label="Fermer">✕</button></div>
     <div id="sosAddressText" class="sos-addr">Localisation en cours…</div>
     <div class="sos-grid">
+      <button type="button" class="sos-big amber" onclick="quickAlert('battery')">🔋 Panne de batterie<small>prévient mon proche en 1 geste</small></button>
+      <button type="button" class="sos-big amber" onclick="quickAlert('stuck')">🚧 Je suis bloqué(e)<small>prévient mon proche en 1 geste</small></button>
       <a class="sos-big red" href="tel:112">📞 Appeler le 112<small>urgences</small></a>
       <a id="sos114" class="sos-big" href="#">📩 SMS au 114<small>sourds / malentendants</small></a>
       <a id="sosContactSms" class="sos-big blue" href="#" hidden>💬 SMS à <span class="sosCName"></span><small>avec ma position</small></a>
@@ -1646,6 +1737,7 @@
         </div>
         <div id="routeMeta" class="sub" style="margin:6px 0;"></div>
         <div id="rainAdvice" style="display:none;" aria-live="polite"></div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px;"><button onclick="quickShare()" aria-label="Partager mon trajet à un proche en un geste">📡 Partager mon trajet</button></div>
         <div id="routeAlts" class="alts" role="radiogroup" aria-label="Choix de l'itinéraire" style="display:none;"></div>
         <div id="routeElevationBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
         <div class="batt-slot" data-scope="route" style="margin-bottom:6px;"></div>
@@ -1901,6 +1993,7 @@
     let worksFeatures = [];
     let communityObstacles = [];
     let blockedPoints = [];
+    let avoidSession = [];            // points à éviter pendant ce guidage (détour accepté)
     let communityVotes = {};
     let lastSosMessage = "";
 
@@ -2719,6 +2812,7 @@
 
       const queue = Date.now() - nav.startedAt < 5000;   // juste après le départ : on n'interrompt pas la 1re consigne
       announceAlerts(queue);                             // pentes / passages difficiles à venir
+      try { detourWatch(); } catch {}                    // passage infranchissable devant : détour proposé
 
       // 4. Après une manœuvre sur un long tronçon : « Continuez sur 800 mètres »
       if (nav.stepIdx !== prevIdx) {
@@ -4032,6 +4126,7 @@
       drawAlertsOnMap(route);
       variantAnalysisDone(route);
       persistLastRoute();
+      try { routeConfidence(route); preDepartureCheck(route); } catch {}
       if (typeof pmrAugmentRoute === "function") pmrAugmentRoute(route);      // + obstacles des données nationales (pmr-live-data) et météo
     }
 
@@ -4094,7 +4189,7 @@
         const ahead = list[i].along - nav.progress;
         if (ahead <= (list[i].severity >= 3 ? 70 : 45) && ahead > -10) {
           nav.spoken.add(key);
-          speakFR(list[i].voice, true);
+          speakFR((ahead > 8 ? `Dans ${distanceWords(Math.max(10, ahead))}, ${lowerFirst(list[i].voice)}` : list[i].voice), true);
           if (list[i].severity >= 3 && "vibrate" in navigator) navigator.vibrate([120, 80, 120]);
           watchAlertNotify(list[i]);
           break;                                                  // une alerte à la fois
@@ -6087,6 +6182,7 @@
           ${p.hours ? `<div class="sub">🕒 ${escapeHTML(String(p.hours).slice(0, 140))}</div>` : ""}
           ${p.details ? `<div style="font-size:12px;">${escapeHTML(p.details)}</div>` : ""}
           ${featsHTML ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">${featsHTML}</div>` : ""}
+          ${p.cat !== "parking" ? placeSheetHTML(p) : ""}
           ${p.webUrl ? `<a href="${escapeHTML(p.webUrl)}" target="_blank" rel="noopener" style="font-size:12px;color:#007aff;font-weight:600;text-decoration:none;">Voir la fiche Accèslibre ↗</a>` : ""}
           ${p.cat !== "parking" ? `
             <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:2px;">
@@ -6109,6 +6205,7 @@
         container.querySelector(".v-lim").addEventListener("click", () => { votePlaceAccessibility(p.id, "limited"); popup.remove(); });
         container.querySelector(".v-no").addEventListener("click", () => { votePlaceAccessibility(p.id, "no"); popup.remove(); });
       }
+      { const fx = container.querySelector(".fix-btn"); if (fx) fx.addEventListener("click", () => { popup.remove(); placeFix(p); }); }
       container.querySelector(".go-route-btn").addEventListener("click", () => {
         routeTo(Number(p.lat), Number(p.lon), p.name, { isParkingRoute: p.cat === "parking" });
       });
@@ -6319,7 +6416,7 @@
         ? {
             locations: [{ lat: origin[1], lon: origin[0], type: "break" }, { lat, lon, type: "break" }],
             costing: "auto",
-            exclude_locations: blockedPoints.slice(0, 8),
+            exclude_locations: [...avoidSession, ...blockedPoints].slice(0, 8),
             directions_options: { units: "kilometers", language: "fr-FR" }
           }
         : {
@@ -6334,7 +6431,7 @@
                 ...(tweak || {})
               }
             },
-            exclude_locations: blockedPoints.slice(0, 8),
+            exclude_locations: [...avoidSession, ...blockedPoints].slice(0, 8),
             directions_options: { units: "kilometers", language: "fr-FR" }
           };
 
@@ -6439,6 +6536,7 @@
 
         setStatus(usedFallback ? `⚠️ Côte importante sur ce trajet (pente > ${getWc().maxSlope}%).` : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
         persistLastRoute();
+        try { simpleOnRoute(); } catch {}
         if (!options.isReroute && !options.isParkingRoute && !options.isCarReturn) addHistory(lat, lon, name, false);
         return true;
       } catch (err) {
@@ -6675,7 +6773,7 @@
       gpsHealthStop(); navPaused = false; favSwitch.pending = false; clearTimeout(favSwitch.timer);
       releaseWakeLock();
       document.body.classList.remove("nav-mode");   // réaffiche les menus
-      try { pkUpdateActions(); pkReturnRefresh(); } catch {}
+      try { pkUpdateActions(); pkReturnRefresh(); if (wasNavigating) simpleReset(); detourClear(); avoidSession = []; const sb = document.getElementById("stuckBar"); if (sb) sb.hidden = true; } catch {}
       av3("stop");                                    // retire l'avatar 3D et libère Three.js
       setTimeout(drawAltLines, 80);
       if (!wasNavigating) return;
@@ -10511,6 +10609,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         route.alerts = [...have, ...fresh].sort((a, b) => a.along - b.along);
         if (route.analysis) route.analysis.live = fresh.length;
         renderAlerts(route); drawAlertsOnMap(route); persistLastRoute();
+        try { preDepartureCheck(route); } catch {}
       } catch {}
     }
 
@@ -11154,6 +11253,387 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       };
     })();
     Navigation3DAvatar.init(map);
+
+    // =====================================================================================
+    // CONFORT & ACCESSIBILITÉ : texte, contraste, gros boutons, une main, mode simple, commandes vocales
+    // + FIABILITÉ : détour, confiance par tronçon, vérifications avant départ + FICHES LIEU + SÉCURITÉ + AIDE
+    // =====================================================================================
+    const A11Y_KEY = "gps_pmr_a11y_v1";
+    const a11y = Object.assign({ text: null, hc: false, big: false, one: false, hand: "r", simple: false },
+      (() => { try { return JSON.parse(localStorage.getItem(A11Y_KEY) || "{}") || {}; } catch { return {}; } })());
+    const a11ySave = () => { try { localStorage.setItem(A11Y_KEY, JSON.stringify(a11y)); } catch {} };
+    function a11yApply() {
+      const b = document.body, lvl = a11y.text == null ? (isLargeMode ? 1 : 0) : a11y.text, wantLarge = lvl >= 1;
+      if (isLargeMode !== wantLarge) {
+        isLargeMode = wantLarge; b.classList.toggle("large-mode", wantLarge);
+        try { localStorage.setItem("gps_pmr_large_mode", wantLarge ? "1" : "0"); } catch {}
+        const lb = gid("largeModeBtn"); if (lb) lb.setAttribute("aria-pressed", String(wantLarge));
+        av3("refresh");
+      }
+      b.classList.toggle("txt-xl", lvl >= 2); b.classList.toggle("hc", !!a11y.hc); b.classList.toggle("big-btn", !!a11y.big);
+      b.classList.toggle("one-hand", !!a11y.one); b.classList.toggle("one-left", !!a11y.one && a11y.hand === "l");
+      b.classList.toggle("simple", !!a11y.simple);
+      const set = (id, v) => { const e = gid(id); if (e) { if (e.type === "checkbox") e.checked = !!v; else e.value = v; } };
+      set("cfText", String(lvl)); set("cfHc", a11y.hc); set("cfBig", a11y.big); set("cfOne", a11y.one); set("cfHand", a11y.hand); set("cfSimple", a11y.simple);
+      try { if (a11y.simple) simpleEnter(); else simpleLeave(); } catch {}
+    }
+    function a11yFromForm() {
+      a11y.text = +gid("cfText").value; a11y.hc = gid("cfHc").checked; a11y.big = gid("cfBig").checked;
+      a11y.one = gid("cfOne").checked; a11y.hand = gid("cfHand").value === "l" ? "l" : "r"; a11y.simple = gid("cfSimple").checked;
+      a11ySave(); a11yApply();
+    }
+    function openComfort() { a11yApply(); const d = gid("comfortDlg"); if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute("open", ""); }
+    function closeComfort() { const d = gid("comfortDlg"); if (d.open) d.close(); }
+    function comfortDownloadCity() { closeComfort(); const c = gid("packCard"); if (c) c.open = true; const s = gid("packSize"); if (s) s.value = "city"; packDownload(); }
+
+    // ---------- Mode très simplifié : une destination, un bouton « Y aller » ----------
+    let simpleT = null;
+    function simpleEnter() { gid("simpleBar").hidden = false; if (!isNavigating && activeTransportTab !== "wheelchair") switchModeTab("wheelchair"); simpleOnRoute(); }
+    function simpleLeave() { gid("simpleBar").hidden = true; }
+    function simpleOnRoute() {
+      if (!a11y.simple) return;
+      const has = !!currentRoute && !isNavigating && !!gid("simpleInput").value;
+      gid("simpleSummary").textContent = has ? "📍 " + gid("routeTitle").textContent : "";
+      gid("simpleGo").hidden = !has;
+    }
+    function simpleReset() { if (!a11y.simple) return; gid("simpleInput").value = ""; gid("simpleList").innerHTML = ""; gid("simpleSummary").textContent = ""; gid("simpleGo").hidden = true; }
+    function simpleShow(list) {
+      const box = gid("simpleList"); box.innerHTML = "";
+      (list || []).filter(it => it && !it.isGPS).slice(0, 5).forEach(it => {
+        const b = document.createElement("button"); b.type = "button"; b.textContent = it.title;
+        b.onclick = () => { box.innerHTML = ""; gid("simpleInput").value = it.title; gid("simpleSummary").textContent = "⏳ Calcul de l'itinéraire…"; applyPickedSuggestion("dest", it); };
+        box.appendChild(b);
+      });
+    }
+    gid("simpleInput").addEventListener("input", e => {
+      clearTimeout(simpleT); const q = e.target.value.trim(); gid("simpleGo").hidden = true;
+      if (q.length < 3) { gid("simpleList").innerHTML = ""; return; }
+      simpleT = setTimeout(async () => { try { simpleShow(await fetchAutocompleteSuggestions(q, "dest")); } catch {} }, 350);
+    });
+    gid("simpleGo").addEventListener("click", () => { if (currentRoute && !isNavigating) startGuidance(false); });
+
+    // ---------- Commandes vocales (partout) ----------
+    const normCmd = t => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+    function parseCommand(raw) {
+      const t = normCmd(raw); if (!t) return { intent: "unknown" };
+      const R = (re, intent, extra) => re.test(t) ? Object.assign({ intent }, extra || {}) : null;
+      return R(/\b(place (est )?occupee|occupee|place suivante|suivante|autre place)\b/, "occupied")
+        || R(/\b(je suis gare|je me suis gare|suis gare|c est gare|voiture (est )?garee|stationne|stationnee)\b/, "parked")
+        || R(/\b(retour (a|vers) (ma|la) voiture|retrouve (ma|la) voiture|ou est ma voiture|ramene moi a ma voiture)\b/, "returnCar")
+        || R(/\b(sos|au secours|besoin d aide|aide moi|urgence)\b/, "sos")
+        || R(/\b(prendre le detour|detour|contourne)\b/, "detour")
+        || R(/\b(ignore|ignorer|non merci)\b/, "ignore")
+        || R(/\b(arrete|arreter|stop|termine|terminer|fin du guidage|annule le guidage)\b/, "stop")
+        || R(/\b(repete|repeter|redis|redire)\b/, "repeat")
+        || R(/\b(recentre|recentrer|ou suis je|ma position)\b/, "recenter")
+        || R(/\b(partage|partager) (mon |le )?(trajet|position)|partage mon trajet\b/, "share")
+        || R(/\b(mode complet|mode normal|quitte le mode simple|quitter le mode simple|sors du mode simple)\b/, "simple", { on: false })
+        || R(/\b(mode simple|simplifie|simplifier)\b/, "simple", { on: true })
+        || R(/\bmode (voiture|auto)\b/, "mode", { mode: "car" })
+        || R(/\bmode fauteuil\b/, "mode", { mode: "wheelchair" })
+        || R(/\b(contraste)\b/, "contrast")
+        || R(/\b(plus gros|plus grand|agrandis|agrandir)\b/, "textUp")
+        || R(/\b(plus petit|texte normal|reduis)\b/, "textDown")
+        || R(/\b(y aller|on y va|demarre|demarrer|lance le guidage|lance|c est parti|go)\b/, "go")
+        || R(/\b(aide|que puis je dire|commandes|liste des commandes)\b/, "help")
+        || ((m) => m ? { intent: "dest", arg: m[1].trim() } : null)(t.match(/\b(?:emmene moi|emmenez moi|aller|allons|va|vas|navigue|itineraire|direction|route|je veux aller|je vais)\s+(?:a la |a l |au |aux |a |vers |chez |jusqu a |jusqu au )?(.{2,})$/))
+        || { intent: "dest-free", arg: t };
+    }
+    let cmdRec = null;
+    function cmdListen() {
+      if (!SpeechRec) { navToast("🎙️ Commande vocale indisponible sur ce navigateur.", 5000); return false; }
+      if (typeof voice !== "undefined" && voice.on) return false;
+      if (cmdRec) { try { cmdRec.stop(); } catch {} return true; }
+      const rec = new SpeechRec(); cmdRec = rec; rec.lang = "fr-FR"; rec.interimResults = false; rec.maxAlternatives = 3; rec.continuous = false;
+      const mics = document.querySelectorAll(".cmd-mic"); mics.forEach(b => b.classList.add("listening"));
+      navToast("🎙️ Je vous écoute… (dites « aide » pour la liste)", 4000);
+      rec.onresult = e => runVoiceCommand(Array.from(e.results[0] || []).map(a => a.transcript));
+      rec.onerror = e => { if (e.error && e.error !== "no-speech" && e.error !== "aborted") navToast("🎙️ " + (e.error === "not-allowed" ? "Micro refusé : autorisez-le dans les réglages du navigateur." : "Commande vocale impossible (" + e.error + ")."), 6000); };
+      rec.onend = () => { cmdRec = null; mics.forEach(b => b.classList.remove("listening")); };
+      try { rec.start(); } catch { cmdRec = null; mics.forEach(b => b.classList.remove("listening")); return false; }
+      return true;
+    }
+    function runVoiceCommand(input) {
+      const list = Array.isArray(input) ? input : [input];
+      let c = null; for (const t of list) { const r = parseCommand(t); if (r.intent !== "dest-free" && r.intent !== "unknown") { c = r; break; } }
+      if (!c) c = parseCommand(list[0] || "");
+      const car = activeTransportTab === "car", say = m => { navToast("🎙️ " + m, 5000); speakFR(m); };
+      switch (c.intent) {
+        case "occupied": if (isNavigating && car) pkOccupiedNext(); else say("« Place occupée » s'utilise pendant un guidage en voiture."); break;
+        case "parked": if (currentRoute && currentRoute.options && currentRoute.options.isParkingRoute && currentRoute.options.finalDestLat != null) pkParked(); else say("Je n'ai pas de trajet voiture vers un parking en cours."); break;
+        case "returnCar": if (pkLoadParked()) pkReturnToCar(); else say("Aucune voiture garée n'est mémorisée."); break;
+        case "sos": openSos(); break;
+        case "detour": detourTake(); break;
+        case "ignore": detourClear(); break;
+        case "stop": if (isNavigating) stopGuidance(); else navToast("Aucun guidage en cours."); break;
+        case "repeat": repeatCurrentInstruction(); break;
+        case "recenter": if (isNavigating) enableFollowCamera(); else recenterOnStart(); break;
+        case "go": if (currentRoute && !isNavigating) startGuidance(false); else say("Choisissez d'abord une destination."); break;
+        case "share": quickShare(); break;
+        case "simple": a11y.simple = !!c.on; a11ySave(); a11yApply(); break;
+        case "mode": if (!isNavigating) switchModeTab(c.mode); else say("Arrêtez le guidage pour changer de mode."); break;
+        case "contrast": a11y.hc = !a11y.hc; a11ySave(); a11yApply(); break;
+        case "textUp": a11y.text = Math.min(2, (a11y.text == null ? (isLargeMode ? 1 : 0) : a11y.text) + 1); a11ySave(); a11yApply(); break;
+        case "textDown": a11y.text = Math.max(0, (a11y.text == null ? (isLargeMode ? 1 : 0) : a11y.text) - 1); a11ySave(); a11yApply(); break;
+        case "help": openComfort(); speakFR("Vous pouvez dire : emmène-moi à, y aller, arrête, répète, place occupée, je suis garé, retour à ma voiture, détour, partage mon trajet, S.O.S."); break;
+        case "dest": case "dest-free":
+          if (isNavigating) { say("Arrêtez le guidage pour changer de destination."); break; }
+          navToast("🔎 Recherche de « " + c.arg + " »…", 4000); voiceHandle(c.arg, "dest", []); break;
+      }
+      return c.intent;
+    }
+
+    // ---------- Détour avant un passage infranchissable ----------
+    function detourBarShow(msg) { const b = gid("detourBar"); gid("detourTxt").textContent = msg; b.hidden = false; }
+    function detourClear() { const b = gid("detourBar"); if (b) b.hidden = true; if (nav) nav.detour = null; }
+    function detourWatch() {
+      if (!nav || !currentRoute || activeTransportTab === "car" || nav.rerouting) return;
+      if (nav.detour) { if (nav.detour.alert.along - nav.progress < -10) detourClear(); return; }
+      nav.detourSeen = nav.detourSeen || new Set();
+      for (const a of currentRoute.alerts || []) {
+        if (!(a.severity >= 3) || !isFinite(a.lat)) continue;
+        const ahead = a.along - nav.progress, key = a.id || (a.kind + ":" + Math.round(a.along));
+        if (ahead < 30 || ahead > 180 || nav.detourSeen.has(key)) continue;
+        nav.detourSeen.add(key); detourCompute(a, ahead); break;
+      }
+    }
+    async function detourCompute(a, ahead) {
+      const pos = currentPosition(), r = currentRoute; if (!pos || !r || !nav) return;
+      const rem = Math.max(0, nav.geo.total - nav.progress), saved = avoidSession; avoidSession = [{ lat: a.lat, lon: a.lon }, ...saved];
+      let data = null; try { data = await callValhalla([pos.lon, pos.lat], r.destLat, r.destLon, getWc().maxSlope, null); } catch {} finally { avoidSession = saved; }
+      if (!nav || currentRoute !== r) return;
+      const d5 = Math.max(5, Math.round(ahead / 5) * 5);
+      let ok = false, len = 0;
+      if (data && data.trip) {
+        const g = makeRouteGeo(decodePolyline6(data.trip.legs[0].shape)); len = Math.round(data.trip.summary.length * 1000);
+        ok = projectOnRoute(g, a.lat, a.lon, -1e9).off >= 12 && len <= rem * 3 + 300;
+      }
+      if (!ok) { navToast(`${a.short} dans ${d5} m : aucun détour trouvé, avancez avec prudence.`, 8000); return; }
+      const extra = len - Math.round(rem);
+      nav.detour = { alert: a, extra };
+      detourBarShow(`Détour possible (${extra >= 0 ? "+" : "−"}${Math.abs(extra)} m) pour éviter : ${a.short}`);
+      speakFR(`Passage difficile dans ${d5} mètres. Un détour existe, ${Math.abs(extra)} mètres de ${extra >= 0 ? "plus" : "moins"}. Dites détour pour le prendre, ou ignorer.`, true);
+    }
+    async function detourTake() {
+      if (!nav || !nav.detour || !currentRoute) { navToast("Aucun détour proposé pour le moment."); return false; }
+      const a = nav.detour.alert, r = currentRoute, pos = currentPosition(); detourClear();
+      avoidSession.unshift({ lat: a.lat, lon: a.lon });
+      const ok = await routeTo(r.destLat, r.destLon, r.destName, { ...r.options, isReroute: true, originOverride: pos ? [pos.lon, pos.lat] : undefined });
+      if (ok && isNavigating && nav) { beginGuidanceState(); nav.lastReroute = Date.now(); speakFR("Détour pris. " + (currentRoute.steps[0] ? currentRoute.steps[0].instruction : "")); }
+      return ok;
+    }
+
+    // ---------- Fiabilité du tracé (vérifié / déduit / inconnu) + vérifications avant départ ----------
+    function ensureBar(id) {
+      let d = gid(id); if (d) return d;
+      d = document.createElement("div"); d.id = id; d.className = "route-bar sub"; const h = gid("routeHazardsBar"); if (h) h.after(d); else gid("routeBox").appendChild(d); return d;
+    }
+    function confClass(tags) {
+      if (!tags) return "unknown";
+      if (tags.wheelchair === "yes" || tags.wheelchair === "designated" || (tags.smoothness && tags.surface) || (tags.incline && tags.surface)) return "verified";
+      if (tags.surface || tags.footway === "sidewalk" || tags.footway === "crossing" || tags.sidewalk || tags.width || /^(footway|pedestrian|living_street|steps|cycleway)$/.test(tags.highway || "")) return "inferred";
+      return "unknown";
+    }
+    function confDraw(segs) {
+      const fc = { type: "FeatureCollection", features: (segs || []).map(s => ({ type: "Feature", properties: { c: s.c }, geometry: { type: "LineString", coordinates: s.coords } })) };
+      if (!map.getStyle()) return;
+      if (map.getSource("route-confidence")) { map.getSource("route-confidence").setData(fc); return; }
+      map.addSource("route-confidence", { type: "geojson", data: fc });
+      map.addLayer({ id: "route-confidence-layer", type: "line", source: "route-confidence", layout: { "line-cap": "butt" },
+        paint: { "line-width": 3, "line-color": ["match", ["get", "c"], "verified", "#16a34a", "inferred", "#f59e0b", "#64748b"], "line-dasharray": [2, 1.5] } });
+    }
+    async function routeConfidence(route) {
+      const box = ensureBar("routeConfBar");
+      if (!route || activeTransportTab === "car") { box.innerHTML = ""; confDraw([]); return null; }
+      const geo = makeRouteGeo(route.coords);
+      if (!navigator.onLine) { box.innerHTML = `<div>⚪ Fiabilité non vérifiée hors ligne : tout le tracé est à vérifier sur place.</div>`; confDraw([]); return null; }
+      if (geo.total > 5000) { box.innerHTML = `<div>ℹ️ Fiabilité du tracé non calculée (trajet de plus de 5 km).</div>`; confDraw([]); return null; }
+      box.innerHTML = `<span class="badge b-unk">🔎 Fiabilité du tracé…</span>`;
+      const step = Math.max(40, geo.total / 100), pts = [];
+      for (let d = 0; d <= geo.total + 1; d += step) { const p = pointAtDistance(geo, Math.min(d, geo.total)); pts.push(p.lat.toFixed(5), p.lon.toFixed(5)); }
+      const json = await queryOverpass(`[out:json][timeout:20];way(around:12,${pts.join(",")})["highway"];out tags geom;`, null, 15000).catch(() => null);
+      if (currentRoute !== route) return null;
+      if (!json || !Array.isArray(json.elements)) { box.innerHTML = `<div>⚪ Fiabilité non vérifiée (données de voirie injoignables) : tracé à vérifier sur place.</div>`; confDraw([]); return null; }
+      const ways = json.elements.filter(e => e.geometry && e.geometry.length > 1).map(e => ({ tags: e.tags || {}, g: makeRouteGeo(e.geometry.map(q => [q.lon, q.lat])) }));
+      const stepS = Math.max(15, Math.min(40, geo.total / 60)), samples = [];
+      for (let d = 0; d <= geo.total; d += stepS) {
+        const p = pointAtDistance(geo, d); let best = null, bo = 1e9;
+        for (const w of ways) { const o = projectOnRoute(w.g, p.lat, p.lon, -1e9).off; if (o < bo) { bo = o; best = w; } }
+        samples.push({ p, c: bo <= 12 ? confClass(best.tags) : "unknown" });
+      }
+      const cnt = { verified: 0, inferred: 0, unknown: 0 }; samples.forEach(s => cnt[s.c]++);
+      const n = samples.length || 1, pc = k => Math.round(cnt[k] / n * 100);
+      const segs = []; let cur = null;
+      samples.forEach(s => { const pt = [s.p.lon, s.p.lat]; if (cur && cur.c === s.c) cur.coords.push(pt); else { if (cur) cur.coords.push(pt); cur = { c: s.c, coords: [pt] }; segs.push(cur); } });
+      confDraw(segs.filter(s => s.coords.length > 1));
+      route.confidence = { verified: pc("verified"), inferred: pc("inferred"), unknown: pc("unknown") };
+      box.innerHTML = `<div style="font-weight:700;margin-bottom:3px;">🔎 Fiabilité du tracé</div>
+        <div class="conf-row"><span class="conf-dot" style="background:#16a34a"></span> Vérifié <b>${pc("verified")} %</b> <span class="sub">(balisage fauteuil ou état du sol renseigné)</span></div>
+        <div class="conf-row"><span class="conf-dot" style="background:#f59e0b"></span> Déduit <b>${pc("inferred")} %</b> <span class="sub">(type de voie connu, sans détail fauteuil)</span></div>
+        <div class="conf-row"><span class="conf-dot" style="background:#64748b"></span> Inconnu <b>${pc("unknown")} %</b> <span class="sub">(aucune donnée : à vérifier sur place)</span></div>`;
+      return route.confidence;
+    }
+    async function preDepartureCheck(route) {
+      const box = ensureBar("preCheckBar");
+      if (!route || activeTransportTab === "car") { box.innerHTML = ""; return null; }
+      const tok = route._preTok = (route._preTok || 0) + 1, geo = makeRouteGeo(route.coords), items = [], now = Date.now();
+      const render = (pending) => {
+        const bad = items.filter(i => i.l === "bad").length, warn = items.filter(i => i.l === "warn" || i.l === "unk").length;
+        const verdict = bad ? ["⛔", "Ce trajet risque de ne pas passer", "b-no"] : (warn || pending) ? ["⚠️", pending ? "Vérifications en cours…" : "À vérifier avant de partir", "b-lim"] : ["✅", "Rien de bloquant repéré", "b-yes"];
+        const ic = { ok: "✅", warn: "⚠️", bad: "⛔", unk: "❔" };
+        const hh = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+        box.innerHTML = `<div style="margin-bottom:4px;"><span class="badge ${verdict[2]}">${verdict[0]} ${verdict[1]}</span> <span class="sub">vérifié à ${hh}</span></div>` + items.map(i => `<div class="step-item">${ic[i.l]} ${escapeHTML(i.t)}</div>`).join("");
+      };
+      const obs = (communityObstacles || []).filter(o => (!o.expires || o.expires > now) && projectOnRoute(geo, o.lat, o.lon, -1e9).off <= 20);
+      items.push(obs.length ? { l: "bad", t: `${obs.length} obstacle${obs.length > 1 ? "s" : ""} signalé${obs.length > 1 ? "s" : ""} par des usagers sur le tracé : ${obs.slice(0, 3).map(o => o.description || o.category).join(" ; ")}` } : { l: "ok", t: "Aucun obstacle signalé par les usagers sur le tracé" });
+      const blk = (route.alerts || []).filter(a => a.severity >= 3);
+      if (blk.length) items.push({ l: "bad", t: `${blk.length} passage${blk.length > 1 ? "s" : ""} difficile${blk.length > 1 ? "s" : ""} : ${blk.slice(0, 3).map(a => a.short).join(" ; ")}` });
+      else if (route.analysis && route.analysis.slopes === "ok" && route.analysis.hazards === "ok") items.push({ l: "ok", t: "Aucun escalier, pente ou passage trop étroit repéré" });
+      else items.push({ l: "unk", t: "Pentes et passages difficiles non entièrement vérifiés" });
+      const lifts = (typeof RT !== "undefined" && RT.lifts) || [];
+      if (lifts.length) items.push({ l: "warn", t: `Alerte ascenseur / escalator du réseau de transport : ${lifts.slice(0, 2).join(" ; ")}` });
+      render(true);
+      if (!navigator.onLine) { items.push({ l: "unk", t: "Travaux et voies fermées non vérifiés (hors ligne)" }); render(false); return items; }
+      if (geo.total > 8000) { items.push({ l: "unk", t: "Travaux et voies fermées non vérifiés (trajet de plus de 8 km)" }); render(false); return items; }
+      const step = Math.max(40, geo.total / 70), pts = [];
+      for (let d = 0; d <= geo.total + 1; d += step) { const p = pointAtDistance(geo, Math.min(d, geo.total)); pts.push(p.lat.toFixed(5), p.lon.toFixed(5)); }
+      const a = pts.join(",");
+      const json = await queryOverpass(`[out:json][timeout:20];(way(around:15,${a})["highway"="construction"];way(around:15,${a})["construction"];way(around:12,${a})["highway"~"^(footway|path|pedestrian|steps)$"]["access"~"^(no|private)$"];nwr(around:20,${a})["highway"="elevator"];node(around:12,${a})["barrier"~"^(block|bollard|gate)$"]["access"="no"];);out tags center;`, null, 15000).catch(() => null);
+      if (route._preTok !== tok || currentRoute !== route) return null;
+      if (!json || !Array.isArray(json.elements)) items.push({ l: "unk", t: "Travaux et voies fermées non vérifiés (données injoignables)" });
+      else {
+        const near = json.elements.filter(el => { const p = el.type === "node" ? el : el.center; return p && projectOnRoute(geo, p.lat, p.lon, -1e9).off <= 25; });
+        const works = near.filter(el => el.tags && (el.tags.highway === "construction" || el.tags.construction));
+        const closed = near.filter(el => el.tags && /^(no|private)$/.test(el.tags.access || "") && !(el.tags.highway === "construction"));
+        const elev = near.filter(el => el.tags && el.tags.highway === "elevator");
+        if (works.length) items.push({ l: "bad", t: `Travaux signalés sur ou près du tracé (${works.length})${works[0].tags.name ? " : " + works[0].tags.name : ""}` });
+        if (closed.length) items.push({ l: "warn", t: `Voie ou accès marqué fermé près du tracé (${closed.length})` });
+        if (elev.length) items.push({ l: "warn", t: `Ascenseur sur le trajet (${elev.length}) : son état de marche n'est pas surveillé, prévoyez une alternative` });
+        if (!works.length && !closed.length) items.push({ l: "ok", t: "Pas de travaux ni de voie fermée repérés dans OpenStreetMap" });
+      }
+      render(false); return items;
+    }
+
+    // ---------- Fiche d'accessibilité d'un lieu + « Cet accès est faux » ----------
+    const CORR_KEY = "gps_pmr_corrections_v1";
+    const readCorr = () => { try { return JSON.parse(localStorage.getItem(CORR_KEY) || "{}") || {}; } catch { return {}; } };
+    function placeSheetHTML(p) {
+      const al = p.al || {}, feats = (p.features || []).join(" ").toLowerCase(), wc = getWc();
+      const row = (ico, lab, st, txt) => `<div class="ps-row"><span>${ico} ${lab}</span><b class="ps-${st}">${txt}</b></div>`;
+      const flat = (al.flat || /plain-pied/.test(feats)) ? ["ok", "Oui"] : (al.ramp || /rampe/.test(feats)) ? ["warn", "Par rampe"] : ["unk", "Non renseigné"];
+      const door = al.door ? (al.door >= wc.width + 10 ? ["ok", al.door + " cm"] : ["bad", al.door + " cm (trop étroit ?)"]) : ["unk", "Non renseignée"];
+      const wcr = (al.wc || p.toiletsPMR === "yes" || /wc pmr/.test(feats)) ? ["ok", "Oui"] : ["unk", "Non renseigné"];
+      const lift = (al.lift || /ascenseur/.test(feats)) ? ["ok", "Oui"] : ["unk", "Non renseigné"];
+      const c = readCorr()[placeVoteKey(p)];
+      return `<div class="ps-box" aria-label="Fiche d'accessibilité">
+        <div class="sub" style="font-weight:700;margin-bottom:3px;">♿ FICHE D'ACCESSIBILITÉ</div>
+        ${row("📐", "Entrée de plain-pied", flat[0], flat[1])}${row("🚪", "Largeur de porte", door[0], door[1])}${row("🚻", "Toilettes PMR", wcr[0], wcr[1])}${row("🛗", "Ascenseur", lift[0], lift[1])}
+        <div class="sub">Source : ${p.isAcceslibre ? "Accèslibre" : "OpenStreetMap / usagers"} — « Non renseigné » ne veut pas dire « non ».</div>
+        ${c ? `<div class="sub" style="color:#c96a00;font-weight:700;">⚠️ Vous avez signalé cette fiche comme inexacte (${escapeHTML(c.items.join(", "))}).</div>` : ""}
+        <button class="fix-btn" type="button" style="width:100%;margin-top:4px;">⚠️ Cet accès est faux</button></div>`;
+    }
+    const FIX_OPTS = ["Pas de plain-pied (marche / escalier)", "Porte trop étroite", "Pas de toilettes PMR", "Pas d'ascenseur", "Ce lieu est en fait accessible", "Autre erreur"];
+    function openFixDialog(p) {
+      let d = gid("fixDlg");
+      if (!d) { d = document.createElement("dialog"); d.id = "fixDlg"; d.className = "big-dlg"; document.body.appendChild(d); }
+      d.innerHTML = `<div class="row between"><h2>⚠️ Cet accès est faux</h2><button type="button" id="fixX" aria-label="Fermer">✕</button></div>
+        <div class="sub" style="margin:6px 0;">« ${escapeHTML(p.name)} » — qu'est-ce qui est inexact ?</div>
+        ${FIX_OPTS.map((o, i) => `<label class="rep-cat"><input type="checkbox" name="fix" value="${i}"> ${escapeHTML(o)}</label>`).join("")}
+        <label class="rep-cat" style="display:block;margin-top:8px;"><span class="sub">Gravité</span>
+          <select id="fixSev" style="width:100%;"><option value="">Seulement signaler l'erreur</option><option value="limited">Accès partiel seulement</option><option value="no">Non accessible en fauteuil</option></select></label>
+        <div class="row" style="margin-top:10px;"><button type="button" id="fixCancel">Annuler</button><button type="button" id="fixOk" class="primary">Envoyer</button></div>`;
+      return new Promise(res => {
+        const fin = v => { if (d.open) d.close(); res(v); };
+        d.querySelector("#fixX").onclick = d.querySelector("#fixCancel").onclick = () => fin(null);
+        d.querySelector("#fixOk").onclick = () => {
+          const items = [...d.querySelectorAll("input[name=fix]:checked")].map(i => FIX_OPTS[+i.value]);
+          if (!items.length) { navToast("Cochez au moins une erreur."); return; }
+          fin({ items, sev: d.querySelector("#fixSev").value });
+        };
+        d.showModal();
+      });
+    }
+    async function placeFix(p) {
+      const r = await openFixDialog(p); if (!r) return false;
+      const all = readCorr(); all[placeVoteKey(p)] = { ts: Date.now(), name: p.name, lat: p.lat, lon: p.lon, items: r.items, sev: r.sev };
+      try { localStorage.setItem(CORR_KEY, JSON.stringify(all)); } catch {}
+      if (r.sev) await votePlaceAccessibility(p.id, r.sev);                       // alimente les notes d'accessibilité des usagers (locales + Supabase si activé)
+      else setStatus("✅ Merci : la correction est enregistrée sur cet appareil.", "ok");
+      return true;
+    }
+
+    // ---------- Sécurité : alerte rapide, blocage détecté, partage en un geste ----------
+    function openHref(h) { const a = document.createElement("a"); a.href = h; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); }
+    function quickAlert(kind) {
+      const { lat, lon } = sosPosition(), la = lat.toFixed(5), lo = lon.toFixed(5);
+      const head = kind === "battery" ? "🔋 Panne de batterie de mon fauteuil" : "🚧 Je suis bloqué(e), je ne peux pas passer";
+      const osm = `https://www.openstreetmap.org/?mlat=${la}&mlon=${lo}#map=18/${la}/${lo}`;
+      const dest = currentRoute && isNavigating ? `\nJe me rendais à : ${currentRoute.destName}` : "";
+      const link = live && live.active ? `\nSuivi en direct : ${liveUrl()}` : "";
+      const msg = `🆘 ${head} (GPS PMR)${safety.name ? " — " + safety.name : ""}.\nPosition : ${osm}${dest}${link}`;
+      lastSosMessage = msg;
+      try { if (getSupabaseConfig().enabled && liveBaseUrl() && !live.active) startLiveShare("help"); } catch {}
+      if (safety.cPhone) openHref(smsHref(safety.cPhone, msg));
+      else if (navigator.share) navigator.share({ title: "Besoin d'aide — GPS PMR", text: msg }).catch(() => {});
+      else openHref(smsHref("", msg));
+      navToast(safety.cPhone ? `📩 Message prêt pour ${safety.cName || "votre proche"} : appuyez sur Envoyer.` : "📩 Choisissez le destinataire du message d'alerte.", 7000);
+      const sb = gid("stuckBar"); if (sb) sb.hidden = true;
+      return msg;
+    }
+    let stillSince = 0, stuckSnooze = 0;
+    function stuckCheck(force) {
+      if (!force) {
+        if (!stillSince || Date.now() - stillSince < 180000 || Date.now() < stuckSnooze || !nav) return;
+        if (Math.max(0, nav.geo.total - nav.progress) < 40) return;
+      }
+      gid("stuckBar").hidden = false; speakFR("Vous êtes à l'arrêt depuis un moment. Avez-vous besoin d'aide ?"); stillSince = Date.now();
+    }
+    function stuckDismiss() { gid("stuckBar").hidden = true; stuckSnooze = Date.now() + 600000; stillSince = 0; }
+    setInterval(() => {
+      try {
+        if (!isNavigating || simActive || activeTransportTab !== "wheelchair" || !nav || nav.arrived) { stillSince = 0; return; }
+        if (lastSpeed < 0.3) stillSince = stillSince || Date.now(); else { stillSince = 0; const sb = gid("stuckBar"); if (sb && !sb.hidden) sb.hidden = true; }
+        stuckCheck(false);
+      } catch {}
+    }, 5000);
+    async function quickShare() {
+      if (!currentRoute) { navToast("Calculez d'abord un trajet, puis partagez-le.", 5000); return null; }
+      try { if (!live.active && getSupabaseConfig().enabled && liveBaseUrl()) await startLiveShare("moving"); } catch {}
+      const url = live && live.active ? liveUrl() : "", dest = currentRoute.destName || "ma destination";
+      const mins = Math.max(1, Math.round((currentRoute.timeSec || 0) / 60));
+      const text = url ? `📡 Suivez mon trajet en direct vers « ${dest} » : ${url}` : `🧭 Je me rends à « ${dest} » (environ ${mins} min). Envoyé depuis GPS PMR.`;
+      if (navigator.share) { try { await navigator.share({ title: "Mon trajet — GPS PMR", text }); } catch {} }
+      else { const ok = await copyTextSafe(text); navToast(ok ? "📋 Message copié : collez-le dans un SMS à votre proche." : "Impossible de copier le message.", 6000); }
+      return text;
+    }
+
+    // ---------- Tutoriel au premier lancement + aide « signaler un obstacle » ----------
+    const TUTO_KEY = "gps_pmr_tuto_v1";
+    const TUTO = [
+      ["👋 Bienvenue", "GPS PMR calcule des itinéraires pensés pour le fauteuil : pentes, bordures, largeur du passage. Les données (OpenStreetMap, IGN, Accèslibre) ne sont pas toujours à jour : gardez votre jugement et vérifiez sur place."],
+      ["📍 Trouver un trajet", "Tapez ou dictez votre destination (🎙️), choisissez Fauteuil ou Voiture, puis appuyez sur « Y aller ». Le mode « Simplifié » (⚙️ Confort) ne garde que la destination et « Y aller »."],
+      ["🧭 Pendant le guidage", "La voix annonce les manœuvres et les passages difficiles avant d'y arriver, avec un détour quand il en existe un. Le bouton 🎙️ permet de dire « répète », « arrête », « place occupée », « je suis garé »…"],
+      ["⚠️ Signaler un obstacle", "Un trottoir barré, un véhicule, une bordure trop haute ? Centrez la carte dessus, appuyez sur « Signaler un obstacle », choisissez le type et la durée. Les autres utilisateurs sont prévenus, et le signalement expire tout seul."],
+      ["🆘 Sécurité et confort", "Le bouton SOS prévient un proche en un geste (panne de batterie, blocage). Dans ⚙️ Confort : texte plus grand, contraste élevé, boutons plus gros, mode une main, téléchargement de la ville pour la 4G faible."]
+    ];
+    let tutoI = 0;
+    function tutoRender() {
+      gid("tutoTitle").textContent = TUTO[tutoI][0]; gid("tutoBody").textContent = TUTO[tutoI][1];
+      gid("tutoDots").textContent = TUTO.map((_, i) => i === tutoI ? "●" : "○").join(" ");
+      gid("tutoPrev").hidden = tutoI === 0; gid("tutoNext").textContent = tutoI === TUTO.length - 1 ? "C'est parti ✓" : "Suivant ›";
+    }
+    function openTuto() { tutoI = 0; tutoRender(); const d = gid("tutoDlg"); if (!d.open) d.showModal(); }
+    function closeTuto() { try { localStorage.setItem(TUTO_KEY, "1"); } catch {} const d = gid("tutoDlg"); if (d.open) d.close(); }
+    function tutoStep(n) { if (n > 0 && tutoI === TUTO.length - 1) { closeTuto(); return; } tutoI = Math.max(0, Math.min(TUTO.length - 1, tutoI + n)); tutoRender(); }
+    function openHelpObstacle() { const d = gid("helpObsDlg"); if (!d.open) d.showModal(); }
+
+    // ---------- Démarrage ----------
+    (function bootComfort() {
+      try { a11yApply(); } catch {}
+      document.addEventListener("keydown", e => { if ((e.key === "v" || e.key === "V") && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || "") && !e.ctrlKey && !e.metaKey) cmdListen(); });
+      if (!SpeechRec) document.querySelectorAll(".cmd-mic").forEach(b => { b.title = "Commande vocale indisponible sur ce navigateur"; });
+      if (!VIEWER_ID && !navigator.webdriver) setTimeout(() => { try { if (!localStorage.getItem(TUTO_KEY) && !gid("tutoDlg").open) openTuto(); } catch {} }, 1800);   // pas en test automatisé
+    })();
 
     map.on("load", () => {
       if (VIEWER_ID) { initViewer(); return; }
