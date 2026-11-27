@@ -10,7 +10,7 @@
 // Les requêtes POST (Overpass, Valhalla, Supabase écriture) ne passent jamais par le cache ; l'application mémorise
 // elle-même lieux et dernier itinéraire (IndexedDB / localStorage).
 
-const APP_CACHE  = "gps-pmr-app-v4";
+const APP_CACHE  = "gps-pmr-app-v5";
 const TILE_CACHE = "gps-pmr-tiles-v1";
 const DATA_CACHE = "gps-pmr-data-v1";
 const MAX_TILES = 2500;
@@ -21,12 +21,13 @@ const NET_TIMEOUT_DATA = 7000;
 const SHELL = ["./", "index.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 
 const TILE_HOSTS = ["tiles.openfreemap.org", "tile.openstreetmap.org", "a.tile.openstreetmap.org", "b.tile.openstreetmap.org", "c.tile.openstreetmap.org",
-  "basemaps.cartocdn.com", "a.basemaps.cartocdn.com", "b.basemaps.cartocdn.com", "c.basemaps.cartocdn.com", "d.basemaps.cartocdn.com"];
+  "basemaps.cartocdn.com", "tiles.basemaps.cartocdn.com", "a.basemaps.cartocdn.com", "b.basemaps.cartocdn.com", "c.basemaps.cartocdn.com", "d.basemaps.cartocdn.com"];
 const LIB_HOSTS  = ["unpkg.com", "cdn.jsdelivr.net"];
 const DATA_HOSTS = ["acceslibre.beta.gouv.fr", "data.angers.fr", "tabular-api.data.gouv.fr", "www.data.gouv.fr", "transport.data.gouv.fr", "www.irigo.fr"];
 const isSupabase = u => u.hostname.endsWith(".supabase.co");
 const isIgnTile  = u => u.hostname === "data.geopf.fr" && /\/(wmts|tms)/i.test(u.pathname);
-const isTile     = u => (TILE_HOSTS.includes(u.hostname) && !u.pathname.startsWith("/styles/")) || isIgnTile(u);
+const isStyle    = u => u.pathname.startsWith("/styles/") || /\/style\.json$/.test(u.pathname);   // description de la carte : toujours rafraîchie
+const isTile     = u => (TILE_HOSTS.includes(u.hostname) && !isStyle(u)) || isIgnTile(u);
 
 self.addEventListener("install", event => {
   event.waitUntil((async () => {

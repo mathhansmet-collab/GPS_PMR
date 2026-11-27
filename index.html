@@ -15,7 +15,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
   <title>GPS PMR — France • Navigation & Pratiques PMR</title>
   <link rel="preconnect" href="https://unpkg.com" crossorigin />
-  <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+  <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin />
+  <link rel="preconnect" href="https://tiles.basemaps.cartocdn.com" crossorigin />
   <link rel="preconnect" href="https://overpass-api.de" crossorigin />
   <link rel="preconnect" href="https://data.angers.fr" crossorigin />
   <link rel="preconnect" href="https://data.geopf.fr" crossorigin />
@@ -977,6 +978,37 @@
     /* 4. Pas de rebond élastique / « tirer pour actualiser » depuis le panneau ou le tiroir */
     .sidebar, .scroll-area, .tb-menu, .install-card, .install-guide, .sheet-handle, .sheet-header, #placesBody, .suggestions-list { overscroll-behavior: contain; }
     .sidebar, .scroll-area, #placesBody { -webkit-overflow-scrolling: touch; }
+    /* =====================================================================
+       CARTE CLAIRE VERROUILLÉE + CONTRÔLES FLOTTANTS LIQUID GLASS (20 px)
+       ===================================================================== */
+    #map, #map .maplibregl-canvas, #map canvas { filter: none !important; }
+    .toolbar { gap: 10px; }
+    .toolbar button.pill-bar, #fabLocate, .maplibregl-ctrl-group {
+      border-radius: 20px;
+      background: var(--lg-card-bg); border: var(--lg-card-border); box-shadow: var(--lg-card-shadow);
+      -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); color: var(--text);
+    }
+    .toolbar button.pill-bar[aria-pressed="true"] { background: var(--lg-sel-bg), var(--lg-card-bg); border: var(--lg-sel-border, var(--lg-card-border)); }
+    body.eco-glass-mode .toolbar button.pill-bar, body.eco-glass-mode #fabLocate, body.eco-glass-mode .maplibregl-ctrl-group {
+      -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+      border: 1px solid transparent; border-top: 1px solid rgba(255,255,255,0.22); border-left: 1px solid rgba(255,255,255,0.14);
+      border-bottom: 1px solid rgba(0,0,0,0.6); border-right: 1px solid rgba(0,0,0,0.35);
+    }
+    .maplibregl-ctrl-group { overflow: hidden; }
+    .maplibregl-ctrl-group:not(:empty) { box-shadow: var(--lg-card-shadow); }
+    .maplibregl-ctrl-group button { width: 42px; height: 42px; background-color: transparent !important; border: 0; border-radius: 0; }
+    .maplibregl-ctrl-group button + button { border-top: 1px solid rgba(148,163,184,0.35); }
+    @media (pointer: coarse) { .maplibregl-ctrl-group button { width: 48px; height: 48px; } }
+    @media (hover: hover) { .maplibregl-ctrl-group button:hover { background-color: rgba(56,189,248,0.16) !important; } }
+    body.dark .maplibregl-ctrl-group button .maplibregl-ctrl-icon, body.eco-glass-mode .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1); }
+    .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group { margin: 0 14px 10px 0; }
+    .maplibregl-ctrl-top-right { top: calc(env(safe-area-inset-top, 0px) + 70px); right: calc(14px + env(safe-area-inset-right, 0px)); }
+    .maplibregl-ctrl-top-right .maplibregl-ctrl { margin: 0; }
+    body.nav-mode .maplibregl-ctrl-top-right, body.viewer .maplibregl-ctrl-top-right { display: none; }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .toolbar button.pill-bar, #fabLocate, .maplibregl-ctrl-group { background: rgba(248,250,252,.96) !important; }
+      body.dark .toolbar button.pill-bar, body.dark #fabLocate, body.dark .maplibregl-ctrl-group { background: rgba(15,23,42,.96) !important; }
+    }
   </style>
 </head>
 <body>
@@ -1544,7 +1576,8 @@
     const DEFAULT_SUPABASE_URL = "";
     const DEFAULT_SUPABASE_KEY = "";
 
-    const MAP_CLEAR_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+    // Fond de carte clair et épuré (CARTO Positron, version vectorielle : mêmes rues grises/blanches, sans clé API, hors ligne compatible)
+    const MAP_CLEAR_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
     let activeTransportTab = "wheelchair";
     let profile = "manual";
@@ -1689,8 +1722,23 @@
       container: "map",
       style: MAP_CLEAR_STYLE,
       center: DEFAULT_CENTER,
-      zoom: 14
+      zoom: 14,
+      locale: { "NavigationControl.ZoomIn": "Zoom avant", "NavigationControl.ZoomOut": "Zoom arrière", "NavigationControl.ResetBearing": "Remettre le nord en haut" }
     });
+    // La carte reste TOUJOURS claire : aucun filtre/inversion, même en mode Nuit ou Éco (seules les interfaces s'assombrissent)
+    try { map.getCanvas().style.filter = "none"; } catch {}
+
+    // Contrôles de zoom + / − (verre liquide). PC : en bas à droite ; mobile : sous la barre du haut (le bas est occupé par le tiroir)
+    let zoomCtrl = null, zoomCtrlPos = "";
+    function placeZoomCtrl() {
+      const pos = (typeof isMobileLayout === "function" && isMobileLayout()) ? "top-right" : "bottom-right";
+      if (pos === zoomCtrlPos) return;
+      try { if (zoomCtrl) map.removeControl(zoomCtrl); } catch {}
+      zoomCtrl = new maplibregl.NavigationControl({ showCompass: false, showZoom: true });
+      map.addControl(zoomCtrl, pos); zoomCtrlPos = pos;
+    }
+    map.once("load", placeZoomCtrl);
+    window.addEventListener("resize", () => { clearTimeout(placeZoomCtrl._t); placeZoomCtrl._t = setTimeout(placeZoomCtrl, 200); });
 
     // Si l'utilisateur déplace la carte pendant le guidage, on arrête de la recentrer (bouton 🎯 pour reprendre)
     map.on("dragstart", () => {
@@ -5379,11 +5427,11 @@
         map.addLayer({
           id: "parkings-clusters", type: "circle", source: "parkings", filter: ["has", "point_count"],
           layout: { visibility: visibleLayers.parking ? "visible" : "none" },
-          paint: { "circle-color": "#007aff", "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 80, 25], "circle-stroke-width": 2.5, "circle-stroke-color": "#ffffff" }
+          paint: { "circle-color": "rgba(15,23,42,0.88)", "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 80, 25], "circle-stroke-width": 1, "circle-stroke-color": "rgba(255,255,255,0.35)" }
         });
         map.addLayer({
           id: "parkings-cluster-count", type: "symbol", source: "parkings", filter: ["has", "point_count"],
-          layout: { "visibility": visibleLayers.parking ? "visible" : "none", "text-field": "{point_count_abbreviated}", "text-size": 12 },
+          layout: { "visibility": visibleLayers.parking ? "visible" : "none", "text-field": "{point_count_abbreviated}", "text-size": 12, "text-allow-overlap": true, ...clusterTextFont() },
           paint: { "text-color": "#ffffff" }
         });
         map.addLayer({
@@ -5407,23 +5455,23 @@
       if (map.getSource("pois")) { map.getSource("pois").setData(poisGeoJSON); const pc = map.getSource("pois-count"); if (pc) pc.setData(poisGeoJSON); }
       else {
         // Regroupement (clustering) : en dézoomant, les lieux proches sont fondus en pastilles « verre » avec leur nombre
-        map.addSource("pois", { type: "geojson", data: poisGeoJSON, cluster: true, clusterMaxZoom: 16, clusterRadius: 46 });
+        map.addSource("pois", { type: "geojson", data: poisGeoJSON, cluster: true, clusterMaxZoom: 15, clusterRadius: 46 });
         map.addLayer({
           id: "pois-clusters-halo", type: "circle", source: "pois", filter: ["has", "point_count"],
-          paint: { "circle-color": "rgba(255,255,255,0.35)", "circle-blur": 0.7, "circle-radius": ["step", ["get", "point_count"], 25, 20, 30, 80, 36] }
+          paint: { "circle-color": "rgba(15,23,42,0.16)", "circle-blur": 0.8, "circle-radius": ["step", ["get", "point_count"], 25, 20, 30, 80, 36] }
         });
         map.addLayer({
           id: "pois-clusters", type: "circle", source: "pois", filter: ["has", "point_count"],
-          paint: { "circle-color": "rgba(255,255,255,0.86)", "circle-radius": ["step", ["get", "point_count"], 17, 20, 22, 80, 28],
-                   "circle-stroke-width": 2.5, "circle-stroke-color": "rgba(10,132,255,0.85)" }
+          paint: { "circle-color": "rgba(15,23,42,0.88)", "circle-radius": ["step", ["get", "point_count"], 17, 20, 22, 80, 28],
+                   "circle-stroke-width": 1, "circle-stroke-color": "rgba(255,255,255,0.35)" }
         });
         // Les nombres utilisent des polices (glyphes) téléchargées : on les isole dans une 2e source identique,
         // pour qu'un échec réseau sur les polices ne fasse jamais disparaître les points ni les grappes.
-        map.addSource("pois-count", { type: "geojson", data: poisGeoJSON, cluster: true, clusterMaxZoom: 16, clusterRadius: 46 });
+        map.addSource("pois-count", { type: "geojson", data: poisGeoJSON, cluster: true, clusterMaxZoom: 15, clusterRadius: 46 });
         map.addLayer({
           id: "pois-cluster-count", type: "symbol", source: "pois-count", filter: ["has", "point_count"],
           layout: { "text-field": "{point_count_abbreviated}", "text-size": 13, "text-allow-overlap": true, ...clusterTextFont() },
-          paint: { "text-color": "#0a2e6e", "text-halo-color": "rgba(255,255,255,0.9)", "text-halo-width": 1 }
+          paint: { "text-color": "#ffffff" }
         });
         map.addLayer({
           id: "pois-layer", type: "circle", source: "pois", filter: ["!", ["has", "point_count"]],
@@ -5468,17 +5516,39 @@
 
       if (currentRoute && !map.getSource("route")) {
         map.addSource("route", { type: "geojson", data: currentRoute.geojson });
-        map.addLayer({ id: "route-line", type: "line", source: "route", paint: { "line-color": "#007aff", "line-width": 7 } });
+        const LJ = { "line-cap": "round", "line-join": "round" };
+        map.addLayer({ id: "route-casing", type: "line", source: "route", layout: LJ,
+          paint: { "line-color": "#0b2a4a", "line-opacity": 0.95, "line-width": ["interpolate", ["linear"], ["zoom"], 10, 5, 14, 8, 19, 12] } });
+        map.addLayer({ id: "route-line", type: "line", source: "route", layout: LJ,
+          paint: { "line-color": "#38bdf8", "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 14, 5, 19, 8] } });
+        try {
+          routeArrowImage();
+          map.addLayer({ id: "route-arrows", type: "symbol", source: "route",
+            layout: { "symbol-placement": "line", "symbol-spacing": 64, "icon-image": "route-arrow", "icon-allow-overlap": true, "icon-ignore-placement": true,
+                      "icon-rotation-alignment": "map", "icon-pitch-alignment": "map", "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.5, 16, 0.9] } });
+        } catch {}
       }
 
       try { tripEnsureLayer(); } catch {}
       bindMapClickEventsOnce();
     }
 
+    // Flèche de sens de marche : chevron blanc cerclé de bleu nuit, dessiné en canvas (aucune police ni image externe)
+    function routeArrowImage() {
+      if (map.hasImage("route-arrow")) return;
+      const c = document.createElement("canvas"); c.width = c.height = 40;
+      const g = c.getContext("2d"); g.lineCap = "round"; g.lineJoin = "round";
+      g.beginPath(); g.moveTo(13, 9); g.lineTo(27, 20); g.lineTo(13, 31);
+      g.strokeStyle = "#0b2a4a"; g.lineWidth = 9; g.stroke();
+      g.strokeStyle = "#ffffff"; g.lineWidth = 4.5; g.stroke();
+      map.addImage("route-arrow", g.getImageData(0, 0, 40, 40), { pixelRatio: 2 });
+    }
     // Police des nombres de grappes : on réutilise une police déjà employée par le style de la carte (elle existe sur son serveur de glyphes)
     function clusterTextFont() {
       try {
-        const l = map.getStyle().layers.find(x => x.layout && Array.isArray(x.layout["text-font"]) && x.layout["text-font"].every(f => typeof f === "string"));
+        const ok = x => x.layout && Array.isArray(x.layout["text-font"]) && x.layout["text-font"].every(f => typeof f === "string");
+        const ls = map.getStyle().layers.filter(ok);
+        const l = ls.find(x => /bold|semibold/i.test(x.layout["text-font"].join(","))) || ls[0];
         return l ? { "text-font": l.layout["text-font"] } : {};
       } catch { return {}; }
     }
@@ -6907,7 +6977,7 @@
       map.addLayer({
         id: "route-alts-layer", type: "line", source: "route-alts", layout: { "line-cap": "round", "line-join": "round" },
         paint: { "line-color": ["get", "color"], "line-width": 5, "line-opacity": 0.8, "line-dasharray": [2, 1.4] }
-      }, map.getLayer("route-line") ? "route-line" : undefined);
+      }, map.getLayer("route-casing") ? "route-casing" : (map.getLayer("route-line") ? "route-line" : undefined));
       map.on("click", "route-alts-layer", e => { const k = e.features && e.features[0] && e.features[0].properties.key; if (k) selectRouteVariant(k); });
       map.on("mouseenter", "route-alts-layer", () => map.getCanvas().style.cursor = "pointer");
       map.on("mouseleave", "route-alts-layer", () => map.getCanvas().style.cursor = "");
