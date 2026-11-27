@@ -375,6 +375,24 @@
     @media (max-width: 768px) { body.one-hand:not(.nav-mode) .floating-right { top: auto; bottom: calc(var(--sheet-h, 52dvh) + 10px); } }
     .cmd-mic.listening { background: #ef4444 !important; color: #fff; animation: navPulse 1.2s infinite ease-out; }
     .nav-side .cmd-mic { background: #fff; }
+    .energy-row { display: flex; gap: 8px; margin: 6px 0; } .energy-row button { flex: 1; min-height: 44px; border-radius: 12px; border: 2px solid var(--border); background: transparent; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+    .energy-row button.active { border-color: #1a73e8; background: rgba(26,115,232,.15); }
+    .energy-badge { margin: 2px 0 6px; padding: 4px 10px; border-radius: 999px; background: rgba(245,158,11,.18); font-size: .85em; font-weight: 700; display: inline-block; } .energy-badge[hidden] { display: none; }
+    .ent-btn { width: 100%; min-height: 44px; margin: 4px 0; } .ent-btn[hidden] { display: none; }
+    .eta-adv input { font: inherit; padding: 4px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+    .act-bars { display: flex; gap: 6px; align-items: flex-end; height: 84px; margin: 8px 0; } .act-col { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; } .act-col i { display: block; width: 100%; min-height: 2px; background: #1a73e8; border-radius: 4px 4px 0 0; }
+    .rep-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); } .rep-row button { min-height: 44px; min-width: 64px; }
+    #entNote { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
+    #hudBell small, #hudVeil small { display: block; font-size: 9px; line-height: 1; } #hudBell.on { outline: 3px solid #f59e0b; }
+    .black-veil { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.96); color: #4a4a4a; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: calc(16px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom)); font: 600 18px system-ui; touch-action: manipulation; } .black-veil[hidden] { display: none; }
+    .veil-top { align-self: stretch; display: flex; justify-content: space-between; opacity: .8; } .veil-next { font-size: 44px; color: #3a3a3a; }
+    .glove-ctl { position: fixed; z-index: 42; left: 12px; top: 50%; transform: translateY(-50%); display: grid; grid-template-columns: repeat(3, 56px); gap: 12px; } .glove-ctl[hidden] { display: none; }
+    .glove-ctl button { width: 56px; height: 56px; border-radius: 16px; border: 2px solid var(--border); background: var(--bg); color: var(--text); font-size: 24px; font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+    body.glove-mode button:not(.mic-btn):not(.clear-btn), body.glove-mode .pill-bar, body.glove-mode select, body.glove-mode input[type=text] { min-height: 56px; }
+    body.glove-mode .sheet-btns, body.glove-mode .row { gap: 12px; } body.glove-mode #navSide { gap: 12px; } body.glove-mode #navSide button { min-width: 56px; min-height: 56px; }
+    body.glove-mode .slot-btn { min-height: 64px; } body.glove-mode .energy-row button { min-height: 56px; }
+    #loadPill { position: fixed; z-index: 30; top: calc(8px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); padding: 4px 12px; border-radius: 999px; background: rgba(15,23,42,.82); color: #fff; font: 600 12px system-ui; pointer-events: none; }
+    #loadPill[hidden] { display: none; }
     .slot-row { display: flex; gap: 8px; align-items: stretch; margin: 6px 0 8px; }
     .slot-btn { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 8px 2px; min-height: 54px; border-radius: 14px; border: 2px solid var(--border); background: var(--card, var(--bg)); color: var(--text); font: inherit; cursor: pointer; touch-action: manipulation; }
     .slot-btn .si { font-size: 1.35em; line-height: 1; } .slot-btn .sl { font-size: .72em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
@@ -1175,6 +1193,49 @@
     <button id="simpleGo" type="button" class="simple-go" hidden>▶ Y aller</button>
     <div class="simple-foot"><button type="button" onclick="openSos()">🆘 SOS</button><button type="button" onclick="openComfort()">🧩 Réglages</button></div>
   </div>
+  <div id="blackVeil" class="black-veil" hidden role="button" tabindex="0" aria-label="Écran éco : touchez l'écran pour le réveiller quelques secondes">
+    <div class="veil-top"><span id="veilBatt"></span><span>📡 GPS</span></div>
+    <div id="veilNext" class="veil-next"></div>
+  </div>
+  <div id="gloveCtl" class="glove-ctl" hidden aria-label="Commandes de carte pour gants">
+    <button type="button" onclick="gloveZoom(1)" aria-label="Zoom avant">+</button>
+    <button type="button" onclick="glovePan(0,-160)" aria-label="Déplacer la carte vers le haut">↑</button>
+    <button type="button" onclick="gloveZoom(-1)" aria-label="Zoom arrière">−</button>
+    <button type="button" onclick="glovePan(-120,0)" aria-label="Déplacer la carte vers la gauche">←</button>
+    <button type="button" onclick="enableFollowCamera()" aria-label="Recentrer sur ma position">🎯</button>
+    <button type="button" onclick="glovePan(120,0)" aria-label="Déplacer la carte vers la droite">→</button>
+    <span></span>
+    <button type="button" onclick="glovePan(0,160)" aria-label="Déplacer la carte vers le bas">↓</button>
+    <span></span>
+  </div>
+  <dialog id="actDlg" class="big-dlg" aria-labelledby="actTitle">
+    <div class="row between"><h2 id="actTitle">📊 Mon activité</h2><button onclick="gid('actDlg').close()" aria-label="Fermer">✕</button></div>
+    <div id="actBody"></div>
+    <div class="sub">Estimations : tours de roue = distance ÷ circonférence ; kcal ≈ poids × (0,45 × km + 0,0117 × dénivelé) pour un fauteuil manuel ; ≈ 10 Wh/km en électrique.</div>
+    <label class="cf-row"><span>Circonférence de la roue (cm)</span><input id="actCirc" type="number" min="100" max="300" inputmode="numeric" onchange="actSettingsSave()"></label>
+    <label class="cf-row"><span>Poids (kg)</span><input id="actWeight" type="number" min="30" max="250" inputmode="numeric" onchange="actSettingsSave()"></label>
+    <button type="button" onclick="actReset()">🗑 Effacer l'historique</button>
+  </dialog>
+  <dialog id="repairDlg" class="big-dlg" aria-labelledby="repTitle">
+    <div class="row between"><h2 id="repTitle">🔧 Panne de fauteuil</h2><button onclick="closeRepair()" aria-label="Fermer">✕</button></div>
+    <div id="repAddr" class="sos-addr">Localisation en cours…</div>
+    <div id="repCoords" class="sub"></div>
+    <button type="button" class="primary" onclick="repairShare()">📨 Envoyer une demande d'aide</button>
+    <div id="repList"></div>
+  </dialog>
+  <dialog id="entDlg" class="big-dlg" aria-labelledby="entTitle">
+    <div class="row between"><h2 id="entTitle">📍 Vraie entrée PMR</h2><button onclick="entClose()" aria-label="Fermer">✕</button></div>
+    <p id="entInfo" class="sub"></p>
+    <textarea id="entNote" rows="3" maxlength="300" placeholder="Note (ex : passer par le portail bleu à droite, code 1234)" aria-label="Note d'accès"></textarea>
+    <button type="button" class="primary" onclick="entSave('gps')">📍 Je suis à l'entrée : enregistrer ma position</button>
+    <button type="button" onclick="entSave('map')">🎯 Utiliser le centre de la carte</button>
+    <button id="entDelete" type="button" onclick="entDelete()" hidden>🗑 Supprimer cette entrée</button>
+  </dialog>
+  <dialog id="bumpDlg" class="big-dlg" aria-labelledby="bumpTitle">
+    <div class="row between"><h2 id="bumpTitle">〰️ Tronçons vibrants</h2><button onclick="gid('bumpDlg').close()" aria-label="Fermer">✕</button></div>
+    <div id="bumpList"></div>
+    <button type="button" onclick="bumpClearAll()">🗑 Tout effacer</button>
+  </dialog>
   <dialog id="slotDlg" class="big-dlg" aria-labelledby="slotTitle">
     <div class="row between"><h2 id="slotTitle">Favori rapide</h2><button onclick="slotClose()" aria-label="Fermer">✕</button></div>
     <p id="slotCur" class="sub"></p>
@@ -1192,6 +1253,10 @@
     <label class="cf-row"><span>Mode très simplifié (destination + « Y aller »)</span><input id="cfSimple" type="checkbox" onchange="a11yFromForm()"></label>
     <label class="cf-row"><span>Pentes en couleur sur le tracé</span><input id="cfSlope" type="checkbox" onchange="prefs2FromForm()"></label>
     <label class="cf-row"><span>Économie de batterie du téléphone</span><select id="cfSaver" onchange="prefs2FromForm()"><option value="auto">Auto (batterie ≤ 30 %)</option><option value="on">Toujours activée</option><option value="off">Désactivée</option></select></label>
+    <label class="cf-row"><span>🧤 Mode gants / mitaines (gros boutons, carte par + − et flèches)</span><input id="cfGlove" type="checkbox" onchange="gloveToggle(this.checked)"></label>
+    <label class="cf-row"><span>〰️ Détecter le sol irrégulier (pavés, racines) avec le capteur de mouvement</span><input id="cfBump" type="checkbox" onchange="bumpToggle(this.checked)"></label>
+    <div class="row" style="gap:6px;flex-wrap:wrap;"><span class="sub" style="align-self:center;">Tronçons enregistrés : <b id="cfBumpN">0</b></span><button type="button" onclick="bumpOpen()">Voir / supprimer</button></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap;"><button type="button" onclick="closeComfort();actOpen()">📊 Mon activité</button><button type="button" onclick="closeComfort();openRepair()">🔧 Panne fauteuil</button></div>
     <label class="cf-row"><span>Montre : mode discret (pas de « Dans 120 m »)</span><input id="cfDiscreet" type="checkbox" onchange="prefs2FromForm()"></label>
     <div class="row" style="gap:6px;flex-wrap:wrap;"><span class="sub" style="align-self:center;">Vibrations :</span><button type="button" onclick="vibTest('turn')">📳 Virage</button><button type="button" onclick="vibTest('alert')">📳 Obstacle</button><button type="button" onclick="vibTest('arrive')">📳 Arrivée</button></div>
     <div class="cf-sep"></div>
@@ -1253,6 +1318,8 @@
     <button id="hudRate" aria-label="Vitesse de la voix (appui long : changer de voix)" title="Appui : vitesse • appui long : changer de voix" style="font-size:15px;font-weight:800;">1,2×</button>
     <button id="hudMute" onclick="toggleMuteGuidance()" aria-pressed="false" aria-label="Couper ou réactiver la voix">🔊</button>
     <button id="hudShare" onclick="toggleLiveShare()" aria-pressed="false" aria-label="Partager mon trajet en direct avec un proche">📡</button>
+    <button id="hudBell" aria-pressed="false" aria-label="Sonnette de courtoisie : appui court = carillon, appui long = mode foule" title="Appui : carillon • appui long : mode foule">🔔<small>Passage</small></button>
+    <button id="hudVeil" onclick="veilSet(!veilOn)" aria-pressed="false" aria-label="Écran éco : voile noir pour économiser la batterie">🌑<small>Éco</small></button>
     <button id="hudSos" onclick="openSos()" aria-label="Besoin d'aide">SOS</button>
     <button id="hudEnd" class="end" onclick="stopGuidance()" aria-label="Terminer le guidage">Fin</button>
   </div>
@@ -1274,6 +1341,7 @@
       <button id="recenterBtn" class="pill-bar tb-locate" onclick="recenterOnStart()" aria-label="Recentrer la carte sur ma position actuelle" title="Ma position (G)"><span class="ico">🎯</span><span class="lbl">Ma position</span></button>
       <div class="tb-menu" id="tbMenu" role="group" aria-label="Réglages">
         <button id="largeModeBtn" class="pill-bar" onclick="toggleLargeMode()" aria-pressed="false" aria-label="Activer le mode gros boutons et grand texte" title="Grand format (L)"><span class="ico">👁️</span><span class="lbl">Grand format</span></button>
+        <button id="gloveBtn" class="pill-bar" onclick="gloveToggle()" aria-pressed="false" aria-label="Mode gants ou mitaines" title="Mode gants / mitaines"><span class="ico">🧤</span><span class="lbl">Gants</span></button>
         <button id="comfortBtn" class="pill-bar" onclick="openComfort()" aria-label="Confort et accessibilité : texte, contraste, une main, mode simple" title="Confort & accessibilité"><span class="ico">🧩</span><span class="lbl">Confort</span></button>
         <button id="helpBtn" class="pill-bar" onclick="openTuto()" aria-label="Aide : comment utiliser l'application" title="Aide / tutoriel"><span class="ico">❓</span><span class="lbl">Aide</span></button>
         <button id="darkModeBtn" class="pill-bar" onclick="toggleDarkMode()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit" title="Jour / Nuit (N)"><span class="ico">🌓</span><span class="lbl">Jour / Nuit</span></button>
@@ -1328,6 +1396,7 @@
     <div class="sos-grid">
       <button type="button" class="sos-big amber" onclick="quickAlert('battery')">🔋 Panne de batterie<small>prévient mon proche en 1 geste</small></button>
       <button type="button" class="sos-big amber" onclick="quickAlert('stuck')">🚧 Je suis bloqué(e)<small>prévient mon proche en 1 geste</small></button>
+      <button type="button" class="sos-big amber" onclick="openRepair()">🔧 Panne fauteuil<small>réparateur, matériel, arrêt accessible</small></button>
       <a class="sos-big red" href="tel:112">📞 Appeler le 112<small>urgences</small></a>
       <a id="sos114" class="sos-big" href="#">📩 SMS au 114<small>sourds / malentendants</small></a>
       <a id="sosContactSms" class="sos-big blue" href="#" hidden>💬 SMS à <span class="sosCName"></span><small>avec ma position</small></a>
@@ -1666,6 +1735,12 @@
             <button id="btnManual" class="active" onclick="setProfile('manual')">♿ Manuel (≤ 5%)</button>
             <button id="btnElectric" onclick="setProfile('electric')">⚡ Électrique (Abaissés)</button>
           </div>
+          <div id="energyRow" class="energy-row" role="radiogroup" aria-label="Énergie du moment">
+            <button type="button" role="radio" data-e="fit" aria-checked="true" class="active" onclick="energySet('fit')">🟢 En forme</button>
+            <button type="button" role="radio" data-e="tired" aria-checked="false" onclick="energySet('tired')">🟡 Fatigué</button>
+            <button type="button" role="radio" data-e="pain" aria-checked="false" onclick="energySet('pain')">🔴 Épaules</button>
+          </div>
+          <div id="energyBadge" class="energy-badge" role="status" hidden></div>
           <div id="profileHint" class="sub" style="padding:0 2px;">
             Évite les escaliers, les pavés irréguliers et les côtes &gt; 5%.
           </div>
@@ -1761,6 +1836,7 @@
           <div class="row" style="gap:6px;"><button onclick="startGuidance(true)" aria-label="Tester le guidage avec un parcours simulé">▶️ Tester</button><button class="go" onclick="startGuidance(false)" aria-label="Démarrer le guidage en temps réel">Y aller</button></div>
         </div>
         <div id="routeMeta" class="sub" style="margin:6px 0;"></div>
+        <button id="entBtn" type="button" class="ent-btn" onclick="entOpen()" hidden>📍 Vraie entrée PMR de ce lieu</button>
         <div id="rainAdvice" style="display:none;" aria-live="polite"></div>
         <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px;"><button onclick="quickShare()" aria-label="Partager mon trajet à un proche en un geste">📡 Partager mon trajet</button></div>
         <div id="routeAlts" class="alts" role="radiogroup" aria-label="Choix de l'itinéraire" style="display:none;"></div>
@@ -2037,7 +2113,7 @@
       center: DEFAULT_CENTER,
       zoom: 14,
       antialias: !(window.matchMedia && matchMedia("(pointer: coarse)").matches),   // inutile (et coûteux) sur écran tactile dense
-      maxTileCacheSize: 500, fadeDuration: 150,
+      maxTileCacheSize: 600, fadeDuration: 150,
       locale: { "NavigationControl.ZoomIn": "Zoom avant", "NavigationControl.ZoomOut": "Zoom arrière", "NavigationControl.ResetBearing": "Remettre le nord en haut" }
     });
     // La carte reste TOUJOURS claire : aucun filtre/inversion, même en mode Nuit ou Éco (seules les interfaces s'assombrissent)
@@ -2072,7 +2148,7 @@
         return;
       }
       clearTimeout(zoneFetchTimer);
-      zoneFetchTimer = setTimeout(() => { loadZoneData(c.lat, c.lng, false); }, 650);
+      zoneFetchTimer = setTimeout(() => { loadZoneData(c.lat, c.lng, false); }, 150);   // _loadZoneData annule lui-même la requête de zone précédente (zoneAbort)
     });
 
     // Restauration des préférences d'accessibilité
@@ -2137,6 +2213,15 @@
       }
     }
 
+    // Variante annulable de l'extérieur (requêtes de la vue : coupées dès qu'on change de zone)
+    async function fetchAbortable(url, options = {}, timeoutMs = 10000) {
+      const ctrl = new AbortController(), ext = options.signal;
+      const id = setTimeout(() => ctrl.abort(), timeoutMs);
+      const onExt = () => ctrl.abort();
+      if (ext) { if (ext.aborted) ctrl.abort(); else ext.addEventListener("abort", onExt, { once: true }); }
+      try { return await fetch(url, { ...options, signal: ctrl.signal }); }
+      finally { clearTimeout(id); if (ext) ext.removeEventListener("abort", onExt); }
+    }
     async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
       const ctrl = new AbortController();
       const id = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -2505,6 +2590,12 @@
     }
 
     // --- Boussole (utile à l'arrêt, quand le GPS ne donne pas de cap) ---
+    let compassHandler = null;
+    function stopCompass() {   // retire les écouteurs d'orientation (économie de batterie, pas d'écouteurs orphelins)
+      if (!compassHandler) { compassStarted = false; return; }
+      window.removeEventListener("deviceorientationabsolute", compassHandler, true); window.removeEventListener("deviceorientation", compassHandler, true);
+      compassHandler = null; compassStarted = false;
+    }
     async function startCompass() {
       if (compassStarted) return;
       compassStarted = true;
@@ -2515,7 +2606,7 @@
         }
       } catch { compassStarted = false; return; }
 
-      const handler = e => {
+      const handler = compassHandler = e => {
         let h = null;
         if (typeof e.webkitCompassHeading === "number") h = e.webkitCompassHeading;          // iOS
         else if (e.absolute && typeof e.alpha === "number") {                                 // Android
@@ -2932,7 +3023,7 @@
         document.getElementById("hudIcon").textContent = "🏁";
         document.getElementById("hudDist").textContent = "Arrivé";
         document.getElementById("hudInstr").textContent = currentRoute.destName;
-        document.getElementById("hudNext").textContent = "";
+        { const eo = currentRoute.options && currentRoute.options.realEntrance; document.getElementById("hudNext").textContent = eo && eo.note ? "📍 Entrée PMR : " + eo.note : ""; }
         document.getElementById("navEta").textContent = "Vous êtes arrivé";
         return;
       }
@@ -2952,10 +3043,11 @@
         if (alertText) document.getElementById("hudNext").textContent = alertText;
       }
 
-      const mins = Math.max(1, Math.round((currentRoute.timeSec || 0) * (remaining / Math.max(1, nav.geo.total)) / 60));
+      try { actTick(); veilUpdate(step ? maneuverIcon(step) : "", dist, next, nav.rerouting, upcomingAlertText()); } catch {}
+      const mins = Math.max(1, Math.round((currentRoute.etaSec || currentRoute.timeSec || 0) * (remaining / Math.max(1, nav.geo.total)) / 60));
       const arrival = new Date(Date.now() + mins * 60000).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
       const remLabel = remaining >= 1000 ? (remaining / 1000).toFixed(1) + " km" : Math.round(remaining) + " m";
-      document.getElementById("navEta").textContent = `⏱ ${mins} min • ${remLabel} • arrivée ${arrival}`;
+      document.getElementById("navEta").textContent = `⏱ ${mins} min • ${remLabel} • arrivée ${arrival}` + (actShort() ? " • ♿ " + actShort() : "");
       updateMediaSession(
         `${(step ? step.instruction : "Continuez").replace(/[.\s]+$/, "")} — dans ${dist >= 1000 ? (dist / 1000).toFixed(1).replace(".", ",") + " km" : dist + " m"}`,
         currentRoute.destName || ""
@@ -2970,7 +3062,9 @@
       if (!simActive) onArrivedSafety();
       stopSimulation();
       const backToCar = currentRoute && currentRoute.options && currentRoute.options.isCarReturn;
-      speakFR(backToCar ? "Vous êtes revenu à votre voiture." : "Vous êtes arrivé à destination.");
+      speakFR((backToCar ? "Vous êtes revenu à votre voiture." : "Vous êtes arrivé à destination.") + entNoteSpeech());
+      try { const eo = currentRoute && currentRoute.options && currentRoute.options.realEntrance; if (eo && eo.note) navToast("📍 Entrée PMR : " + eo.note, 15000); } catch {}
+      try { actFinish(!simActive, true); } catch {}
       if ("vibrate" in navigator) { try { navigator.vibrate(VIB.arrive); } catch {} }
       if (backToCar) pkReturnArrived();
       sendWatchGuidanceNotification("🏁 Arrivé", "Vous êtes arrivé à destination.", "gps-pmr-step");
@@ -3725,12 +3819,14 @@
     async function pkCollect(lat, lon) {
       const R = CONFIG.parking.radius, dLa = R / 111320, dLo = R / (111320 * Math.cos(lat * Math.PI / 180));
       const local = allPlaces.filter(p => p.cat === "parking").map(p => ({ id: "loc:" + p.id, live: false, name: p.name || "Place PMR", lat: p.lat, lon: p.lon, n: null, source: "Carte locale" }));
-      const [live, street] = await Promise.all([
-        pkFetchLive(null, { lat, lon }).catch(() => []),
-        pkFetchStreet(lat, lon, null).catch(() => []),
+      let live = [], street = [];
+      const net = Promise.all([
+        pkFetchLive(null, { lat, lon }).then(r => { live = r || []; }).catch(() => {}),
+        pkFetchStreet(lat, lon, null).then(r => { street = r || []; }).catch(() => {}),
         Promise.race([PmrDataUpdater.loadCells(PmrDataUpdater.cellsFor({ s: lat - dLa, n: lat + dLa, w: lon - dLo, e: lon + dLo }, 6), {}), new Promise(r => setTimeout(r, 5000))]).catch(() => null)
       ]);
-      return pkRank(pkMerge([...live, ...street, ...pkFromStore(lat, lon), ...local], lat, lon));
+      await Promise.race([net, new Promise(r => setTimeout(r, 2500))]);   // parking souterrain / zone blanche : après 2,5 s on se contente de ce qui est déjà en mémoire
+      return pkRank(pkMerge([...live, ...street, ...pkFromStore(lat, lon), ...local, ...((PK.cands || []).filter(c => c && c.lat != null))], lat, lon));
     }
     async function pkOccupiedNext() {
       if (!isNavigating || !nav || !currentRoute || PK.occBusy) return;
@@ -3888,7 +3984,7 @@
     function getWc() {
       return {
         width: Number(wcSettings.width) > 0 ? Number(wcSettings.width) : 70,
-        maxSlope: wcSettings.slope != null ? Number(wcSettings.slope) : (profile === "manual" ? 5 : 10),
+        maxSlope: energyAdjust(wcSettings.slope != null ? Number(wcSettings.slope) : (profile === "manual" ? 5 : 10)),
         maxCurb: wcSettings.curb != null ? Number(wcSettings.curb) : 2
       };
     }
@@ -6438,6 +6534,11 @@
     }
 
     async function callValhalla(origin, lat, lon, maxGrade, tweak, forceMode) {
+      // tronçons vibrants évités en priorité ; si aucun trajet n'existe sans eux, on relance sans cette pénalité
+      try { return await callValhallaCore(origin, lat, lon, maxGrade, tweak, forceMode, false); }
+      catch (e) { if (!(typeof bumpy !== "undefined" && bumpy.length) || (forceMode ? forceMode === "car" : activeTransportTab === "car")) throw e; return await callValhallaCore(origin, lat, lon, maxGrade, tweak, forceMode, true); }
+    }
+    async function callValhallaCore(origin, lat, lon, maxGrade, tweak, forceMode, noBump) {
       const isCar = forceMode ? forceMode === "car" : activeTransportTab === "car";
       const curb = getWc().maxCurb;
       // Valhalla n'a pas de réglage de hauteur de bordure : on la traduit en pénalité de marche/bordure
@@ -6455,13 +6556,13 @@
             costing_options: {
               pedestrian: {
                 type: "wheelchair", step_penalty: stepPenalty, max_grade: maxGrade,
-                use_hills: maxGrade <= 5 ? 0.1 : (maxGrade <= 8 ? 0.3 : 0.5),
+                use_hills: energyHills(maxGrade <= 5 ? 0.1 : (maxGrade <= 8 ? 0.3 : 0.5)),
                 avoid_bad_surfaces: (avoidCobbles || profile === "manual") ? 1.0 : 0.4,
                 walking_speed: profile === "manual" ? 4.0 : 5.5,
                 ...(tweak || {})
               }
             },
-            exclude_locations: [...avoidSession, ...blockedPoints].slice(0, 8),
+            exclude_locations: [...avoidSession, ...blockedPoints, ...(noBump ? [] : bumpNear(origin[0], origin[1], lat, lon))].slice(0, 8),
             directions_options: { units: "kilometers", language: "fr-FR" }
           };
 
@@ -6480,6 +6581,10 @@
       if (!options.isReroute) { stopGuidance(); cancelSpeech(); }
       resetVariants();
       const isCar = activeTransportTab === "car";
+      if (!options.isReroute && !options.isParkingRoute && !options.entranceApplied) {   // « vraie entrée PMR » mémorisée pour ce lieu : on guide directement vers elle
+        const en = entFind(lat, lon);
+        if (en) { options = { ...options, entranceApplied: true, origDest: { lat, lon, name }, realEntrance: { note: en.note || "" } }; lat = en.lat; lon = en.lon; }
+      }
 
       if (!options.isParkingRoute && !options.isReroute) {
         selectedDest = { name, lat, lon };
@@ -6567,6 +6672,7 @@
         setStatus(usedFallback ? `⚠️ Côte importante sur ce trajet (pente > ${getWc().maxSlope}%).` : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
         persistLastRoute();
         try { simpleOnRoute(); } catch {}
+        try { routeHook47(); } catch {}
         if (!options.isReroute && !options.isParkingRoute && !options.isCarReturn) addHistory(lat, lon, name, false);
         return true;
       } catch (err) {
@@ -6738,6 +6844,7 @@
 
       isNavigating = true;
       autoFollowCamera = true;
+      try { feat47GuidanceStart(); } catch {}
       document.body.classList.add("nav-mode");       // masque les menus du haut et du bas
       try { pkReturnRefresh(); } catch {}
       av3("setMode", activeTransportTab); av3("start", map);
@@ -6791,6 +6898,7 @@
     function stopGuidance() {
       const wasNavigating = isNavigating;
       const wasSimulated = simActive;
+      try { if (wasNavigating) feat47GuidanceStop(wasSimulated, !!(nav && nav.arrived)); } catch {}
       stopSimulation();
       clearTimeout(arriveTimer);
       isNavigating = false;
@@ -10002,7 +10110,7 @@
       maxViewCells: 6,
       cacheName: "gps-pmr-data-v1",      // purgé par « Actualiser les données » (message CLEAR_PMR_DATA_CACHE)
       packCacheName: "gps-pmr-pmrpack-v1", // données des packs hors ligne : jamais purgées par l'actualisation
-      ttlMin: 30, cacheTtlH: 12, maxFeatures: 8000, minZoom: 13
+      ttlMin: 30, cacheTtlH: 24, maxFeatures: 8000, minZoom: 13
     };
     const PMR_RANK = { ok: 0, warning: 1, blocked: 2 };
 
@@ -10138,7 +10246,25 @@
   way["highway"="construction"](${bb});
 )->.w;
 .w out tags geom qt;
+${pmrOverpassQLPoints(b, true)}`;
+    }
+    // Vague 1 (immédiate) : places PMR, toilettes, arrêts, bordures, entrées — nœuds seulement, réponse légère
+    // Vague 2 (différée de 600 ms, zoom ≥ 14) : tracés de voirie (trottoirs, escaliers, travaux) avec géométrie
+    function pmrOverpassQLWays(b) {
+      const bb = `${b.s.toFixed(5)},${b.w.toFixed(5)},${b.n.toFixed(5)},${b.e.toFixed(5)}`;
+      const K = "^(wheelchair|width|est_width|incline|surface|smoothness|tactile_paving|ramp|kerb|kerb:height)$";
+      return `[out:json][timeout:25][maxsize:33554432];
 (
+  way["highway"~"^(footway|path|pedestrian)$"][~"${K}"~"."](${bb});
+  way["footway"="sidewalk"][~"${K}"~"."](${bb});
+  way["highway"="steps"](${bb});
+  way["highway"="construction"](${bb});
+)->.w;
+.w out tags geom qt;`;
+    }
+    function pmrOverpassQLPoints(b, bodyOnly) {
+      const bb = `${b.s.toFixed(5)},${b.w.toFixed(5)},${b.n.toFixed(5)},${b.e.toFixed(5)}`;
+      const body = `(
   node["kerb"~"^(flush|lowered|raised|rolled)$"](${bb});
   node["kerb:height"](${bb});
   node["barrier"="kerb"](${bb});
@@ -10153,6 +10279,7 @@
   nwr["public_transport"="platform"]["wheelchair"](${bb});
 )->.n;
 .n out tags center qt;`;
+      return bodyOnly ? body : `[out:json][timeout:8];\n` + body;
     }
     // Web Worker natif (Blob, sans fichier externe) : JSON.parse + normalisation + classification hors du fil principal
     const PmrWorker = {
@@ -10182,18 +10309,30 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       }
     };
     // Interroge les miroirs à tour de rôle (bascule automatique) et renvoie directement les entités normalisées
-    async function pmrOverpass(ql, settings) {
-      let lastErr = null;
-      for (const ep of PMR_CFG.overpass) {
-        try {
-          const r = await fetchWithTimeout(ep, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: "data=" + encodeURIComponent(ql) }, 30000);
-          if (!r.ok) { lastErr = new Error(`${new URL(ep).hostname} : HTTP ${r.status}`); continue; }
-          const res = await PmrWorker.parse(await r.text(), settings);
-          if (res.remark && /runtime error|timed out|out of memory/i.test(res.remark) && !res.count) { lastErr = new Error(res.remark); continue; }
-          return res.feats;
-        } catch (e) { lastErr = e; }
-      }
-      throw lastErr || new Error("Overpass indisponible");
+    async function pmrOverpass(ql, settings, signal, ms) {
+      const eps = PMR_CFG.overpass, ctrls = [];
+      return await new Promise((resolve, reject) => {
+        let settled = false, started = 0, failed = 0, lastErr = null; const timers = [];
+        const finish = (fn, v) => { if (settled) return; settled = true; timers.forEach(clearTimeout); ctrls.forEach(c => c.abort()); if (signal) signal.removeEventListener("abort", onAb); fn(v); };
+        const onAb = () => finish(reject, new Error("annulé"));
+        if (signal) { if (signal.aborted) return reject(new Error("annulé")); signal.addEventListener("abort", onAb, { once: true }); }
+        const launch = i => {
+          if (settled || i >= eps.length || i < started) return; started = i + 1;
+          const c = new AbortController(); ctrls.push(c);
+          (async () => {
+            const r = await fetchAbortable(eps[i], { method: "POST", signal: c.signal, headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: "data=" + encodeURIComponent(ql) }, ms || 30000);
+            if (!r.ok) throw new Error(`${new URL(eps[i]).hostname} : HTTP ${r.status}`);
+            const res = await PmrWorker.parse(await r.text(), settings);
+            if (res.remark && /runtime error|timed out|out of memory/i.test(res.remark) && !res.count) throw new Error(res.remark);
+            return res.feats;
+          })().then(f => finish(resolve, f), e => {
+            if (settled) return; lastErr = e; failed++;
+            if (failed >= eps.length) finish(reject, lastErr || new Error("Overpass indisponible")); else launch(started);   // un miroir a échoué : on lance le suivant tout de suite
+          });
+        };
+        launch(0);
+        eps.slice(1).forEach((_, k) => timers.push(setTimeout(() => launch(k + 1), 1800 * (k + 1))));   // miroir de secours si le premier dépasse 1,8 s
+      });
     }
 
     // ---------- Sources data.gouv.fr (API tabulaire) ----------
@@ -10212,7 +10351,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       return cols;
     }
     // L'API tabulaire n'a pas de filtre « bbox » natif : on l'émule avec des bornes sur les colonnes latitude / longitude.
-    async function pmrTabularBbox(rid, b, maxPages) {
+    async function pmrTabularBbox(rid, b, maxPages, signal) {
       const cols = await pmrTabularColumns(rid);
       const find = re => cols.find(c => re.test(c));
       const latC = find(/^(lat|latitude|ylat|y_lat|stop_lat|coord_?y|y)$/i), lonC = find(/^(lon|lng|long|longitude|xlong|x_long|stop_lon|coord_?x|x)$/i);
@@ -10220,7 +10359,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       const q = { [latC + "__greater"]: b.s, [latC + "__less"]: b.n, [lonC + "__greater"]: b.w, [lonC + "__less"]: b.e, page_size: "50" };
       const rows = []; let total = 0;
       for (let page = 1; page <= maxPages; page++) {
-        const r = await fetchWithTimeout(`${PMR_CFG.tabular}${rid}/data/?` + new URLSearchParams({ ...q, page: String(page) }).toString(), {}, 9000);
+        const r = await fetchAbortable(`${PMR_CFG.tabular}${rid}/data/?` + new URLSearchParams({ ...q, page: String(page) }).toString(), { signal }, 9000);
         if (!r.ok) { if (page === 1) throw new Error("HTTP " + r.status); break; }
         const j = await r.json();
         rows.push(...(j.data || [])); total = (j.meta && j.meta.total) || rows.length;
@@ -10259,6 +10398,13 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
     }
 
     // ---------- Module principal ----------
+    // Contrôleur d'annulation de la vue courante : un déplacement vers une autre zone coupe toutes les requêtes obsolètes (libère les 6 connexions de Safari iOS)
+    let currentViewAbortController = new AbortController();
+    function viewAbortNew() {
+      try { currentViewAbortController.abort(); } catch {}
+      currentViewAbortController = new AbortController();
+      return currentViewAbortController.signal;
+    }
     const PmrDataUpdater = (() => {
       const store = new Map();          // id → Feature
       const cellsLoaded = new Map();    // clé de cellule → ts
@@ -10277,20 +10423,33 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       const viewBox = () => { const b = map.getBounds(); return { s: b.getSouth(), w: b.getWest(), n: b.getNorth(), e: b.getEast() }; };
       const cacheOk = () => typeof caches !== "undefined";
       const cacheKey = k => new Request("https://gps-pmr.local/pmr/" + encodeURIComponent(k));
+      // Cache mémoire (RAM) devant le Cache API : retour d'une ville déjà visitée en ~0 ms
+      const memCache = new Map(), MEM_MAX = 120, LRU_CELLS = 30;
+      const memGet = k => { const v = memCache.get(k); if (!v) return null; memCache.delete(k); memCache.set(k, v); return v; };
+      const memPut = (k, v) => { memCache.delete(k); memCache.set(k, v); while (memCache.size > MEM_MAX) memCache.delete(memCache.keys().next().value); };
+      async function lruTrim() {   // garde les 30 cellules OSM les plus récentes (hors packs hors ligne)
+        if (!cacheOk()) return;
+        try {
+          const c = await caches.open(PMR_CFG.cacheName), ks = (await c.keys()).filter(r => /pmr%2F|\/pmr\/osm/.test(r.url) && /osm(w)?%2F/.test(r.url));
+          for (const r of ks.slice(0, Math.max(0, ks.length - LRU_CELLS * 2))) await c.delete(r);
+        } catch {}
+      }
 
       async function cacheGet(k, any) {
+        const m = memGet(k); if (m && (any || (Date.now() - m.ts) < PMR_CFG.cacheTtlH * 3600e3)) return m;
         if (!cacheOk()) return null;
         for (const name of [PMR_CFG.cacheName, PMR_CFG.packCacheName]) {
           try {
             const c = await caches.open(name), r = await c.match(cacheKey(k));
             if (!r) continue;
             const j = await r.json();
-            if (any || (Date.now() - j.ts) < PMR_CFG.cacheTtlH * 3600e3) return j;
+            if (any || (Date.now() - j.ts) < PMR_CFG.cacheTtlH * 3600e3) { memPut(k, j); return j; }
           } catch {}
         }
         return null;
       }
       async function cachePut(k, feats, pack) {
+        memPut(k, { ts: Date.now(), feats });
         if (!cacheOk()) return;
         try { const c = await caches.open(pack ? PMR_CFG.packCacheName : PMR_CFG.cacheName); await c.put(cacheKey(k), new Response(JSON.stringify({ ts: Date.now(), feats }), { headers: { "Content-Type": "application/json" } })); } catch {}
       }
@@ -10324,15 +10483,31 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       function push() { const src = map.getSource("pmr-live-data"); if (src) src.setData(collection()); listeners.forEach(fn => { try { fn(); } catch {} }); }
       function reclassify() { const s = pmrSettings(); store.forEach(f => { const p = f.properties; Object.assign(p, pmrClassify(p, s)); }); push(); }
 
-      async function osmCell(i, j, opts) {
-        const key = "osm/" + cellKey(i, j);
+      const waysDone = new Set();
+      async function osmPart(kind, i, j, opts) {
+        const key = (kind === "w" ? "osmw/" : "osm/") + cellKey(i, j);
         const hit = await cacheGet(key, !navigator.onLine);
         if (hit) { merge(hit.feats); return { n: hit.feats.length, cached: true }; }
         if (!navigator.onLine) return { n: 0, offline: true };
-        const feats = await pmrOverpass(pmrOverpassQL(cellBox(i, j)), pmrSettings());
+        const b = cellBox(i, j), sig = opts && opts.signal;
+        const feats = await pmrOverpass(kind === "w" ? pmrOverpassQLWays(b) : pmrOverpassQLPoints(b), pmrSettings(), sig, kind === "w" ? 25000 : 12000);
         merge(feats);
         await cachePut(key, feats, opts && opts.pack);
+        if (!(opts && opts.pack)) lruTrim();
         return { n: feats.length };
+      }
+      async function osmCell(i, j, opts) {
+        const r = await osmPart("p", i, j, opts);                    // vague 1 : immédiate
+        if (opts && opts.ways === "now") { const w = await osmPart("w", i, j, opts).catch(() => ({ n: 0 })); waysDone.add(cellKey(i, j)); r.n += w.n || 0; }
+        return r;
+      }
+      // vague 2 : voirie (tracés), 600 ms après la vague 1, au zoom ≥ 14 seulement
+      async function loadWays(cells, opts) {
+        const todo = cells.filter(([i, j]) => (opts && opts.force) || !waysDone.has(cellKey(i, j)));
+        if (!todo.length) return;
+        await wait(600);
+        if (opts && opts.signal && opts.signal.aborted) return;
+        await runPool(todo, 2, async ([i, j]) => { await osmPart("w", i, j, opts); waysDone.add(cellKey(i, j)); push(); }, 0);
       }
       async function tabularBlock(b, opts) {
         const s = pmrSettings(), out = {};
@@ -10344,7 +10519,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
             if (hit) { merge(hit.feats); out[name] = { ok: true, n: hit.feats.length, cached: true }; return; }
             if (!navigator.onLine) { out[name] = { ok: false, err: "hors ligne" }; return; }
             const rid = PMR_CFG.resources[name];
-            const res = await pmrTabularBbox(rid, b, name === "acceslibre" ? 6 : 4);
+            const res = await pmrTabularBbox(rid, b, name === "acceslibre" ? 6 : 4, opts && opts.signal);
             let feats = pmrRowsToFeatures(srcId, kind, res, s);
             if (name === "pan") {                    // le fichier PAN n'a pas de champ d'accessibilité documenté : on ne garde que s'il en a un
               if (!pmrPickCol(res.cols, /wheelchair/i)) { out[name] = { ok: false, err: "pas de champ wheelchair_boarding dans ce fichier" }; return; }
@@ -10372,7 +10547,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       async function loadCells(cells, opts) {
         opts = opts || {};
         const todo = cells.filter(([i, j]) => opts.force || !cellsLoaded.has(cellKey(i, j)) || Date.now() - cellsLoaded.get(cellKey(i, j)) > PMR_CFG.ttlMin * 60000);
-        if (!todo.length) return { n: 0 };
+        if (!todo.length) { if (opts.ways === "defer") loadWays(cells, opts).catch(() => {}); return { n: 0 }; }
         inflight++; const my = ++seq; setBusy(true);
         try {
           let done = 0;
@@ -10388,10 +10563,21 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
           report.osm = { ok: okN > 0, n: osmRes.reduce((a, r) => a + (r.n || 0), 0), cells: todo.length, failed: errs.length, err: errs[0] && String(errs[0].err.message || errs[0].err).slice(0, 80) };
           if (tab) Object.assign(report, tab);
           push(); renderStatus();
+          if (opts.ways === "defer" && !(opts.signal && opts.signal.aborted)) loadWays(cells, opts).catch(() => {});
           return { n: store.size, report };
         } finally { inflight--; if (!inflight) setBusy(false); }
       }
-      function setBusy(b) { const btn = document.getElementById("pmrRefreshBtn"); if (btn) btn.disabled = b; const st = document.getElementById("pmrDataStatus"); if (st && b) st.textContent = "⏳ Chargement des données d'accessibilité…"; }
+      let pillT = null;
+      function pill(on) {
+        clearTimeout(pillT);
+        let el = document.getElementById("loadPill");
+        if (!on) { if (el) el.hidden = true; return; }
+        pillT = setTimeout(() => {
+          if (!el) { el = document.createElement("div"); el.id = "loadPill"; el.setAttribute("role", "status"); el.textContent = "⚡ Chargement des accès PMR…"; document.body.appendChild(el); }
+          el.hidden = false;
+        }, 250);
+      }
+      function setBusy(b) { pill(!!b); const btn = document.getElementById("pmrRefreshBtn"); if (btn) btn.disabled = b; const st = document.getElementById("pmrDataStatus"); if (st && b) st.textContent = "⏳ Chargement des données d'accessibilité…"; }
       function renderStatus() {
         const st = document.getElementById("pmrDataStatus"); if (!st) return;
         const bits = [];
@@ -10402,7 +10588,10 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
 
       async function loadView(opts) {
         if (VIEWER_ID) return null;
-        return loadCells(cellsFor(viewBox()), opts);
+        const ctr = map.getCenter(), cx = ctr.lng / PMR_CFG.cell, cy = ctr.lat / PMR_CFG.cell;
+        const cells = cellsFor(viewBox()).sort((a, c) => Math.hypot(a[0] + 0.5 - cx, a[1] + 0.5 - cy) - Math.hypot(c[0] + 0.5 - cx, c[1] + 0.5 - cy));   // centre de l'écran d'abord
+        const o = Object.assign({ signal: currentViewAbortController.signal, ways: map.getZoom() >= 14 ? "defer" : false }, opts || {});
+        return loadCells(cells, o);
       }
       // Cellules traversées par un itinéraire (≈ 1 point tous les 150 m), dans l'ordre du trajet
       function corridorCells(coords, cap) {
@@ -10416,15 +10605,15 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         return out.slice(0, cap || 12);
       }
       async function loadCorridor(coords) {
-        return Promise.race([loadCells(corridorCells(coords), { noTabular: true }), wait(18000).then(() => null)]);
+        return Promise.race([loadCells(corridorCells(coords), { noTabular: true, ways: "now" }), wait(18000).then(() => null)]);
       }
       // Pré-chargement pour un pack hors ligne (centre + rayon en km)
       async function prefetchArea(lat, lon, rKm, onProgress) {
         const dLa = rKm / 111.32, dLo = rKm / (111.32 * Math.cos(lat * Math.PI / 180));
         const b = { s: lat - dLa, n: lat + dLa, w: lon - dLo, e: lon + dLo };
         const cells = cellsFor(b, 40);
-        const keys = cells.map(([i, j]) => "osm/" + cellKey(i, j));
-        await loadCells(cells, { pack: true, force: true, concurrency: 2, gap: 250, onProgress });
+        const keys = cells.flatMap(([i, j]) => ["osm/" + cellKey(i, j), "osmw/" + cellKey(i, j)]);
+        await loadCells(cells, { pack: true, force: true, concurrency: 2, gap: 250, onProgress, ways: "now" });
         return { cells: cells.length, keys };
       }
       async function restoreFromCache() {
@@ -10455,7 +10644,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         let viaSw = false;
         try { if (navigator.serviceWorker && navigator.serviceWorker.controller) { navigator.serviceWorker.controller.postMessage({ type: "CLEAR_PMR_DATA_CACHE" }); viaSw = await ack; } } catch {}
         if (!viaSw && cacheOk()) { try { await caches.delete(PMR_CFG.cacheName); } catch {} }   // pas de Service Worker : on purge directement
-        store.clear(); cellsLoaded.clear(); Object.keys(report).forEach(k => delete report[k]);
+        store.clear(); cellsLoaded.clear(); waysDone.clear(); memCache.clear(); Object.keys(report).forEach(k => delete report[k]);
         push();
         try { await loadView({ force: true }); setStatus("✅ Données d'accessibilité actualisées.", "ok"); }
         catch (e) { setStatus("❌ Actualisation impossible : " + (e && e.message || "erreur"), "error"); }
@@ -10465,8 +10654,9 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         clearTimeout(moveTimer);
         moveTimer = setTimeout(() => {
           if (!PmrLayers.enabled || !navigator.onLine || watchMode || map.getZoom() < PMR_CFG.minZoom) return;
+          viewAbortNew();
           loadView().catch(() => {});
-        }, 450);
+        }, 150);
       }
       async function deleteKeys(keys) { if (!cacheOk()) return; try { const c = await caches.open(PMR_CFG.packCacheName); await Promise.all((keys || []).map(k => c.delete(cacheKey(k)))); } catch {} }
       return { store, report, collection, reclassify, loadView, loadCells, loadCorridor, prefetchArea, restoreFromCache, refresh, scheduleMove, renderStatus, deleteKeys, onChange(fn) { listeners.push(fn); }, cellsFor };
@@ -10483,7 +10673,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       colorExpr(p) { return ["match", ["get", "status"], "ok", p.ok, "warning", p.warning, "blocked", p.blocked, p.unk]; },
       init() {
         if (VIEWER_ID || !map.getStyle()) return;
-        if (!map.getSource("pmr-live-data")) map.addSource("pmr-live-data", { type: "geojson", data: PmrDataUpdater.collection() });
+        if (!map.getSource("pmr-live-data")) map.addSource("pmr-live-data", { type: "geojson", data: PmrDataUpdater.collection(), cluster: true, clusterMaxZoom: 14, clusterRadius: 45 });
         const before = map.getLayer("route-casing") ? "route-casing" : undefined, p = this.palette(), k = this.scale();
         const vis = this.enabled ? "visible" : "none";
         if (!map.getLayer("pmr-ways-layer")) map.addLayer({
@@ -10492,12 +10682,17 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
           paint: { "line-color": this.colorExpr(p), "line-width": ["interpolate", ["linear"], ["zoom"], 13, 2 * k, 19, 7 * k], "line-opacity": ["case", ["==", ["get", "known"], true], 0.95, 0.4] }
         }, before);
         if (!map.getLayer("pmr-points-layer")) map.addLayer({
-          id: "pmr-points-layer", type: "circle", source: "pmr-live-data", filter: ["==", ["geometry-type"], "Point"], minzoom: 12,
+          id: "pmr-points-layer", type: "circle", source: "pmr-live-data", filter: ["all", ["==", ["geometry-type"], "Point"], ["!", ["has", "point_count"]]], minzoom: 12,
           layout: { visibility: vis },
           paint: { "circle-color": this.colorExpr(p), "circle-radius": ["interpolate", ["linear"], ["zoom"], 13, 4 * k, 19, 9 * k], "circle-stroke-color": p.stroke, "circle-stroke-width": 2 * k, "circle-opacity": ["case", ["==", ["get", "known"], true], 1, 0.55] }
         }, before);
+        try {
+        if (!map.getLayer("pmr-clusters")) map.addLayer({ id: "pmr-clusters", type: "circle", source: "pmr-live-data", filter: ["has", "point_count"], minzoom: 12, layout: { visibility: vis }, paint: { "circle-color": "rgba(30,64,175,0.85)", "circle-radius": ["step", ["get", "point_count"], 13, 20, 17, 80, 22], "circle-stroke-width": 1.5, "circle-stroke-color": "#fff" } }, before);
+        if (!map.getLayer("pmr-cluster-count")) map.addLayer({ id: "pmr-cluster-count", type: "symbol", source: "pmr-live-data", filter: ["has", "point_count"], minzoom: 12, layout: { visibility: vis, "text-field": "{point_count_abbreviated}", "text-size": 11, "text-allow-overlap": true, ...clusterTextFont() }, paint: { "text-color": "#fff" } });
+        } catch (e) { console.warn("clusters PMR :", e && e.message); }
         if (!this._bound) {
           this._bound = true;
+          map.on("click", "pmr-clusters", e => { const f = map.queryRenderedFeatures(e.point, { layers: ["pmr-clusters"] })[0]; if (!f) return; map.getSource("pmr-live-data").getClusterExpansionZoom(f.properties.cluster_id).then(z => map.easeTo({ center: f.geometry.coordinates, zoom: Math.min(z + 0.5, 18) })).catch(() => {}); });
           const open = e => {
             const f = e.features && e.features[0]; if (!f) return;
             const pr = f.properties, col = this.palette()[pr.status] || this.palette().unk;
@@ -10527,7 +10722,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       setEnabled(on) {
         this.enabled = !!on;
         try { localStorage.setItem("gps_pmr_live_layer", on ? "1" : "0"); } catch {}
-        ["pmr-ways-layer", "pmr-points-layer"].forEach(id => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none"); });
+        ["pmr-ways-layer", "pmr-points-layer", "pmr-clusters", "pmr-cluster-count"].forEach(id => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none"); });
         if (on) PmrDataUpdater.loadView().catch(() => {});
       }
     };
@@ -11366,6 +11561,11 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         || R(/\b(contraste)\b/, "contrast")
         || R(/\b(plus gros|plus grand|agrandis|agrandir)\b/, "textUp")
         || R(/\b(plus petit|texte normal|reduis)\b/, "textDown")
+        || R(/^(la |ma |une )?(sonnette|cloche|carillon|passage|sonne|sonner)$|\b(laissez moi passer|laisse moi passer)\b/, "bell")
+        || R(/\b(mode foule|foule dense)\b/, "crowd")
+        || R(/\b(ecran eco|economie d ecran|ecran noir|voile noir)\b/, "veil")
+        || R(/\b(mode gants?|mode mitaines?|mode hiver|gros gants)\b/, "glove")
+        || R(/\b(panne|crevaison|creve|fauteuil en panne)\b/, "repair")
         || R(/\b(y aller|on y va|demarre|demarrer|lance le guidage|lance|c est parti|go)\b/, "go")
         || R(/\b(aide|que puis je dire|commandes|liste des commandes)\b/, "help")
         || ((m) => m ? { intent: "dest", arg: m[1].trim() } : null)(t.match(/\b(?:emmene moi|emmenez moi|aller|allons|va|vas|navigue|itineraire|direction|route|je veux aller|je vais)\s+(?:a la |a l |au |aux |a |vers |chez |jusqu a |jusqu au )?(.{2,})$/))
@@ -11408,6 +11608,11 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         case "textUp": a11y.text = Math.min(2, (a11y.text == null ? (isLargeMode ? 1 : 0) : a11y.text) + 1); a11ySave(); a11yApply(); break;
         case "textDown": a11y.text = Math.max(0, (a11y.text == null ? (isLargeMode ? 1 : 0) : a11y.text) - 1); a11ySave(); a11yApply(); break;
         case "help": openComfort(); speakFR("Vous pouvez dire : emmène-moi à, y aller, arrête, répète, place occupée, je suis garé, retour à ma voiture, détour, partage mon trajet, S.O.S."); break;
+        case "bell": bellPlay(false); break;
+        case "crowd": if (!isNavigating) { say("La sonnette foule s'utilise pendant le guidage."); break; } crowdSet(!crowdOn); break;
+        case "veil": veilSet(!veilOn); break;
+        case "glove": gloveToggle(); break;
+        case "repair": openRepair(); break;
         case "dest": case "dest-free": {
           const sid = slotFromSpeech(normCmd(c.arg || ""));
           if (sid) { const d0 = SLOT_DEFS.find(x => x.id === sid); if (slots[sid]) { say("D'accord, direction " + d0.label.toLowerCase() + "."); slotGo(sid); } else { say(d0.label + " n'est pas encore défini. Appuyez sur son bouton pour le choisir."); slotOpenEdit(sid); } break; }
@@ -11495,6 +11700,388 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
     }
     document.addEventListener("DOMContentLoaded", slotsRender);
     if (document.readyState !== "loading") slotsRender();
+
+    // =====================================================================================================
+    //  PATCH 47 — gants · énergie du moment · activité · sonnette · entrée PMR · écran éco · panne · sol vibrant · ETA réaliste
+    // =====================================================================================================
+    const LSget = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch { return d; } };
+    const LSset = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+    const LSjson = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || "null") || d; } catch { return d; } };
+    const fmt1 = n => String(Math.round(n * 10) / 10).replace(".", ",");
+
+    // ---------- 2. Énergie du moment ----------
+    var energy = /^(fit|tired|pain)$/.test(LSget("gps_pmr_energy_v1", "fit")) ? LSget("gps_pmr_energy_v1", "fit") : "fit";   // var : getWc() peut être appelée avant cette ligne
+    function energyAdjust(base) {
+      if (energy === "tired") return Math.min(base, Math.max(3, Math.min(4, Math.round(base * 0.65 * 10) / 10)));
+      if (energy === "pain") return Math.min(base, 2);
+      return base;
+    }
+    function energyHills(v) { return energy === "pain" ? 0 : energy === "tired" ? Math.min(v, 0.05) : v; }
+    function energyUI() {
+      document.querySelectorAll("#energyRow button").forEach(b => { const on = b.dataset.e === energy; b.setAttribute("aria-checked", on ? "true" : "false"); b.classList.toggle("active", on); });
+      const bd = gid("energyBadge"); if (!bd) return;
+      bd.hidden = energy === "fit";
+      bd.textContent = energy === "fit" ? "" : "Trajet adouci : pente max " + fmt1(getWc().maxSlope) + " %";
+    }
+    function energySet(e, noRoute) {
+      if (!/^(fit|tired|pain)$/.test(e)) return;
+      energy = e; LSset("gps_pmr_energy_v1", e); energyUI();
+      try { updateProfileUI(); } catch {}
+      if (!noRoute && !isNavigating && selectedDest && selectedDest.lat != null && activeTransportTab !== "car") routeTo(selectedDest.lat, selectedDest.lon, selectedDest.name);
+    }
+
+    // ---------- 9. ETA réaliste (énergie + pente + vent de face) ----------
+    const ETA_SPEED = { manual: { fit: 4.5, tired: 3.5, pain: 2.5 }, electric: { fit: 5.5, tired: 5.5, pain: 5 } };
+    let windMem = null;
+    async function windAt(lat, lon) {
+      const k = lat.toFixed(1) + "," + lon.toFixed(1);
+      if (windMem && windMem.k === k && Date.now() - windMem.ts < 20 * 60e3) return windMem.v;
+      if (!navigator.onLine) return null;
+      try {
+        const r = await fetchWithTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh&timezone=auto`, {}, 5000);
+        if (!r.ok) return null; const j = await r.json();
+        if (j.current && j.current.wind_speed_10m != null) { windMem = { k, ts: Date.now(), v: { kmh: +j.current.wind_speed_10m, dir: +j.current.wind_direction_10m } }; return windMem.v; }
+      } catch {}
+      return null;
+    }
+    function etaModel(route, wind) {
+      const geo = makeRouteGeo(route.coords), L = geo.total, sp = ETA_SPEED[profile] || ETA_SPEED.manual, v = sp[energy] || sp.fit, vFit = sp.fit;
+      const base = L / (vFit / 3.6);
+      let flat = L / (v / 3.6), slopeMult = 1, tot = flat;
+      const S = lastSlope && lastSlope.coords === route.coords ? lastSlope : null;
+      if (S && S.ds && S.zs && S.ds.length > 2) {
+        let t = 0;
+        slopeSegments(S.ds, S.zs, 99).forEach(s => { const len = s.d1 - s.d0, g = Math.max(0, Math.abs(s.g) > 2 && s.g > 0 ? s.g : 0); t += len / (v / 3.6) * (g > 2 ? Math.min(2, 1 + 0.10 * (g - 2)) : 1); });
+        if (t > 0) { tot = t; slopeMult = t / flat; }
+      }
+      let windPct = 0, head = 0;
+      if (wind && route.coords.length > 1) {
+        const a = route.coords[0], z = route.coords[route.coords.length - 1], brg = computeBearing(a[1], a[0], z[1], z[0]);
+        head = wind.kmh * Math.cos((wind.dir - brg) * Math.PI / 180);
+        if (head > 15) windPct = 0.10 + (Math.min(head, 40) - 15) / 25 * 0.15;
+      }
+      const total = tot * (1 + windPct);
+      const why = [];
+      if (energy === "tired") why.push("fatigue"); if (energy === "pain") why.push("ménagement des épaules");
+      if (slopeMult > 1.06) why.push("montées"); if (windPct > 0) why.push("vent de face");
+      return { sec: total, baseSec: base, extra: total - base, why, head, windPct, slopeMult };
+    }
+    const hhmmH = t => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", "h");
+    async function etaRouteHook() {
+      const bar = ensureBar("etaBar"), r = currentRoute;
+      if (!r || activeTransportTab === "car" || !r.coords || r.coords.length < 2) { bar.innerHTML = ""; if (r) r.etaSec = null; return; }
+      const m0 = etaModel(r, null); r.etaSec = m0.sec; etaRender(r, m0);
+      const mid = r.coords[Math.floor(r.coords.length / 2)], w = await windAt(mid[1], mid[0]);
+      if (currentRoute !== r) return;
+      const m = etaModel(r, w); r.etaSec = m.sec; r.etaModel = m; etaRender(r, m);
+    }
+    function etaRender(r, m) {
+      const bar = ensureBar("etaBar"), arr = Date.now() + m.sec * 1000, dMin = Math.round(m.extra / 60);
+      const det = dMin >= 2 && m.why.length ? ` (+${dMin} min : ${m.why.join(" & ")})` : "";
+      const wind = m.windPct > 0 ? ` <span class="sub">Vent de face ≈ ${Math.round(m.head)} km/h</span>` : "";
+      const keep = gid("etaWant") ? gid("etaWant").value : "";
+      bar.innerHTML = `<div id="etaLine">🕒 Arrivée : <b>${hhmmH(arr)}</b>${det}${wind}</div><label class="eta-adv">Je veux arriver à <input id="etaWant" type="time" value="${keep}" oninput="etaAdvise()" aria-label="Heure d'arrivée souhaitée"></label> <span id="etaAdv" role="status"></span>`;
+      etaAdvise();
+    }
+    function etaAdvise() {
+      const r = currentRoute, el = gid("etaAdv"), inp = gid("etaWant"); if (!el || !inp || !r || !r.etaSec) return;
+      if (!inp.value) { el.textContent = ""; return; }
+      const [h, mi] = inp.value.split(":").map(Number), t = new Date(); t.setHours(h, mi, 0, 0); if (t.getTime() < Date.now() - 3600e3) t.setDate(t.getDate() + 1);
+      const dep = t.getTime() - r.etaSec * 1000, margin = 5 * 60e3;
+      el.textContent = (dep - margin < Date.now() ? "Partez dès maintenant" : "Heure de départ conseillée : " + hhmmH(dep - margin)) + " (5 min de marge)";
+    }
+
+    // ---------- 3. Activité adaptée au fauteuil ----------
+    const ACT_KEY = "gps_pmr_activity_v1", ACT_SET = "gps_pmr_actset_v1";
+    let actSet = Object.assign({ circ: 1.9, weight: 70 }, LSjson(ACT_SET, {}));
+    let actDays = LSjson(ACT_KEY, []); if (!Array.isArray(actDays)) actDays = [];
+    let actSes = null;
+    const dayKey = (d = new Date()) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    function actStart() { actSes = { dist: 0, climb: 0, t0: Date.now(), lastP: null, lastZ: null, saved: false }; }
+    function actZ(p) {
+      const L = lastSlope; if (!L || !currentRoute || L.coords !== currentRoute.coords || !L.ds || !L.zs) return null;
+      const ds = L.ds, zs = L.zs; if (p <= ds[0]) return zs[0]; if (p >= ds[ds.length - 1]) return zs[zs.length - 1];
+      let i = 1; while (i < ds.length && ds[i] < p) i++; const f = (p - ds[i - 1]) / Math.max(1e-6, ds[i] - ds[i - 1]); return zs[i - 1] + f * (zs[i] - zs[i - 1]);
+    }
+    function actTick() {
+      if (!actSes || !isNavigating || !nav || typeof nav.progress !== "number" || nav.arrived) return;
+      const p = nav.progress;
+      if (actSes.lastP == null) { actSes.lastP = p; actSes.lastZ = actZ(p); return; }
+      const d = p - actSes.lastP;
+      if (d > 0 && d < 60) { actSes.dist += d; const z = actZ(p); if (z != null && actSes.lastZ != null && z > actSes.lastZ) actSes.climb += z - actSes.lastZ; if (z != null) actSes.lastZ = z; }
+      actSes.lastP = p;
+    }
+    function actCalc(a) {
+      const km = a.dist / 1000, turns = a.dist / Math.max(0.5, actSet.circ), pushes = turns / 0.7;
+      const electric = profile === "electric";
+      return { km, turns: Math.round(turns), pushes: Math.round(pushes), climb: Math.round(a.climb), kcal: electric ? 0 : Math.round(actSet.weight * (0.45 * km + 0.0117 * a.climb)), wh: electric ? Math.round(km * 10) : 0, electric };
+    }
+    function actShort() {
+      if (!actSes || actSes.dist < 20) return "";
+      const c = actCalc(actSes); return `${c.km >= 1 ? fmt1(c.km) + " km" : Math.round(actSes.dist) + " m"} · ${c.turns} tours${c.climb ? " · +" + c.climb + " m" : ""}`;
+    }
+    function actSaveDay(a) {
+      const c = actCalc(a), k = dayKey(); let d = actDays.find(x => x.d === k);
+      if (!d) { d = { d: k, dist: 0, turns: 0, climb: 0, kcal: 0, wh: 0, n: 0 }; actDays.push(d); }
+      d.dist += Math.round(a.dist); d.turns += c.turns; d.climb += c.climb; d.kcal += c.kcal; d.wh += c.wh; d.n++;
+      actDays = actDays.slice(-60); LSset(ACT_KEY, JSON.stringify(actDays));
+    }
+    function actFinish(save, announce) {
+      const a = actSes; if (!a || a.saved) return null; a.saved = true; actSes = null;
+      if (!save || a.dist < 30) return null;
+      actSaveDay(a); const c = actCalc(a);
+      if (announce) {
+        const msg = `🏆 Bravo ! ${c.km >= 1 ? fmt1(c.km) + " km" : Math.round(a.dist) + " m"} parcourus · ≈ ${c.turns} tours de roue${c.climb ? " · +" + c.climb + " m de dénivelé" : ""}${c.electric ? " · ≈ " + c.wh + " Wh de batterie" : " · ≈ " + c.kcal + " kcal"}`;
+        navToast(msg, 14000); try { speakFR("Bravo ! " + (c.km >= 1 ? fmt1(c.km) + " kilomètres" : Math.round(a.dist) + " mètres") + " parcourus."); } catch {}
+      }
+      return c;
+    }
+    function actOpen() {
+      const days = []; for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); const k = dayKey(d), r = actDays.find(x => x.d === k) || { dist: 0, turns: 0, climb: 0, kcal: 0, wh: 0, n: 0 }; days.push({ k, dd: d, r }); }
+      const sum = f => days.reduce((a, x) => a + (x.r[f] || 0), 0), today = days[6].r, max = Math.max(1, ...days.map(x => x.r.dist));
+      gid("actBody").innerHTML = `<p><b>Aujourd'hui</b> : ${fmt1(today.dist / 1000)} km · ${today.turns} tours · +${today.climb} m · ${profile === "electric" ? today.wh + " Wh" : today.kcal + " kcal"}</p>
+        <p><b>7 derniers jours</b> : ${fmt1(sum("dist") / 1000)} km · ${sum("turns")} tours · +${sum("climb")} m · ${profile === "electric" ? sum("wh") + " Wh" : sum("kcal") + " kcal"}</p>
+        <div class="act-bars" role="img" aria-label="Distance par jour">${days.map(x => `<div class="act-col"><i style="height:${Math.round(x.r.dist / max * 60)}px"></i><small>${x.dd.toLocaleDateString("fr-FR", { weekday: "narrow" })}</small></div>`).join("")}</div>`;
+      gid("actCirc").value = Math.round(actSet.circ * 100); gid("actWeight").value = actSet.weight;
+      const dl = gid("actDlg"); if (dl.showModal) { if (!dl.open) dl.showModal(); } else dl.setAttribute("open", "");
+    }
+    function actSettingsSave() {
+      const c = parseInt(gid("actCirc").value, 10), w = parseInt(gid("actWeight").value, 10);
+      if (c >= 100 && c <= 300) actSet.circ = c / 100; if (w >= 30 && w <= 250) actSet.weight = w; LSset(ACT_SET, JSON.stringify(actSet)); actOpen();
+    }
+    function actReset() { actDays = []; LSset(ACT_KEY, "[]"); actOpen(); }
+
+    // ---------- 4. Sonnette de courtoisie (Web Audio, 100 % hors ligne) ----------
+    let audioCtx = null, crowdOn = false, crowdTimer = null;
+    function audioUnlock() {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+        if (!audioCtx) audioCtx = new AC();
+        if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+        return audioCtx;
+      } catch { return null; }
+    }
+    const audioUnlockEvents = ["pointerdown", "touchend", "keydown", "click"];
+    function audioUnlockOnce() { const c = audioUnlock(); if (c && c.state === "running") audioUnlockEvents.forEach(ev => window.removeEventListener(ev, audioUnlockOnce)); }
+    audioUnlockEvents.forEach(ev => window.addEventListener(ev, audioUnlockOnce, { passive: true }));
+    function bellPlay(soft) {
+      const ctx = audioUnlock(); if (!ctx) { navToast("🔔 Son indisponible sur cet appareil.", 3000); return false; }
+      const t = ctx.currentTime, master = ctx.createGain(); master.gain.value = soft ? 0.25 : 0.5; master.connect(ctx.destination);
+      [[880, 0, 0.30], [1318.5, 0, 0.12], [1174.7, 0.32, 0.30], [1760, 0.32, 0.12]].forEach(([f, off, vol]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sine"; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t + off); g.gain.exponentialRampToValueAtTime(vol, t + off + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + off + 0.9);
+        o.connect(g); g.connect(master); o.start(t + off); o.stop(t + off + 1);
+      });
+      return true;
+    }
+    function crowdSet(on) {
+      const was = crowdOn; crowdOn = !!on; clearInterval(crowdTimer); crowdTimer = null;
+      if (crowdOn) { bellPlay(true); crowdTimer = setInterval(() => { if (!isNavigating) return crowdSet(false); bellPlay(true); }, 4000); }
+      const b = gid("hudBell"); if (b) { b.setAttribute("aria-pressed", crowdOn ? "true" : "false"); b.classList.toggle("on", crowdOn); }
+      if (was !== crowdOn) navToast(crowdOn ? "🔔 Mode foule : petit tintement toutes les 4 s (appui long pour arrêter)." : "🔔 Mode foule arrêté.", 4000);
+    }
+    (function bellButton() {
+      const b = gid("hudBell"); if (!b) return; let t = null, long = false;
+      b.addEventListener("pointerdown", () => { long = false; t = setTimeout(() => { long = true; crowdSet(!crowdOn); if ("vibrate" in navigator) try { navigator.vibrate(60); } catch {} }, 650); });
+      ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => clearTimeout(t)));
+      b.addEventListener("click", () => { if (long) { long = false; return; } bellPlay(false); });
+    })();
+
+    // ---------- 6. Écran éco (voile noir tactile) ----------
+    let veilOn = false, veilAwake = false, veilT = null, veilLastStep = -1, veilLastAlert = "", veilBatt = null;
+    function veilShow(show) { const v = gid("blackVeil"); if (v) v.hidden = !show; }
+    function veilSet(on) {
+      if (on && !isNavigating) { navToast("🌑 L'écran éco s'active pendant le guidage.", 4000); return; }
+      veilOn = !!on; veilAwake = false; clearTimeout(veilT); veilShow(veilOn);
+      const b = gid("hudVeil"); if (b) b.setAttribute("aria-pressed", veilOn ? "true" : "false");
+      if (veilOn) { try { requestWakeLock(); } catch {} veilBattery(); }
+    }
+    function veilWake(ms) {
+      if (!veilOn) return; veilAwake = true; veilShow(false); clearTimeout(veilT);
+      veilT = setTimeout(() => { veilAwake = false; if (veilOn && isNavigating) veilShow(true); }, ms || 5500);
+    }
+    async function veilBattery() {
+      try { if (!veilBatt && navigator.getBattery) veilBatt = await navigator.getBattery(); } catch {}
+      const el = gid("veilBatt"); if (el) el.textContent = veilBatt ? "🔋 " + Math.round(veilBatt.level * 100) + " %" : "";
+    }
+    function veilUpdate(icon, dist, stepIdx, rerouting, alertText) {
+      const n = gid("veilNext"); if (n) n.textContent = (icon || "") + " " + (dist >= 1000 ? (dist / 1000).toFixed(1) + " km" : dist + " m");
+      if (!veilOn) return;
+      if (rerouting) { if (!veilAwake) veilWake(6000); return; }
+      if (dist < 25 && stepIdx !== veilLastStep) { veilLastStep = stepIdx; veilWake(5500); }
+      if (alertText && alertText !== veilLastAlert) { veilLastAlert = alertText; veilWake(6000); } else if (!alertText) veilLastAlert = "";
+    }
+    gid("blackVeil") && gid("blackVeil").addEventListener("click", () => veilWake(5500));
+
+    // ---------- 7. Panne / crevaison ----------
+    let repairPos = null;
+    async function openRepair() {
+      closeSos();
+      const pos = (typeof currentPosition === "function" && currentPosition()) || userPos || (() => { const c = map.getCenter(); return { lat: c.lat, lon: c.lng }; })();
+      repairPos = pos;
+      gid("repCoords").textContent = pos.lat.toFixed(5) + ", " + pos.lon.toFixed(5);
+      gid("repAddr").textContent = "Adresse en cours de recherche…"; gid("repList").innerHTML = "<p class='sub'>⏳ Recherche des réparateurs et arrêts accessibles…</p>";
+      const dl = gid("repairDlg"); if (dl.showModal) { if (!dl.open) dl.showModal(); } else dl.setAttribute("open", "");
+      reverseGeocodeFullAddress(pos.lat, pos.lon).then(a => { repairPos.addr = (a && (a.label || a.address || a)) || ""; gid("repAddr").textContent = typeof repairPos.addr === "string" && repairPos.addr ? repairPos.addr : "Adresse introuvable : utilisez les coordonnées ci-dessous."; }).catch(() => { gid("repAddr").textContent = "Adresse introuvable : utilisez les coordonnées ci-dessous."; });
+      repairSearch(pos);
+    }
+    function closeRepair() { const d = gid("repairDlg"); if (d.open) d.close(); }
+    async function repairSearch(pos) {
+      const { lat, lon } = pos, a3 = `(around:3000,${lat},${lon})`, a5 = `(around:5000,${lat},${lon})`;
+      const ql = `[out:json][timeout:12];(nwr["shop"="bicycle"]${a3};nwr["amenity"="bicycle_repair_station"]${a3};nwr["shop"~"^(medical_supply|mobility)$"]${a5};nwr["healthcare"="medical_supply"]${a5};node["highway"="bus_stop"]["wheelchair"="yes"](around:700,${lat},${lon});node["railway"="tram_stop"]["wheelchair"="yes"](around:900,${lat},${lon}););out center tags qt;`;
+      let els = null; try { const j = await queryOverpass(ql, null, 9000); els = j && j.elements; } catch {}
+      const groups = { bike: [], med: [], stop: [] };
+      (els || []).forEach(e => {
+        const la = e.lat != null ? e.lat : e.center && e.center.lat, lo = e.lon != null ? e.lon : e.center && e.center.lon, t = e.tags || {}; if (la == null) return;
+        const o = { lat: la, lon: lo, name: t.name || "", d: Math.round(distanceMeters(lat, lon, la, lo)) };
+        if (t.shop === "bicycle" || t.amenity === "bicycle_repair_station") groups.bike.push(Object.assign(o, { name: o.name || (t.amenity ? "Borne de réparation vélo" : "Réparateur de cycles") }));
+        else if (/medical_supply|mobility/.test((t.shop || "") + (t.healthcare || ""))) groups.med.push(Object.assign(o, { name: o.name || "Matériel médical" }));
+        else if (t.highway === "bus_stop" || t.railway === "tram_stop") groups.stop.push(Object.assign(o, { name: o.name || (t.railway ? "Arrêt de tram accessible" : "Arrêt de bus accessible") }));
+      });
+      if (!(els && els.length)) {   // hors ligne / Overpass indisponible : base locale déjà en mémoire
+        try { PmrDataUpdater.store.forEach(f => { const p = f.properties; if (p.kind === "stop" && f.geometry.type === "Point" && p.wheelchair === "yes") { const [lo, la] = f.geometry.coordinates, d = Math.round(distanceMeters(lat, lon, la, lo)); if (d < 900) groups.stop.push({ lat: la, lon: lo, name: p.name || "Arrêt accessible", d }); } }); } catch {}
+      }
+      const row = (o, i, g) => `<div class="rep-row"><div><b>${escapeHTML(o.name)}</b><br><span class="sub">${o.d >= 1000 ? (o.d / 1000).toFixed(1) + " km" : o.d + " m"}</span></div><button type="button" onclick="repairGo('${g}',${i})">Y aller</button></div>`;
+      repairPos.found = {}; let html = "";
+      [["bike", "🚲 Réparateurs de cycles (crevaison 24\")"], ["med", "🏥 Matériel médical"], ["stop", "🚌 Arrêt accessible le plus proche"]].forEach(([g, title]) => {
+        const l = groups[g].sort((a, b) => a.d - b.d).slice(0, g === "stop" ? 2 : 3); repairPos.found[g] = l;
+        html += `<h3>${title}</h3>` + (l.length ? l.map((o, i) => row(o, i, g)).join("") : "<p class='sub'>Aucun résultat à proximité" + (els ? "" : " (réseau indisponible)") + ".</p>");
+      });
+      gid("repList").innerHTML = html;
+    }
+    function repairGo(g, i) { const o = repairPos && repairPos.found && repairPos.found[g] && repairPos.found[g][i]; if (!o) return; closeRepair(); switchModeTab("wheelchair"); routeTo(o.lat, o.lon, o.name); }
+    function repairMessage() {
+      const p = repairPos || userPos || { lat: 0, lon: 0 }, link = `https://www.openstreetmap.org/?mlat=${p.lat.toFixed(6)}&mlon=${p.lon.toFixed(6)}#map=18/${p.lat.toFixed(6)}/${p.lon.toFixed(6)}`;
+      const addr = (typeof p.addr === "string" && p.addr) ? p.addr : p.lat.toFixed(5) + ", " + p.lon.toFixed(5);
+      return `Bonjour, je suis immobilisé(e) suite à une panne/crevaison de mon fauteuil roulant à ${addr} (${link}). Peux-tu venir m'aider ou me récupérer (prévoir place coffre pour le fauteuil) ?`;
+    }
+    async function repairShare() {
+      const text = repairMessage();
+      try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+      location.href = "sms:?&body=" + encodeURIComponent(text);   // ouvre l'application SMS : rien n'est envoyé sans votre appui
+    }
+
+    // ---------- 5. Vraie entrée PMR ----------
+    const ENT_KEY = "gps_pmr_entrances_v1";
+    let entrances = LSjson(ENT_KEY, []); if (!Array.isArray(entrances)) entrances = [];
+    function entFind(lat, lon) { return entrances.find(e => distanceMeters(e.olat, e.olon, lat, lon) < 40) || null; }
+    function entOpen() {
+      const r = currentRoute, o = r && (r.options && r.options.origDest || { lat: r.destLat, lon: r.destLon, name: r.destName }); if (!o) { navToast("Calculez d'abord un itinéraire.", 3000); return; }
+      const ex = entFind(o.lat, o.lon); gid("entNote").value = ex ? ex.note || "" : ""; gid("entDelete").hidden = !ex;
+      gid("entTitle").textContent = "📍 Vraie entrée PMR — " + (o.name || "destination");
+      gid("entInfo").textContent = ex ? "Une entrée est déjà enregistrée : l'itinéraire s'y rend directement." : "Placez-vous devant l'entrée accessible, puis enregistrez. Le prochain trajet vers ce lieu y mènera directement.";
+      entOpen.target = o; const dl = gid("entDlg"); if (dl.showModal) { if (!dl.open) dl.showModal(); } else dl.setAttribute("open", "");
+    }
+    function entSave(src) {
+      const o = entOpen.target; if (!o) return;
+      let p = src === "map" ? (() => { const c = map.getCenter(); return { lat: c.lat, lon: c.lng }; })() : (currentPosition() || userPos);
+      if (!p) { navToast("Position GPS indisponible : utilisez « centre de la carte ».", 4000); return; }
+      entrances = entrances.filter(e => distanceMeters(e.olat, e.olon, o.lat, o.lon) >= 40);
+      entrances.push({ olat: o.lat, olon: o.lon, name: o.name || "", lat: p.lat, lon: p.lon, note: gid("entNote").value.trim().slice(0, 300), ts: Date.now() });
+      LSset(ENT_KEY, JSON.stringify(entrances.slice(-100))); entClose(); navToast("📍 Entrée PMR enregistrée. Relancez l'itinéraire pour l'utiliser.", 5000);
+      if (selectedDest && !isNavigating) routeTo(o.lat, o.lon, o.name || selectedDest.name);
+    }
+    function entDelete() { const o = entOpen.target; if (!o) return; entrances = entrances.filter(e => distanceMeters(e.olat, e.olon, o.lat, o.lon) >= 40); LSset(ENT_KEY, JSON.stringify(entrances)); entClose(); navToast("Entrée PMR supprimée.", 3000); }
+    function entClose() { const d = gid("entDlg"); if (d.open) d.close(); }
+    function entNoteSpeech() { const o = currentRoute && currentRoute.options && currentRoute.options.realEntrance; return o ? " Vous êtes à l'entrée accessible." + (o.note ? " " + o.note : "") : ""; }
+
+    // ---------- 8. Sol irrégulier (accéléromètre) ----------
+    const BUMP_KEY = "gps_pmr_bumpy_v1", BUMP_ON = "gps_pmr_bump_on", BUMP_RMS = 1.5, BUMP_SECS = 4;
+    let bumpy = LSjson(BUMP_KEY, []); if (!Array.isArray(bumpy)) bumpy = [];
+    let bumpOn = LSget(BUMP_ON, "0") === "1", bumpAttached = false, bumpBucket = null, bumpRun = null, bumpyAvoid = [];
+    function bumpSave() { LSset(BUMP_KEY, JSON.stringify(bumpy.slice(-200))); }
+    function bumpGate() { return bumpOn && isNavigating && activeTransportTab === "wheelchair" && (lastSpeed || 0) >= 0.4 && !simActive; }
+    function bumpHandle(e) {
+      const a = e.acceleration; if (!a || a.x == null) return;
+      const now = Date.now();
+      if (!bumpGate()) { bumpBucket = null; bumpRun = null; return; }       // à l'arrêt, en voiture / bus / tram : capteur en pause
+      if (!bumpBucket) bumpBucket = { t0: now, s: 0, n: 0 };
+      bumpBucket.s += a.x * a.x + a.y * a.y + a.z * a.z; bumpBucket.n++;
+      if (now - bumpBucket.t0 < 1000) return;
+      const rms = Math.sqrt(bumpBucket.s / Math.max(1, bumpBucket.n)); bumpBucket = null;
+      bumpTick(rms);
+    }
+    function bumpTick(rms) {
+      const pos = currentPosition() || userPos; if (!pos) return;
+      if (rms > BUMP_RMS) {
+        if (!bumpRun) bumpRun = { a: [pos.lon, pos.lat], n: 0, gap: 0, seg: null };
+        bumpRun.n++; bumpRun.gap = 0;
+        if (bumpRun.n >= BUMP_SECS) {
+          if (!bumpRun.seg) { bumpRun.seg = { id: "b" + Date.now().toString(36), a: bumpRun.a, b: [pos.lon, pos.lat], ts: Date.now() }; bumpy.push(bumpRun.seg); }
+          else bumpRun.seg.b = [pos.lon, pos.lat];
+          bumpSave(); bumpDraw();
+        }
+      } else if (bumpRun) {
+        if (++bumpRun.gap > 1) { const s = bumpRun.seg; bumpRun = null; if (s && distanceMeters(s.a[1], s.a[0], s.b[1], s.b[0]) < 12) { bumpy = bumpy.filter(x => x !== s); bumpSave(); bumpDraw(); } }
+      }
+    }
+    function bumpAttach() { if (bumpAttached || !bumpOn) return; window.addEventListener("devicemotion", bumpHandle); bumpAttached = true; }
+    function bumpDetach() { if (!bumpAttached) return; window.removeEventListener("devicemotion", bumpHandle); bumpAttached = false; bumpBucket = null; bumpRun = null; }
+    async function bumpToggle(on) {
+      if (on) {
+        try { if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") { const r = await DeviceMotionEvent.requestPermission(); if (r !== "granted") { bumpOn = false; LSset(BUMP_ON, "0"); feat47Sync(); navToast("Capteur de mouvement refusé : réglage iOS.", 5000); return; } } } catch {}
+        if (typeof DeviceMotionEvent === "undefined") { bumpOn = false; feat47Sync(); navToast("Capteur de mouvement indisponible sur cet appareil.", 5000); return; }
+      }
+      bumpOn = !!on; LSset(BUMP_ON, on ? "1" : "0"); if (on && isNavigating) bumpAttach(); else bumpDetach();
+    }
+    function bumpDraw() {
+      try {
+        const fc = { type: "FeatureCollection", features: bumpy.map(s => ({ type: "Feature", properties: { id: s.id }, geometry: { type: "LineString", coordinates: [s.a, s.b] } })) };
+        const src = map.getSource("bumpy-src");
+        if (src) { src.setData(fc); return; }
+        if (!map.getStyle()) return;
+        map.addSource("bumpy-src", { type: "geojson", data: fc });
+        map.addLayer({ id: "bumpy-layer", type: "line", source: "bumpy-src", layout: { "line-cap": "butt" }, paint: { "line-color": "#f97316", "line-width": 5, "line-dasharray": [1.5, 1.5], "line-opacity": 0.9 } });
+      } catch {}
+    }
+    map.on("styledata", () => { if (!map.getSource("bumpy-src")) bumpDraw(); });
+    function bumpNear(oLon, oLat, dLat, dLon) {
+      const k = Math.cos(oLat * Math.PI / 180), ax = oLon * k * 111320, ay = oLat * 110540, bx = dLon * k * 111320, by = dLat * 110540, L2 = (bx - ax) ** 2 + (by - ay) ** 2 || 1;
+      return bumpy.map(s => { const mx = (s.a[0] + s.b[0]) / 2, my = (s.a[1] + s.b[1]) / 2, px = mx * k * 111320, py = my * 110540; let t = ((px - ax) * (bx - ax) + (py - ay) * (by - ay)) / L2; t = Math.max(0, Math.min(1, t)); return { s, d: Math.hypot(px - (ax + t * (bx - ax)), py - (ay + t * (by - ay))), mx, my }; })
+        .filter(x => x.d < 60).sort((a, b) => a.d - b.d).slice(0, 3).map(x => ({ lat: x.my, lon: x.mx }));
+    }
+    function bumpOpen() {
+      const box = gid("bumpList");
+      box.innerHTML = bumpy.length ? bumpy.slice().reverse().map(s => `<div class="rep-row"><div><b>Tronçon vibrant</b><br><span class="sub">${new Date(s.ts).toLocaleDateString("fr-FR")} · ${Math.round(distanceMeters(s.a[1], s.a[0], s.b[1], s.b[0]))} m · ${s.a[1].toFixed(4)}, ${s.a[0].toFixed(4)}</span></div><button type="button" onclick="bumpDel('${s.id}')" aria-label="Supprimer ce tronçon">✕</button></div>`).join("") : "<p class='sub'>Aucun tronçon enregistré.</p>";
+      const dl = gid("bumpDlg"); if (dl.showModal) { if (!dl.open) dl.showModal(); } else dl.setAttribute("open", "");
+    }
+    function bumpDel(id) { bumpy = bumpy.filter(s => s.id !== id); bumpSave(); bumpDraw(); bumpOpen(); feat47Sync(); }
+    function bumpClearAll() { bumpy = []; bumpSave(); bumpDraw(); bumpOpen(); feat47Sync(); }
+
+    // ---------- 1. Mode gants / mitaines ----------
+    let gloveOn = LSget("gps_pmr_glove_v1", "0") === "1";
+    function gloveApply() {
+      document.body.classList.toggle("glove-mode", gloveOn);
+      const b = gid("gloveBtn"); if (b) b.setAttribute("aria-pressed", gloveOn ? "true" : "false");
+      try { ["dragPan", "touchZoomRotate", "doubleClickZoom"].forEach(h => gloveOn ? map[h].disable() : map[h].enable()); } catch {}
+      const c = gid("gloveCtl"); if (c) c.hidden = !gloveOn;
+      const cf = gid("cfGlove"); if (cf) cf.checked = gloveOn;
+    }
+    function gloveToggle(v) { gloveOn = v === undefined ? !gloveOn : !!v; LSset("gps_pmr_glove_v1", gloveOn ? "1" : "0"); gloveApply(); navToast(gloveOn ? "🧤 Mode gants activé : gros boutons, carte pilotée par + − et flèches." : "🧤 Mode gants désactivé.", 4000); }
+    function glovePan(dx, dy) { try { autoFollowCamera = false; } catch {} map.panBy([dx, dy], { duration: 250 }); }
+    function gloveZoom(d) { map.easeTo({ zoom: map.getZoom() + d, duration: 250 }); }
+
+    // ---------- commun ----------
+    function feat47Sync() {
+      const set = (id, v) => { const e = gid(id); if (e) { if (e.type === "checkbox") e.checked = !!v; else e.textContent = v; } };
+      set("cfGlove", gloveOn); set("cfBump", bumpOn); set("cfBumpN", bumpy.length + " tronçon" + (bumpy.length > 1 ? "s" : ""));
+    }
+    function routeHook47() {
+      try { energyUI(); } catch {}
+      try { const r = currentRoute; if (r && r.options && r.options.realEntrance) { const m = gid("routeMeta"); if (m && !/Entrée PMR/.test(m.textContent)) m.textContent += " • 📍 Entrée PMR enregistrée"; } } catch {}
+      try { gid("entBtn").hidden = !currentRoute; } catch {}
+      etaRouteHook().catch(() => {});
+    }
+    function feat47GuidanceStart() { if (!actSes) actStart(); bumpAttach(); }
+    function feat47GuidanceStop(wasSim, arrived) {
+      try { actFinish(!wasSim && !arrived, false); } catch {}
+      bumpDetach(); crowdSet(false); veilSet(false); veilLastStep = -1; veilLastAlert = ""; stopCompass();
+    }
+    function feat47Cleanup() { if (!isNavigating) stopCompass(); clearInterval(crowdTimer); crowdTimer = null; crowdOn = false; clearTimeout(veilT); bumpDetach(); }
+    window.addEventListener("pagehide", feat47Cleanup);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) { bumpBucket = null; bumpRun = null; } });
+    document.addEventListener("DOMContentLoaded", () => { gloveApply(); energyUI(); feat47Sync(); });
+    if (document.readyState !== "loading") { gloveApply(); energyUI(); feat47Sync(); }
 
     // ---------- Détour avant un passage infranchissable ----------
     function detourBarShow(msg) { const b = gid("detourBar"); gid("detourTxt").textContent = msg; b.hidden = false; }
@@ -11833,7 +12420,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
     // ---------- Réglages (formulaire Confort) ----------
     function prefs2Sync() {
       const set = (id, v) => { const e = gid(id); if (e) { if (e.type === "checkbox") e.checked = !!v; else e.value = v; } };
-      set("cfSlope", slopeColorOn); set("cfDiscreet", watchPrefs.discreet); set("cfSaver", psMode);
+      set("cfSlope", slopeColorOn); set("cfDiscreet", watchPrefs.discreet); set("cfSaver", psMode); try { feat47Sync(); } catch {}
     }
     function prefs2FromForm() {
       const sl = gid("cfSlope").checked; if (sl !== slopeColorOn) slopeToggle();
