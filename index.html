@@ -199,11 +199,6 @@
     }
     body.dark .irigoflex-box { background: rgba(88, 86, 214, 0.22); }
 
-    .sos-box {
-      background: rgba(220, 38, 38, 0.10); border: 2px solid #dc2626;
-      border-radius: 16px; padding: 12px; display: none; flex-direction: column; gap: 8px;
-    }
-    body.dark .sos-box { background: rgba(220, 38, 38, 0.22); }
 
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; }
     .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -310,7 +305,7 @@
     .status-error { background: rgba(255,59,48,0.15); color: #ff3b30; }
     .status-ok { background: rgba(52,199,89,0.16); color: #248a3d; }
 
-    .nav-banner { background: #141c17; color: #fff; border-radius: 16px; padding: 14px; border: 1px solid rgba(255,255,255,0.18); }
+    .dir-item, .step-item, .batt-item { content-visibility: auto; contain-intrinsic-size: auto 52px; }   /* longues listes : le navigateur ne dessine que ce qui est visible */
     .step-item { padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
     .step-item:last-child { border-bottom: none; }
 
@@ -333,11 +328,6 @@
     }
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
 
-    .gps-dot {
-      width: 18px; height: 18px; border-radius: 50%;
-      background: #007aff; border: 3px solid #ffffff;
-      box-shadow: 0 0 0 6px rgba(0, 122, 255, 0.28), 0 2px 6px rgba(0,0,0,0.3);
-    }
 
     .nav-arrow-wrap {
       position: relative; width: 46px; height: 46px;
@@ -530,7 +520,6 @@
     .sug-star { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 18px; color: var(--sub); }
     .sug-star.on { color: #f59e0b; }
     @media (hover: hover) { .sug-star:hover { background: rgba(245,158,11,0.18); } }
-    .sug-group { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; color: var(--sub); padding: 7px 11px 3px; text-transform: uppercase; background: var(--card); }
     #placesCard { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
     .places-head { gap: 6px; }
     .seg { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--card2); padding: 3px; border-radius: 12px; border: 1px solid var(--border); }
@@ -650,7 +639,7 @@
       --lg-card-border: 1px solid rgba(255,255,255,0.8);
       --lg-card-shadow: 0 8px 28px rgba(31,38,80,0.12), 0 1px 3px rgba(31,38,80,0.08);
       --lg-blur: blur(16px) saturate(160%);
-      --lg-radius: 24px; --lg-radius-s: 18px;
+      --lg-radius: 24px;
       --lg-gap: 20px; --lg-pad: 16px; --lg-touch: 48px;
       --lg-sel-bg: linear-gradient(180deg, rgba(10,132,255,0.30), rgba(10,132,255,0.16));
       --lg-sel-border: 1px solid rgba(10,132,255,0.55);
@@ -3787,7 +3776,7 @@
     }
 
     function drawAlertsOnMap(route) {
-      if (!map.isStyleLoaded()) return;
+      if (!map.getStyle()) return;          // isStyleLoaded() est faux dès qu'une source GeoJSON se met à jour : on dessinerait rarement
       const fc = {
         type: "FeatureCollection",
         features: (route.alerts || []).map(a => ({
@@ -4260,7 +4249,7 @@
       if (q.length < 2) { showQuickSuggestions(field); return; }
 
       renderSuggestions(searchLocalPlaces(q), field, true);
-      autocompleteTimer = setTimeout(() => fetchAutocompleteSuggestions(q, field), 200);
+      autocompleteTimer = setTimeout(() => fetchAutocompleteSuggestions(q, field), 300);
     }
 
     function clearAddressField(field) {
@@ -8228,7 +8217,7 @@
     }
     function ensureRtLayer() {
       if (map.getSource("rt-vehicles")) return true;
-      if (!map.isStyleLoaded()) return false;
+      if (!map.getStyle()) return false;
       map.addSource("rt-vehicles", { type: "geojson", data: rtGeo([]) });
       map.addLayer({ id: "rt-vehicles-layer", type: "circle", source: "rt-vehicles", minzoom: 11,
         layout: { visibility: visibleLayers.rt ? "visible" : "none" },
@@ -9685,15 +9674,43 @@
 )->.n;
 .n out tags center qt;`;
     }
-    async function pmrOverpass(ql) {
+    // Web Worker natif (Blob, sans fichier externe) : JSON.parse + normalisation + classification hors du fil principal
+    const PmrWorker = {
+      w: null, seq: 0, pend: new Map(), dead: false,
+      src() {
+        return `const PMR_RANK=${JSON.stringify(PMR_RANK)};const PMR_KIND_FR=${JSON.stringify(PMR_KIND_FR)};const PMR_LINE_KINDS=new Set(${JSON.stringify([...PMR_LINE_KINDS])});
+${pmrParseCm}\n${pmrParseIncline}\n${pmrClassify}\n${pmrOsmFeature}
+onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],out=[];for(const el of els){const f=pmrOsmFeature(el,d.s);if(f)out.push(f);}postMessage({id:d.id,feats:out,count:els.length,remark:j.remark||""});}catch(err){postMessage({id:d.id,error:String(err)});}};`;
+      },
+      start() {
+        if (this.w || this.dead) return this.w;
+        try {
+          const url = URL.createObjectURL(new Blob([this.src()], { type: "text/javascript" }));
+          this.w = new Worker(url); URL.revokeObjectURL(url);
+          this.w.onmessage = e => { const r = this.pend.get(e.data.id); if (r) { this.pend.delete(e.data.id); e.data.error ? r.rej(new Error(e.data.error)) : r.res(e.data); } };
+          this.w.onerror = () => { this.dead = true; this.w = null; this.pend.forEach(r => r.rej(new Error("worker"))); this.pend.clear(); };
+        } catch { this.dead = true; this.w = null; }
+        return this.w;
+      },
+      parseMain(text, s) { const j = JSON.parse(text), els = j.elements || [], feats = []; els.forEach(el => { const f = pmrOsmFeature(el, s); if (f) feats.push(f); }); return { feats, count: els.length, remark: j.remark || "" }; },
+      async parse(text, s) {
+        if (text.length > 20000 && this.start()) {
+          try { return await new Promise((res, rej) => { const id = ++this.seq; this.pend.set(id, { res, rej }); setTimeout(() => { if (this.pend.delete(id)) rej(new Error("timeout")); }, 20000); this.w.postMessage({ id, text, s }); }); }
+          catch { /* repli : traitement sur le fil principal */ }
+        }
+        return this.parseMain(text, s);
+      }
+    };
+    // Interroge les miroirs à tour de rôle (bascule automatique) et renvoie directement les entités normalisées
+    async function pmrOverpass(ql, settings) {
       let lastErr = null;
-      for (const ep of PMR_CFG.overpass) {                       // bascule automatique : un miroir qui échoue ou est saturé passe la main au suivant
+      for (const ep of PMR_CFG.overpass) {
         try {
           const r = await fetchWithTimeout(ep, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: "data=" + encodeURIComponent(ql) }, 30000);
           if (!r.ok) { lastErr = new Error(`${new URL(ep).hostname} : HTTP ${r.status}`); continue; }
-          const j = await r.json();
-          if (j && j.remark && /runtime error|timed out|out of memory/i.test(j.remark) && !(j.elements || []).length) { lastErr = new Error(j.remark); continue; }
-          return j;
+          const res = await PmrWorker.parse(await r.text(), settings);
+          if (res.remark && /runtime error|timed out|out of memory/i.test(res.remark) && !res.count) { lastErr = new Error(res.remark); continue; }
+          return res.feats;
         } catch (e) { lastErr = e; }
       }
       throw lastErr || new Error("Overpass indisponible");
@@ -9832,9 +9849,7 @@
         const hit = await cacheGet(key, !navigator.onLine);
         if (hit) { merge(hit.feats); return { n: hit.feats.length, cached: true }; }
         if (!navigator.onLine) return { n: 0, offline: true };
-        const json = await pmrOverpass(pmrOverpassQL(cellBox(i, j)));
-        const s = pmrSettings(), feats = [];
-        (json.elements || []).forEach(el => { const f = pmrOsmFeature(el, s); if (f) feats.push(f); });
+        const feats = await pmrOverpass(pmrOverpassQL(cellBox(i, j)), pmrSettings());
         merge(feats);
         await cachePut(key, feats, opts && opts.pack);
         return { n: feats.length };
@@ -9971,7 +9986,7 @@
         moveTimer = setTimeout(() => {
           if (!PmrLayers.enabled || !navigator.onLine || watchMode || map.getZoom() < PMR_CFG.minZoom) return;
           loadView().catch(() => {});
-        }, 900);
+        }, 450);
       }
       async function deleteKeys(keys) { if (!cacheOk()) return; try { const c = await caches.open(PMR_CFG.packCacheName); await Promise.all((keys || []).map(k => c.delete(cacheKey(k)))); } catch {} }
       return { store, report, collection, reclassify, loadView, loadCells, loadCorridor, prefetchArea, restoreFromCache, refresh, scheduleMove, renderStatus, deleteKeys, onChange(fn) { listeners.push(fn); }, cellsFor };
@@ -9992,7 +10007,7 @@
         const before = map.getLayer("route-casing") ? "route-casing" : undefined, p = this.palette(), k = this.scale();
         const vis = this.enabled ? "visible" : "none";
         if (!map.getLayer("pmr-ways-layer")) map.addLayer({
-          id: "pmr-ways-layer", type: "line", source: "pmr-live-data", filter: ["==", ["geometry-type"], "LineString"], minzoom: 12,
+          id: "pmr-ways-layer", type: "line", source: "pmr-live-data", filter: ["==", ["geometry-type"], "LineString"], minzoom: 14,
           layout: { "line-cap": "round", "line-join": "round", visibility: vis },
           paint: { "line-color": this.colorExpr(p), "line-width": ["interpolate", ["linear"], ["zoom"], 13, 2 * k, 19, 7 * k], "line-opacity": ["case", ["==", ["get", "known"], true], 0.95, 0.4] }
         }, before);
