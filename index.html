@@ -603,6 +603,12 @@
 
     /* ===== SOS / suivi / synchro ===== */
     dialog.big-dlg { border: 1px solid var(--border); border-radius: 20px; background: var(--card2); color: var(--text); width: min(480px, 94vw); max-height: 90dvh; padding: 16px 18px; overflow-y: auto; }
+    .fc-box { margin: 0 0 8px; padding: 8px 10px; border-radius: 12px; background: var(--card2); border: 1px solid var(--border); font-size: 13px; }
+    .fc-row { display: flex; gap: 6px; overflow-x: auto; margin-top: 6px; }
+    .fc-chip { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; padding: 4px 8px; border-radius: 10px; font-size: 12px; border: 1px solid var(--border); }
+    .fc-chip small { opacity: .7; font-size: 10.5px; }
+    .fc-ok { background: rgba(40,170,90,.18); } .fc-warn { background: rgba(240,170,30,.2); } .fc-bad { background: rgba(220,60,50,.2); }
+    .rep-cat { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 14px; }
     dialog.big-dlg::backdrop { background: rgba(0,0,0,0.5); }
     dialog.big-dlg h2 { margin: 0; font-size: 19px; }
     .sos-addr { font-weight: 700; font-size: 13.5px; margin: 8px 0; }
@@ -1246,6 +1252,41 @@
     </div>
   </div>
 
+  <dialog id="shareDlg" class="big-dlg" aria-labelledby="shareTitle">
+    <h2 id="shareTitle">Partager ce trajet</h2>
+    <div class="sub" id="shareTitle2" style="margin:4px 0 8px;"></div>
+    <canvas id="shareQr" aria-label="QR code du lien de partage" style="display:block;margin:0 auto 8px;max-width:100%;image-rendering:pixelated;border-radius:8px;"></canvas>
+    <input id="shareUrl" type="text" readonly aria-label="Lien de partage" style="width:100%;" />
+    <div class="sub" style="margin:6px 0;">Seule la destination est partagée (ni votre position, ni vos réglages). Le destinataire obtient un itinéraire adapté à son propre profil.</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap;"><button onclick="shareCopy()">📋 Copier</button><button id="shareNative" onclick="shareNative()">📤 Partager…</button><button onclick="gid('shareDlg').close()">Fermer</button></div>
+  </dialog>
+  <dialog id="reportDlg" class="big-dlg" aria-labelledby="reportTitle">
+    <h2 id="reportTitle">Signaler un obstacle</h2>
+    <div class="sub" style="margin:4px 0 8px;">À l'endroit indiqué par la carte (ou votre position).</div>
+    <div id="reportCats" role="radiogroup" aria-label="Type d'obstacle"></div>
+    <label class="sub" for="reportDesc">Précision (facultatif)</label>
+    <input id="reportDesc" type="text" maxlength="140" style="width:100%;" />
+    <label class="sub" for="reportDays">Visible pendant</label>
+    <select id="reportDays"><option value="1">1 jour</option><option value="3">3 jours</option><option value="14" selected>14 jours</option><option value="60">60 jours</option></select>
+    <div class="row" style="gap:6px;margin-top:10px;"><button id="reportOk" class="go">Signaler</button><button id="reportCancel">Annuler</button></div>
+  </dialog>
+  <dialog id="aboutDlg" class="big-dlg" aria-labelledby="aboutTitle">
+    <h2 id="aboutTitle">À propos, données et vie privée</h2>
+    <div class="sub" style="line-height:1.5;margin-top:8px;">
+      <p><b>GPS PMR — France</b> est un outil d'aide à l'orientation. Il peut comporter des erreurs : les données d'accessibilité sont incomplètes et la prudence de l'utilisateur reste prioritaire. Ce n'est pas un dispositif de sécurité ou d'urgence.</p>
+      <p><b>Éditeur</b> : [À compléter : nom / pseudo]. <b>Contact</b> : [À compléter : e-mail]. <b>Hébergement</b> : GitHub Pages (GitHub Inc.).</p>
+      <p><b>Position</b> : utilisée sur votre appareil pour guider ; elle n'est envoyée qu'aux services de calcul d'itinéraire (Valhalla/OSM) sous forme de coordonnées de départ, et à Open-Meteo / IGN pour la météo et l'altitude (coordonnées arrondies). Aucun compte, aucune publicité, aucun traceur.</p>
+      <p><b>Signalements</b> : si le partage est configuré (Supabase), la position et le texte d'un obstacle signalé sont publics et visibles de tous, puis expirent. Sinon ils restent sur votre appareil.</p>
+      <p><b>Alerte SOS / contacts</b> : le message n'est envoyé que sur votre action, via votre application de messagerie.</p>
+      <p><b>Stockage local</b> : favoris, réglages, packs hors ligne. Effaçables ci-dessous.</p>
+      <p><b>Sources et licences</b> : © contributeurs OpenStreetMap (ODbL) — données d'itinéraires, trottoirs, lieux ; fond de carte © CARTO ; calcul Valhalla ; Accèslibre (Licence Ouverte) ; data.gouv.fr / transport.data.gouv.fr (Licence Ouverte) ; altimétrie IGN ; météo Open-Meteo (CC BY 4.0) ; mairie d'Angers / Irigo (données ouvertes).</p>
+    </div>
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px;"><button onclick="pmrEraseLocalData()">🗑️ Effacer mes données locales</button><button onclick="gid('aboutDlg').close()">Fermer</button></div>
+  </dialog>
+  <div id="consentBar" role="region" aria-label="Information vie privée" style="display:none;position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;padding:10px 12px;border-radius:14px;background:var(--card2);color:var(--text);border:1px solid var(--border);box-shadow:0 6px 24px rgba(0,0,0,.35);font-size:13px;">
+    Cette appli utilise votre position pour vous guider, sans compte ni traceur. <a href="#" onclick="openAbout();return false;" style="color:inherit;text-decoration:underline;">En savoir plus</a>
+    <button id="consentOk" style="margin-left:8px;">J'ai compris</button>
+  </div>
   <dialog id="helpDlg" aria-labelledby="helpTitle">
     <h2 id="helpTitle" style="margin:0 0 4px;font-size:18px;">Raccourcis clavier</h2>
     <table>
@@ -1260,6 +1301,7 @@
       <tr><td><span class="kbd">L</span></td><td>Grand format</td></tr>
       <tr><td><span class="kbd">Échap</span></td><td>Fermer / quitter un champ</td></tr>
       <tr><td><span class="kbd">?</span></td><td>Cette aide</td></tr>
+      <tr><td colspan="2"><button onclick="gid('helpDlg').close();openAbout()" style="font-size:12.5px;">ℹ️ À propos, données et vie privée</button></td></tr>
     </table>
     <div class="sub ios-tip" style="margin-bottom:10px;">📲 iPhone / iPad : touchez <b>Partager</b> puis <b>Sur l'écran d'accueil</b> pour utiliser l'appli en plein écran.</div>
     <div class="sub" style="margin-bottom:12px;">Sur mobile : faites glisser la poignée du panneau pour l'agrandir ou le réduire.</div>
@@ -1570,11 +1612,13 @@
         <div id="routeElevationBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
         <div class="batt-slot" data-scope="route" style="margin-bottom:6px;"></div>
         <div id="routeWeatherBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
+        <div id="routeForecast" class="fc-box" style="display:none;" aria-live="polite"></div>
         <div id="tramInfo" style="display:none;"></div>
         <div id="routeToiletsBar" style="margin-bottom:8px;"></div>
         <div id="routeHazardsBar" style="margin-bottom:8px;"></div>
         <div class="row" style="margin-bottom:8px; flex-wrap:wrap; gap:6px;">
           <button onclick="precacheRouteTiles()" style="font-size:12.5px;" aria-label="Télécharger la carte du trajet pour l'utiliser hors ligne">📥 Carte hors-ligne du trajet</button>
+          <button onclick="openShare()" style="font-size:12.5px;" aria-label="Partager ce trajet par lien ou QR code">🔗 Partager</button>
           <span id="offlineStatus" class="sub"></span>
         </div>
         <label class="sub" style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer;">
@@ -2828,7 +2872,7 @@
       catch { communityVotes = {}; }
 
       let localObs = [];
-      try { localObs = JSON.parse(localStorage.getItem("angers_local_obstacles_v1") || "[]"); }
+      try { localObs = pmrPurgeLocalObstacles(JSON.parse(localStorage.getItem("angers_local_obstacles_v1") || "[]")); }
       catch { localObs = []; }
 
       const sb = getSupabaseConfig();
@@ -3628,7 +3672,7 @@
         const p = pointAtDistance(geo, s.startD);
         const word = s.up ? "Montée" : "Descente";
         return {
-          kind: "slope", along: s.startD, lat: p.lat, lon: p.lon,
+          kind: "slope", grade: s.grade, peak: s.peak, along: s.startD, lat: p.lat, lon: p.lon,
           severity: s.exceeds ? 3 : 2,
           short: `${s.up ? "↗️" : "↘️"} ${word} ${s.grade} %${s.peak > s.grade ? ` (jusqu'à ${s.peak} %)` : ""} sur ${len} m${s.exceeds ? " — > votre limite" : ""}`,
           voice: `${s.exceeds ? "Attention, " : ""}${word.toLowerCase()} à ${s.grade} pour cent${s.peak > s.grade ? `, jusqu'à ${s.peak}` : ""}, sur ${distanceWords(len)}${s.exceeds ? ", au-delà de votre limite" : ""}.`
@@ -6048,7 +6092,12 @@
             directions_options: { units: "kilometers", language: "fr-FR" }
           };
 
-      const res = await fetchWithTimeout("https://valhalla1.openstreetmap.de/route?json=" + encodeURIComponent(JSON.stringify(payload)), {}, 11000);
+      let res;
+      try { res = await fetchWithTimeout("https://valhalla1.openstreetmap.de/route?json=" + encodeURIComponent(JSON.stringify(payload)), {}, 11000); }
+      catch (netErr) {
+        if (!isCar) { const off = await pmrOfflineFallback(origin, lat, lon); if (off) return off; }
+        throw netErr;
+      }
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || `Erreur Valhalla (${res.status})`);
       return data;
@@ -6087,6 +6136,7 @@
           catch { data = await callValhalla(origin, lat, lon, Math.max(12, getWc().maxSlope + 5)); usedFallback = true; }
         }
 
+        if (data.offlineFallback) setStatus("📴 Hors ligne : itinéraire de secours sur le réseau piéton téléchargé (sans dénivelé). Restez vigilant.", "info");
         const leg = data.trip.legs[0];
         const coords = decodePolyline6(leg.shape);
         const geojson = { type: "Feature", geometry: { type: "LineString", coordinates: coords } };
@@ -6135,7 +6185,7 @@
         // Dénivelé + Batterie + IrigoFlex + Météo sol glissant + Toilettes PMR sur le tracé
         if (!options.isReroute) {
           updateRouteElevationAndIrigoFlex(coords, dist, usedFallback, lat, lon);
-          updateRouteWeatherAlert(lat, lon);
+          updateRouteWeatherAlert(lat, lon); pmrRouteForecast(coords, data.trip.summary.time);
           findToiletsAlongRoute(coords);
         }
         analyzeRouteAhead(currentRoute);       // pentes + passages difficiles (largeur, bordures, escaliers)
@@ -6396,13 +6446,17 @@
     async function reportObstacleAtCenter(opts = {}) {
       const mc = map.getCenter();
       const c = opts.pos ? { lat: opts.pos.lat, lng: opts.pos.lon } : mc;      // « Trottoir barré » : à ma position
-      const desc = opts.desc || prompt("Quel obstacle signalez-vous à cet endroit ?", "Véhicule garé sur le trottoir");
+      let det = null;
+      if (!opts.desc) { det = await askObstacleDetails(); if (!det) return; }
+      const desc = opts.desc || ((det.category + (det.desc ? " — " + det.desc : "")) || "Obstacle");
       if (!desc) return;
+      const days = det ? det.days : 14;
 
       const obs = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-        category: opts.category || "Obstacle signalé",
+        category: opts.category || (det && det.category) || "Obstacle signalé",
         description: desc,
+        expires: Date.now() + days * 864e5,
         lat: c.lat,
         lon: c.lng,
         confirmationCount: 1,
@@ -6417,7 +6471,7 @@
             headers: { ...supabaseHeaders(sb.key), "Prefer": "return=representation" },
             body: JSON.stringify({
               id: obs.id,
-              category: opts.category || "Véhicule sur trottoir",
+              category: opts.category || (det && det.category) || "Véhicule sur trottoir",
               severity: "Passage impossible",
               latitude: obs.lat,
               longitude: obs.lon,
@@ -7956,6 +8010,10 @@
       const bits = [];
       if (v.key === "tram") bits.push("marche " + fmtDist(v.walkM));
       if (variants.rainy && v.shelter != null) bits.push("☂️ " + Math.round(v.shelter * 100) + " % abrité");
+      if (v.alerts) {
+        const sl = v.alerts.filter(a => a.kind === "slope"), mx = sl.reduce((m, a) => Math.max(m, a.peak || a.grade || 0), 0), nc = v.alerts.filter(a => a.kind === "curb").length;
+        bits.push("pente max " + (mx ? Math.round(mx) + " %" : "faible") + " • " + nc + " bordure" + (nc > 1 ? "s" : "") + " à franchir");
+      }
       if (v.key === "tram" && v.notices && v.notices.elevator && v.notices.elevator.length) bits.push("🛗 alerte");
       else if (v.key === "tram" && v.notices && v.notices.line && v.notices.line.length) bits.push("⚠️ perturbation");
       return bits.length ? " • " + bits.join(" • ") : "";
@@ -8827,6 +8885,7 @@
         packProg(64, "Données d'accessibilité (trottoirs, bordures, obstacles)…");
         let pmrKeys = [];
         try { const pf = await PmrDataUpdater.prefetchArea(lat, lon, rKm, (d, t) => packProg(64 + 14 * d / t, `Accessibilité : zone ${d}/${t}…`)); pmrKeys = pf.keys; } catch (e) { if (packCancelled) throw e; }
+        try { const gf = await PmrOffline.prefetch(lat, lon, Math.min(rKm, 2.5), (d, t) => packProg(76 + 2 * d / t, `Réseau piéton de secours : ${d}/${t}…`)); pmrKeys = pmrKeys.concat(gf.keys); } catch (e) { if (packCancelled) throw e; }
         packProg(78, "Carte (tuiles, polices, pictogrammes)…");
         const tiles = await packTiles(lat, lon, rKm * 1.15, (d, t) => packProg(78 + 20 * d / t, `Carte : ${d}/${t} éléments…`));
         const pack = { id: city.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + (big ? "g" : "v"), name: city + (big ? " (grande zone)" : ""), city, lat, lon, radiusKm: rKm, ts: Date.now(), complete,
@@ -10214,6 +10273,317 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
     }
     window.PmrDataUpdater = PmrDataUpdater; window.PmrLayers = PmrLayers; window.calculatePmrRoute = calculatePmrRoute;
     map.on("load", () => { if (!VIEWER_ID) pmrInitUI(); });
+
+    // =====================================================================================
+    // v2 : QR code + partage de trajet, météo avant départ, signalements, mentions légales,
+    //      routage de secours hors ligne
+    // =====================================================================================
+
+    // ---------- Générateur de QR code (octets, correction d'erreurs L, versions 1 à 40) ----------
+    const QR = (() => {
+      const ECC = [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30];
+      const BLK = [-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25];
+      const rawModules = v => { let r = (16 * v + 128) * v + 64; if (v >= 2) { const a = Math.floor(v / 7) + 2; r -= (25 * a - 10) * a - 55; if (v >= 7) r -= 36; } return r; };
+      const dataCw = v => Math.floor(rawModules(v) / 8) - ECC[v] * BLK[v];
+      const mul = (x, y) => { let z = 0; for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> i) & 1) * x; } return z; };
+      const rsDiv = deg => { const r = new Array(deg).fill(0); r[deg - 1] = 1; let root = 1; for (let i = 0; i < deg; i++) { for (let j = 0; j < deg; j++) { r[j] = mul(r[j], root); if (j + 1 < deg) r[j] ^= r[j + 1]; } root = mul(root, 2); } return r; };
+      const rsRem = (data, div) => { const r = div.map(() => 0); for (const b of data) { const f = b ^ r.shift(); r.push(0); div.forEach((c, i) => { r[i] ^= mul(c, f); }); } return r; };
+      function encode(text) {
+        const bytes = Array.from(new TextEncoder().encode(text));
+        let ver = 1;
+        for (; ; ver++) { if (ver > 40) throw new Error("Texte trop long pour un QR code"); if (4 + (ver < 10 ? 8 : 16) + bytes.length * 8 <= dataCw(ver) * 8) break; }
+        const bits = [], put = (v, n) => { for (let i = n - 1; i >= 0; i--) bits.push((v >>> i) & 1); };
+        put(4, 4); put(bytes.length, ver < 10 ? 8 : 16); bytes.forEach(b => put(b, 8));
+        const cap = dataCw(ver) * 8; put(0, Math.min(4, cap - bits.length)); put(0, (8 - bits.length % 8) % 8);
+        for (let pad = 0xEC; bits.length < cap; pad ^= 0xEC ^ 0x11) put(pad, 8);
+        const data = []; for (let i = 0; i < bits.length; i += 8) { let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j]; data.push(b); }
+        const nb = BLK[ver], ecl = ECC[ver], raw = Math.floor(rawModules(ver) / 8), shortLen = Math.floor(raw / nb) - ecl, numShort = nb - raw % nb;
+        const div = rsDiv(ecl), blocks = []; let k = 0;
+        for (let i = 0; i < nb; i++) { const d = data.slice(k, k + shortLen + (i < numShort ? 0 : 1)); k += d.length; const e = rsRem(d, div); if (i < numShort) d.push(0); blocks.push(d.concat(e)); }
+        const out = [];
+        for (let i = 0; i < blocks[0].length; i++) blocks.forEach((b, j) => { if (i !== shortLen || j >= numShort) out.push(b[i]); });
+        const size = ver * 4 + 17, m = Array.from({ length: size }, () => new Array(size).fill(false)), fn = Array.from({ length: size }, () => new Array(size).fill(false));
+        const set = (x, y, d) => { m[y][x] = d; fn[y][x] = true; };
+        for (let i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+        const finder = (cx, cy) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy; if (x >= 0 && x < size && y >= 0 && y < size) set(x, y, d !== 2 && d !== 4); } };
+        finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+        const ap = []; if (ver > 1) { const n = Math.floor(ver / 7) + 2, step = ver === 32 ? 26 : Math.ceil((ver * 4 + 4) / (n * 2 - 2)) * 2; ap.push(6); for (let p = size - 7; ap.length < n; p -= step) ap.splice(1, 0, p); }
+        ap.forEach((cx, i) => ap.forEach((cy, j) => { if ((i === 0 && j === 0) || (i === 0 && j === ap.length - 1) || (i === ap.length - 1 && j === 0)) return; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(cx + dx, cy + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1); }));
+        const drawFormat = mask => {
+          const d = (1 << 3) | mask; let rem = d; for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+          const bitsF = ((d << 10) | rem) ^ 0x5412, bit = i => ((bitsF >>> i) & 1) !== 0;
+          for (let i = 0; i <= 5; i++) set(8, i, bit(i)); set(8, 7, bit(6)); set(8, 8, bit(7)); set(7, 8, bit(8)); for (let i = 9; i < 15; i++) set(14 - i, 8, bit(i));
+          for (let i = 0; i < 8; i++) set(size - 1 - i, 8, bit(i)); for (let i = 8; i < 15; i++) set(8, size - 15 + i, bit(i)); set(8, size - 8, true);
+        };
+        drawFormat(0);
+        if (ver >= 7) { let rem = ver; for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1F25); const bv = (ver << 12) | rem; for (let i = 0; i < 18; i++) { const bt = ((bv >>> i) & 1) !== 0, a = size - 11 + i % 3, b = Math.floor(i / 3); set(a, b, bt); set(b, a, bt); } }
+        let bi = 0;
+        for (let right = size - 1; right >= 1; right -= 2) { if (right === 6) right = 5; for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) { const x = right - j, y = ((right + 1) & 2) === 0 ? size - 1 - vert : vert; if (!fn[y][x] && bi < out.length * 8) { m[y][x] = ((out[bi >>> 3] >>> (7 - (bi & 7))) & 1) !== 0; bi++; } } }
+        const MASKS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x, y) => x % 3 === 0, (x, y) => (x + y) % 3 === 0, (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => x * y % 2 + x * y % 3 === 0, (x, y) => (x * y % 2 + x * y % 3) % 2 === 0, (x, y) => ((x + y) % 2 + x * y % 3) % 2 === 0];
+        const applyMask = mk => { for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!fn[y][x] && MASKS[mk](x, y)) m[y][x] = !m[y][x]; };
+        const penalty = () => {
+          let p = 0, dark = 0;
+          const line = get => { let run = 1, prev = get(0); for (let i = 1; i < size; i++) { const c = get(i); if (c === prev) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else { run = 1; prev = c; } } };
+          for (let i = 0; i < size; i++) { line(j => m[i][j]); line(j => m[j][i]); }
+          for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) { if (m[y][x]) dark++; if (x < size - 1 && y < size - 1 && m[y][x] === m[y][x + 1] && m[y][x] === m[y + 1][x] && m[y][x] === m[y + 1][x + 1]) p += 3; }
+          const pat = [1, 0, 1, 1, 1, 0, 1], chk = (get) => { for (let i = 0; i + 6 < size; i++) { let a = true; for (let k2 = 0; k2 < 7; k2++) if ((get(i + k2) ? 1 : 0) !== pat[k2]) { a = false; break; } if (!a) continue; const lw = o => { for (let k2 = 1; k2 <= 4; k2++) { const q = o < 0 ? i - k2 : i + 6 + k2; if (q >= 0 && q < size && get(q)) return false; } return true; }; if (lw(-1) || lw(1)) p += 40; } };
+          for (let i = 0; i < size; i++) { chk(j => m[i][j]); chk(j => m[j][i]); }
+          const tot = size * size; p += (Math.ceil(Math.abs(dark * 20 - tot * 10) / tot) - 1) * 10;
+          return p;
+        };
+        let best = 0, bestP = Infinity;
+        for (let mk = 0; mk < 8; mk++) { applyMask(mk); drawFormat(mk); const pn = penalty(); if (pn < bestP) { bestP = pn; best = mk; } applyMask(mk); }
+        applyMask(best); drawFormat(best);
+        return { size, ver, get: (x, y) => m[y][x] };
+      }
+      function draw(canvas, text, px) {
+        const q = encode(text), quiet = 4, n = q.size + quiet * 2, scale = Math.max(2, Math.floor((px || 240) / n));
+        canvas.width = canvas.height = n * scale;
+        const g = canvas.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, canvas.width, canvas.height); g.fillStyle = "#000";
+        for (let y = 0; y < q.size; y++) for (let x = 0; x < q.size; x++) if (q.get(x, y)) g.fillRect((x + quiet) * scale, (y + quiet) * scale, scale, scale);
+        return q;
+      }
+      return { encode, draw };
+    })();
+
+    // ---------- Partage d'un trajet (lien + QR) ----------
+    function pmrShareUrl() {
+      if (!currentRoute) return "";
+      const u = new URL(location.href); u.search = ""; u.hash = "";
+      const q = new URLSearchParams();
+      q.set("i", `${(+currentRoute.destLat).toFixed(5)},${(+currentRoute.destLon).toFixed(5)}`);
+      if (currentRoute.destName) q.set("n", String(currentRoute.destName).slice(0, 60));
+      return u.toString() + "?" + q.toString();      // seule la destination est partagée : ni votre position, ni vos réglages
+    }
+    function openShare() {
+      const url = pmrShareUrl(); if (!url) { setStatus("Calculez d'abord un itinéraire pour le partager.", "info"); return; }
+      const d = gid("shareDlg"); gid("shareUrl").value = url; gid("shareTitle2").textContent = currentRoute.destName || "Destination";
+      try { QR.draw(gid("shareQr"), url, 260); gid("shareQr").style.display = ""; } catch { gid("shareQr").style.display = "none"; }
+      gid("shareNative").style.display = navigator.share ? "" : "none";
+      if (d.showModal) d.showModal(); else d.setAttribute("open", "");
+    }
+    function shareCopy() { copyTextSafe(gid("shareUrl").value); setStatus("🔗 Lien copié.", "ok"); }
+    async function shareNative() { try { await navigator.share({ title: "Trajet accessible", text: "Trajet vers " + (currentRoute && currentRoute.destName || "ma destination"), url: gid("shareUrl").value }); } catch {} }
+    // Ouverture d'un lien reçu : ?i=lat,lon&n=Nom → l'itinéraire est calculé depuis VOTRE position avec VOS réglages
+    function pmrHandleSharedLink() {
+      let q; try { q = new URLSearchParams(location.search); } catch { return; }
+      const m = /^(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(q.get("i") || ""); if (!m) return;
+      const lat = +m[1], lon = +m[2]; if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) return;
+      const name = (q.get("n") || "Destination partagée").slice(0, 60);
+      try { history.replaceState(null, "", location.pathname); } catch {}
+      let tries = 0;
+      const go = () => {
+        if (typeof routeTo !== "function" || !map.getStyle()) { if (++tries < 40) setTimeout(go, 250); return; }
+        try { switchTab("map"); } catch {}
+        const dest = gid("destInput"); if (dest) dest.value = name;
+        setStatus("🔗 Trajet partagé : calcul depuis votre position…", "info");
+        routeTo(lat, lon, name).catch(() => {});
+      };
+      setTimeout(go, 1200);
+    }
+
+    // ---------- Météo avant le départ ----------
+    const PMR_FC = {
+      verdict(a, b, nowMs, durMs, offsets) {
+        const hourAt = (f, t) => { const i = f.times.findIndex(x => t >= x && t < x + 3600e3); return i; };
+        return (offsets || [0, 1, 2, 3, 4, 6]).map(off => {
+          const t0 = nowMs + off * 3600e3, t1 = t0 + Math.max(durMs, 600e3);
+          let pp = 0, pr = 0, tmin = 99, wind = 0, n = 0;
+          [a, b].forEach(f => { if (!f) return; for (let t = Math.floor(t0 / 3600e3) * 3600e3; t < t1; t += 3600e3) { const i = hourAt(f, t); if (i < 0) continue; n++; pp = Math.max(pp, f.pp[i] || 0); pr += (f.pr[i] || 0) * Math.min(1, durMs / 3600e3 + 0.2); tmin = Math.min(tmin, f.t[i]); wind = Math.max(wind, f.w[i] || 0); } });
+          if (!n) return { off, level: "unk", reasons: ["prévision indisponible"], t: t0 };
+          const reasons = []; let level = "ok";
+          const bump = (l, r) => { reasons.push(r); if (l === "bad" || level === "ok") level = l === "bad" ? "bad" : (level === "bad" ? "bad" : "warn"); };
+          if (pr >= 1.5 || (pp >= 70 && pr >= 0.3)) bump("bad", "pluie marquée"); else if (pp >= 40 || pr >= 0.3) bump("warn", "risque de pluie");
+          if (tmin <= 1 && (pp >= 40 || pr > 0.1)) bump("bad", "risque de verglas"); else if (tmin <= 2) bump("warn", "froid, sols glissants possibles");
+          if (tmin >= 33) bump("warn", "forte chaleur");
+          if (wind >= 60) bump("bad", "vent violent"); else if (wind >= 45) bump("warn", "vent fort");
+          return { off, level, reasons, t: t0, pp: Math.round(pp), tmin: Math.round(tmin), wind: Math.round(wind) };
+        });
+      },
+      best(list) { const rank = { ok: 0, warn: 1, bad: 2, unk: 3 }; return list.slice().sort((x, y) => rank[x.level] - rank[y.level] || x.off - y.off)[0]; },
+      async fetch(lat, lon) {
+        const r = await fetchWithTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m&forecast_days=2&timezone=auto`, {}, 6000);
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const j = await r.json(), h = j.hourly; if (!h || !h.time) throw new Error("vide");
+        const off = (j.utc_offset_seconds || 0) * 1000;
+        return { times: h.time.map(s => Date.parse(s + "Z") - off), t: h.temperature_2m, pp: h.precipitation_probability, pr: h.precipitation, w: h.wind_speed_10m };
+      }
+    };
+    async function pmrRouteForecast(coords, durSec) {
+      const box = gid("routeForecast"); if (!box) return;
+      box.style.display = "none"; box.innerHTML = "";
+      if (!coords || coords.length < 2 || durSec < 600 || !navigator.onLine) return;
+      try {
+        const a = coords[0], z = coords[coords.length - 1];
+        const [fa, fb] = await Promise.all([PMR_FC.fetch(a[1], a[0]), PMR_FC.fetch(z[1], z[0]).catch(() => null)]);
+        const list = PMR_FC.verdict(fa, fb, Date.now(), durSec * 1000);
+        if (list.every(x => x.level === "unk")) return;
+        const best = PMR_FC.best(list), now = list[0];
+        const ico = { ok: "✅", warn: "⚠️", bad: "⛔", unk: "❔" };
+        const lab = o => o === 0 ? "Maintenant" : "+" + o + " h";
+        const hh = t => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+        let msg = now.level === "ok" ? "☀️ Bon moment pour partir : pas de pluie ni de gel prévus sur votre trajet." :
+          `${ico[now.level]} Maintenant : ${now.reasons.join(", ")}.` + (best.level !== "unk" && best.off > 0 && PMR_RANK_FC(best.level) < PMR_RANK_FC(now.level) ? ` Meilleur créneau : partir vers ${hh(best.t)} (${best.reasons.length ? best.reasons.join(", ") : "temps sec"}).` : "");
+        box.innerHTML = `<div class="fc-msg" role="status">${escapeHTML(msg)}</div><div class="fc-row" aria-label="Prévisions selon l'heure de départ">${list.map(x => `<span class="fc-chip fc-${x.level}" title="${escapeHTML(x.reasons.join(", ") || "temps sec")}">${ico[x.level]} ${lab(x.off)}<small>${hh(x.t)}</small></span>`).join("")}</div>`;
+        box.style.display = "block";
+      } catch {}
+    }
+    const PMR_RANK_FC = l => ({ ok: 0, warn: 1, bad: 2, unk: 3 })[l];
+
+    // ---------- Signalement d'obstacle : catégories + durée de validité ----------
+    const PMR_OBS_CATS = ["Véhicule sur trottoir", "Trottoir bloqué / travaux", "Ascenseur en panne", "Bordure haute ou marche", "Rampe ou passage dégradé", "Autre obstacle"];
+    function askObstacleDetails() {
+      return new Promise(resolve => {
+        const d = gid("reportDlg"); if (!d || !d.showModal) { resolve({ category: PMR_OBS_CATS[5], desc: (typeof prompt === "function" && prompt("Quel obstacle signalez-vous à cet endroit ?", "")) || "", days: 14 }); return; }
+        const box = gid("reportCats"); box.innerHTML = PMR_OBS_CATS.map((c, i) => `<label class="rep-cat"><input type="radio" name="repCat" value="${i}" ${i === 0 ? "checked" : ""}/> ${escapeHTML(c)}</label>`).join("");
+        gid("reportDesc").value = ""; gid("reportDays").value = "14";
+        let settled = false;
+        const fin = v => { if (settled) return; settled = true; d.removeEventListener("close", onClose); resolve(v); if (d.open) d.close(); };
+        const done = ok => fin(ok ? { category: PMR_OBS_CATS[+(box.querySelector("input:checked") || { value: 5 }).value], desc: gid("reportDesc").value.trim(), days: +gid("reportDays").value || 14 } : null);
+        const onClose = () => { if (!d.open) fin(null); };      // ignore l'événement « close » tardif d'une fermeture précédente
+        gid("reportOk").onclick = () => done(true); gid("reportCancel").onclick = () => done(false);
+        d.addEventListener("close", onClose);
+        d.showModal();
+      });
+    }
+    function pmrPurgeLocalObstacles(list) { const now = Date.now(); return (list || []).filter(o => !o.expires || o.expires > now); }
+
+    // ---------- Mentions légales, vie privée, consentement ----------
+    function openAbout() { const d = gid("aboutDlg"); if (d.showModal) d.showModal(); else d.setAttribute("open", ""); }
+    async function pmrEraseLocalData() {
+      if (!confirm("Effacer toutes les données enregistrées sur cet appareil (favoris, réglages, packs hors ligne, signalements locaux) ?")) return;
+      try { const ks = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^(gps_pmr|angers_|pmr_|acceslibre_|sb_)/.test(k)) ks.push(k); } ks.forEach(k => localStorage.removeItem(k)); } catch {}
+      try { if (window.caches) for (const k of await caches.keys()) if (/^gps-pmr-(data|pmrpack)/.test(k)) await caches.delete(k); } catch {}
+      try { if (window.indexedDB) indexedDB.deleteDatabase("gpspmr_offline"); } catch {}
+      setStatus("🗑️ Données locales effacées.", "ok");
+    }
+    function pmrConsentInit() {
+      let seen = null; try { seen = localStorage.getItem("gps_pmr_consent_v1"); } catch {}
+      let force = false; try { force = !!localStorage.getItem("gps_pmr_force_consent"); } catch {}
+      if (seen || (navigator.webdriver && !force)) return;
+      const bar = gid("consentBar"); if (!bar) return;
+      bar.style.display = "block";
+      gid("consentOk").onclick = () => { bar.style.display = "none"; try { localStorage.setItem("gps_pmr_consent_v1", String(Date.now())); } catch {} };
+    }
+
+    // ---------- Routage de secours hors ligne (réseau piéton téléchargé avec le pack) ----------
+    const PmrOffline = {
+      G: 0.03, maxCells: 12,
+      cacheName() { return PMR_CFG.packCacheName; },
+      key(i, j) { return "graph/" + i + "_" + j; },
+      req(k) { return new Request("https://gps-pmr.local/pmr/" + encodeURIComponent(k)); },
+      ql(b) { const bb = `${b.s.toFixed(5)},${b.w.toFixed(5)},${b.n.toFixed(5)},${b.e.toFixed(5)}`; return `[out:json][timeout:60][maxsize:67108864];way["highway"~"^(footway|path|pedestrian|steps|residential|living_street|service|unclassified|tertiary|secondary|primary|cycleway|track|tertiary_link|secondary_link|primary_link)$"]["foot"!="no"]["access"!~"^(private|no)$"](${bb});out tags geom qt;`; },
+      slim(json) {
+        return (json.elements || []).filter(e => e.type === "way" && e.geometry && e.geometry.length > 1).map(e => {
+          const t = e.tags || {}, w = { h: t.highway, c: [] };
+          ["name", "surface", "smoothness", "wheelchair", "width", "incline", "step_count", "ramp"].forEach(k => { if (t[k] != null) w[k] = t[k]; });
+          e.geometry.forEach(g => w.c.push(+g.lat.toFixed(6), +g.lon.toFixed(6)));
+          return w;
+        });
+      },
+      async fetchCell(i, j) {
+        const b = { s: j * this.G, n: (j + 1) * this.G, w: i * this.G, e: (i + 1) * this.G };
+        let last = null;
+        for (const ep of PMR_CFG.overpass) {
+          try {
+            const r = await fetchWithTimeout(ep, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: "data=" + encodeURIComponent(this.ql(b)) }, 60000);
+            if (!r.ok) { last = new Error("HTTP " + r.status); continue; }
+            return this.slim(await r.json());
+          } catch (e) { last = e; }
+        }
+        throw last || new Error("Overpass indisponible");
+      },
+      cellsAround(lat, lon, rKm) {
+        const dLa = rKm / 111.32, dLo = rKm / (111.32 * Math.cos(lat * Math.PI / 180)), g = this.G, out = [];
+        for (let i = Math.floor((lon - dLo) / g); i <= Math.floor((lon + dLo) / g); i++) for (let j = Math.floor((lat - dLa) / g); j <= Math.floor((lat + dLa) / g); j++) out.push([i, j]);
+        out.sort((a, c) => Math.hypot(a[0] + .5 - lon / g, a[1] + .5 - lat / g) - Math.hypot(c[0] + .5 - lon / g, c[1] + .5 - lat / g));
+        return out.slice(0, this.maxCells);
+      },
+      async prefetch(lat, lon, rKm, onProg) {
+        if (!window.caches) return { keys: [], ok: 0 };
+        const cells = this.cellsAround(lat, lon, rKm), c = await caches.open(this.cacheName()), keys = []; let ok = 0, done = 0, k = 0;
+        const worker = async () => { while (k < cells.length) { const [i, j] = cells[k++]; try { const ways = await this.fetchCell(i, j); const key = this.key(i, j); await c.put(this.req(key), new Response(JSON.stringify({ ts: Date.now(), ways }), { headers: { "Content-Type": "application/json" } })); keys.push(key); ok++; } catch {} if (onProg) onProg(++done, cells.length); } };
+        await Promise.all([worker(), worker()]);
+        return { keys, ok, total: cells.length };
+      },
+      async loadWays(minLat, minLon, maxLat, maxLon) {
+        if (!window.caches || !(await caches.has(this.cacheName()))) return [];
+        const c = await caches.open(this.cacheName()), g = this.G, ways = [];
+        for (let i = Math.floor(minLon / g); i <= Math.floor(maxLon / g); i++) for (let j = Math.floor(minLat / g); j <= Math.floor(maxLat / g); j++) {
+          try { const r = await c.match(this.req(this.key(i, j))); if (r) ways.push(...(await r.json()).ways); } catch {}
+        }
+        return ways;
+      },
+      // Graphe + A* : même classification que la carte (pmrClassify) → blocage ou surcoût selon VOTRE fauteuil
+      build(ways, s) {
+        const ids = new Map(), lat = [], lon = [], adj = [];
+        const node = (a, o) => { const k = a + "," + o; let id = ids.get(k); if (id == null) { id = lat.length; ids.set(k, id); lat.push(a); lon.push(o); adj.push([]); } return id; };
+        const ROAD = { primary: 3, primary_link: 3, secondary: 2.6, secondary_link: 2.6, tertiary: 1.8, tertiary_link: 1.8, residential: 1.2, unclassified: 1.3, service: 1.3, track: 2, living_street: 1, cycleway: 1.3 };
+        ways.forEach((w, wi) => {
+          const p = { kind: w.h === "steps" ? "steps" : "sidewalk", widthCm: pmrParseCm(w.width), inclinePct: pmrParseIncline(w.incline), surface: w.surface, smoothness: w.smoothness, wheelchair: w.wheelchair, ramp: w.ramp === "yes" ? "yes" : undefined, steps: w.step_count };
+          const cl = pmrClassify(p, s); if (cl.status === "blocked") return;
+          const mult = (cl.status === "warning" ? 2.5 : 1) * (ROAD[w.h] || 1);
+          for (let i = 0; i + 3 < w.c.length; i += 2) {
+            const a = node(w.c[i], w.c[i + 1]), b = node(w.c[i + 2], w.c[i + 3]); if (a === b) continue;
+            const len = distanceMeters(lat[a], lon[a], lat[b], lon[b]);
+            adj[a].push({ to: b, len, cost: len * mult, w: wi }); adj[b].push({ to: a, len, cost: len * mult, w: wi });
+          }
+        });
+        return { lat, lon, adj, ways };
+      },
+      nearest(G, la, lo) { let best = -1, bd = 1e9; for (let i = 0; i < G.lat.length; i++) { if (!G.adj[i].length) continue; const d = Math.abs(G.lat[i] - la) * 111320 + Math.abs(G.lon[i] - lo) * 111320 * Math.cos(la * Math.PI / 180); if (d < bd) { bd = d; best = i; } } return bd <= 250 ? best : -1; },
+      astar(G, a, b) {
+        const n = G.lat.length, g = new Float64Array(n).fill(Infinity), from = new Int32Array(n).fill(-1), via = new Int32Array(n).fill(-1), closed = new Uint8Array(n);
+        const h = i => distanceMeters(G.lat[i], G.lon[i], G.lat[b], G.lon[b]);
+        const heap = [[h(a), a]]; g[a] = 0;
+        const push = x => { heap.push(x); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+        const pop = () => { const t = heap[0], l = heap.pop(); if (heap.length) { heap[0] = l; let i = 0; for (;;) { let m = i; const L = 2 * i + 1, R = L + 1; if (L < heap.length && heap[L][0] < heap[m][0]) m = L; if (R < heap.length && heap[R][0] < heap[m][0]) m = R; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return t; };
+        while (heap.length) {
+          const [, u] = pop(); if (closed[u]) continue; closed[u] = 1; if (u === b) break;
+          for (const e of G.adj[u]) { const ng = g[u] + e.cost; if (ng < g[e.to]) { g[e.to] = ng; from[e.to] = u; via[e.to] = e.w; push([ng + h(e.to), e.to]); } }
+        }
+        if (!isFinite(g[b])) return null;
+        const path = [], ws = []; for (let v = b; v !== -1; v = from[v]) { path.push(v); ws.push(via[v]); } path.reverse(); ws.reverse();
+        return { path, ws };
+      },
+      toTrip(G, r, s) {
+        const pts = r.path.map(i => [G.lon[i], G.lat[i]]);
+        let total = 0; const seg = []; for (let i = 1; i < pts.length; i++) { const d = distanceMeters(pts[i - 1][1], pts[i - 1][0], pts[i][1], pts[i][0]); seg.push(d); total += d; }
+        const bearing = (a, b) => Math.atan2((b[0] - a[0]) * Math.cos(a[1] * Math.PI / 180), b[1] - a[1]) * 180 / Math.PI;
+        const nameOf = i => (G.ways[r.ws[i]] && G.ways[r.ws[i]].name) || "";
+        const man = []; let start = 0, acc = 0;
+        const turnText = d => { const a = Math.abs(d); const side = d > 0 ? "droite" : "gauche"; return a < 25 ? ["Continuez tout droit", 8] : a < 60 ? ["Tournez légèrement à " + side, d > 0 ? 9 : 16] : a < 120 ? ["Tournez à " + side, d > 0 ? 10 : 15] : ["Faites demi-tour à " + side, d > 0 ? 11 : 14]; };
+        const flush = (end, text, type, street) => { man.push({ instruction: text + (street ? " sur " + street : "") + ".", length: acc / 1000, type, begin_shape_index: start, end_shape_index: end, verbal_post_transition_instruction: "", street_names: street ? [street] : [] }); start = end; acc = 0; };
+        let first = true, curText = "Dirigez-vous vers votre destination", curType = 1, curStreet = nameOf(1) || "";
+        for (let i = 1; i < pts.length; i++) {
+          acc += seg[i - 1];
+          if (i < pts.length - 1) {
+            let d = bearing(pts[i], pts[i + 1]) - bearing(pts[i - 1], pts[i]); d = ((d + 540) % 360) - 180;
+            const nm = nameOf(i + 1);
+            if (Math.abs(d) >= 30 && acc > 8) { flush(i, first ? curText : curText, first ? curType : curType, curStreet); first = false; const [t, ty] = turnText(d); curText = t; curType = ty; curStreet = nm; }
+          }
+        }
+        flush(pts.length - 1, curText, curType, curStreet);
+        man.push({ instruction: "Vous êtes arrivé.", length: 0, type: 4, begin_shape_index: pts.length - 1, end_shape_index: pts.length - 1, verbal_post_transition_instruction: "", street_names: [] });
+        const speed = (typeof profile !== "undefined" && profile === "manual") ? 1.1 : 1.5;
+        return { trip: { summary: { time: Math.round(total / speed), length: total / 1000 }, legs: [{ shape: pmrPolyline6(pts), maneuvers: man }] }, offlineFallback: true };
+      },
+      async route(origin, lat, lon) {
+        const o = { lat: origin[1], lon: origin[0] }, pad = 0.004;
+        const ways = await this.loadWays(Math.min(o.lat, lat) - pad, Math.min(o.lon, lon) - pad, Math.max(o.lat, lat) + pad, Math.max(o.lon, lon) + pad);
+        if (!ways.length) return null;
+        const s = pmrSettings(), G = this.build(ways, s), a = this.nearest(G, o.lat, o.lon), b = this.nearest(G, lat, lon);
+        if (a < 0 || b < 0) return null;
+        const r = this.astar(G, a, b); if (!r || r.path.length < 2) return null;
+        return this.toTrip(G, r, s);
+      }
+    };
+    function pmrPolyline6(pts) {
+      const enc = n => { n = n < 0 ? ~(n << 1) : (n << 1); let s = ""; while (n >= 0x20) { s += String.fromCharCode((0x20 | (n & 0x1f)) + 63); n >>= 5; } return s + String.fromCharCode(n + 63); };
+      let la = 0, lo = 0, out = ""; for (const [x, y] of pts) { const a = Math.round(y * 1e6), b = Math.round(x * 1e6); out += enc(a - la) + enc(b - lo); la = a; lo = b; } return out;
+    }
+    async function pmrOfflineFallback(origin, lat, lon) { try { return await PmrOffline.route(origin, lat, lon); } catch { return null; } }
+    if (!VIEWER_ID) { map.on("load", () => { try { pmrHandleSharedLink(); pmrConsentInit(); } catch {} }); }
 
     map.on("load", () => {
       if (VIEWER_ID) { initViewer(); return; }
