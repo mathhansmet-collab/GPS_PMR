@@ -1437,6 +1437,8 @@
         <label class="row" style="gap:8px; margin:8px 0;"><input type="checkbox" id="pmrLayerChk" checked /> Afficher sur la carte</label>
         <div class="row"><button id="pmrRefreshBtn" class="primary" type="button">🔄 Actualiser les données</button></div>
         <div id="pmrDataStatus" class="sub" style="margin-top:6px;" aria-live="polite"></div>
+        <input id="rtProxyInput" placeholder="Proxy temps réel (optionnel) : https://…/?u={url}" aria-label="Proxy pour les flux temps réel sans CORS" style="margin-top:8px;background:var(--card2);" />
+        <div class="sub">Certains réseaux interdisent la lecture de leurs flux depuis un navigateur : un proxy que vous hébergez permet alors de les afficher.</div>
       </details>
       <details class="card" id="packCard">
         <summary class="sub" style="cursor:pointer;font-weight:700;">📴 Hors ligne : télécharger une zone</summary>
@@ -1845,6 +1847,8 @@
       style: MAP_CLEAR_STYLE,
       center: DEFAULT_CENTER,
       zoom: 14,
+      antialias: !(window.matchMedia && matchMedia("(pointer: coarse)").matches),   // inutile (et coûteux) sur écran tactile dense
+      maxTileCacheSize: 500, fadeDuration: 150,
       locale: { "NavigationControl.ZoomIn": "Zoom avant", "NavigationControl.ZoomOut": "Zoom arrière", "NavigationControl.ResetBearing": "Remettre le nord en haut" }
     });
     // La carte reste TOUJOURS claire : aucun filtre/inversion, même en mode Nuit ou Éco (seules les interfaces s'assombrissent)
@@ -6913,7 +6917,7 @@
         document.documentElement.style.setProperty("--kb", kb + "px");
         if (isMobileLayout()) document.querySelector(".sidebar").style.bottom = `calc(${8 + kb}px + env(safe-area-inset-bottom, 0px))`;
       };
-      vv.addEventListener("resize", upd); vv.addEventListener("scroll", upd); upd();
+      vv.addEventListener("resize", upd, { passive: true }); vv.addEventListener("scroll", upd, { passive: true }); upd();
     }
     // Raccourcis de l'icône d'accueil (manifest.json) : ?raccourci=itineraire | lieux
     (function handleHomeShortcut() {
@@ -8154,9 +8158,9 @@
     // Le réseau est retrouvé dans le catalogue officiel transport.data.gouv.fr (Point d'Accès National)
     // =====================================================================================
     const PAN_URL = "https://transport.data.gouv.fr/api/datasets";
-    const PAN_KEY = "gps_pmr_pan_v1";
+    const PAN_KEY = "gps_pmr_pan_v2";
     let panIndex = null, panLoading = null, panRetryAt = 0;
-    const RT = { net: null, city: "", timer: null, fails: 0, vehicles: 0, ts: 0, on: true, abort: null };
+    const RT = { lifts: [], alertAt: 0, net: null, city: "", timer: null, fails: 0, vehicles: 0, ts: 0, on: true, abort: null };
     function panNorm(s) { return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
     function reducePan(list) {
       const out = [];
@@ -8165,7 +8169,8 @@
         const rs = [...(d.resources || []), ...(d.community_resources || [])];
         const v = rs.find(r => r && /gtfs-?rt/i.test(r.format || "") && /vehicle|position/i.test((r.title || "") + " " + (r.url || "") + " " + (r.original_url || "")) && (r.url || r.original_url));
         if (!v) continue;
-        out.push({ t: d.title || "", a: (d.covered_area || []).map(x => panNorm(x && x.nom)).filter(Boolean).slice(0, 40), v: v.url || v.original_url });
+        const al = rs.find(r => r && /gtfs-?rt/i.test(r.format || "") && /alert|service/i.test((r.title || "") + " " + (r.url || "") + " " + (r.original_url || "")) && (r.url || r.original_url));
+        out.push({ t: d.title || "", a: (d.covered_area || []).map(x => panNorm(x && x.nom)).filter(Boolean).slice(0, 40), v: v.url || v.original_url, al: al ? (al.url || al.original_url) : "" });
       }
       return out;
     }
@@ -8210,7 +8215,7 @@
             if (f.f === 1 && f.w === 2) { for (const t of pbFields(b, f.s, f.e)) if (t.f === 5 && t.w === 2) v.route = pbStr(b, t.s, t.e); }
             else if (f.f === 2 && f.w === 2) { for (const t of pbFields(b, f.s, f.e)) { if (t.w !== 5) continue; const x = pbFloat(b, t); if (t.f === 1) v.lat = x; else if (t.f === 2) v.lon = x; else if (t.f === 3) v.bearing = x; else if (t.f === 5) v.speed = x; } }
             else if (f.f === 5 && f.w === 0) v.ts = f.v;
-            else if (f.f === 8 && f.w === 2) { for (const t of pbFields(b, f.s, f.e)) if (t.w === 2 && (t.f === 2 || (t.f === 1 && !v.label))) v.label = pbStr(b, t.s, t.e); }
+            else if (f.f === 8 && f.w === 2) { for (const t of pbFields(b, f.s, f.e)) if (t.w === 2 && (t.f === 2 || (t.f === 1 && !v.label))) v.label = pbStr(b, t.s, t.e); else if (t.f === 4 && t.w === 0) v.wc = t.v === 2 ? "yes" : (t.v === 3 ? "no" : "unk"); }
           }
           if (isFinite(v.lat) && isFinite(v.lon) && Math.abs(v.lat) <= 90 && Math.abs(v.lon) <= 180 && (v.lat || v.lon)) out.push(v);
         }
@@ -8219,7 +8224,7 @@
     }
     function rtGeo(list) {
       return { type: "FeatureCollection", features: list.map(v => ({ type: "Feature", geometry: { type: "Point", coordinates: [v.lon, v.lat] },
-        properties: { route: v.route, label: v.label, speed: v.speed == null ? -1 : Math.round(v.speed * 3.6), age: v.ts ? Math.max(0, Math.round(Date.now() / 1000 - v.ts)) : -1, bearing: v.bearing == null ? 0 : v.bearing } })) };
+        properties: { route: v.route, label: v.label, speed: v.speed == null ? -1 : Math.round(v.speed * 3.6), age: v.ts ? Math.max(0, Math.round(Date.now() / 1000 - v.ts)) : -1, bearing: v.bearing == null ? 0 : v.bearing, wc: v.wc || "unk" } })) };
     }
     function ensureRtLayer() {
       if (map.getSource("rt-vehicles")) return true;
@@ -8227,14 +8232,14 @@
       map.addSource("rt-vehicles", { type: "geojson", data: rtGeo([]) });
       map.addLayer({ id: "rt-vehicles-layer", type: "circle", source: "rt-vehicles", minzoom: 11,
         layout: { visibility: visibleLayers.rt ? "visible" : "none" },
-        paint: { "circle-color": "#e11d48", "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 3.5, 16, 8], "circle-stroke-width": 1.8, "circle-stroke-color": "#ffffff", "circle-opacity": 0.95 } });
+        paint: { "circle-color": ["match", ["get", "wc"], "yes", "#16a34a", "no", "#dc2626", "#64748b"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 3.5, 16, 8], "circle-stroke-width": 1.8, "circle-stroke-color": "#ffffff", "circle-opacity": 0.95 } });
       map.on("click", "rt-vehicles-layer", e => {
         const p = e.features && e.features[0] && e.features[0].properties; if (!p) return;
         const box = document.createElement("div");
         box.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;"><div style="font-weight:700;">🔴 Véhicule en temps réel</div>
           <div class="sub">${p.route ? "Ligne (id réseau) : " + escapeHTML(p.route) : ""}${p.label ? " • véhicule " + escapeHTML(p.label) : ""}</div>
           <div class="sub">${p.speed >= 0 ? "Vitesse ≈ " + p.speed + " km/h • " : ""}${p.age >= 0 ? "position il y a " + p.age + " s" : ""}</div>
-          <div class="sub">L'accessibilité du véhicule n'est pas publiée dans ce flux.</div></div>`;
+          <div class="sub">${p.wc === "yes" ? "♿ Véhicule déclaré accessible aux fauteuils par le réseau." : (p.wc === "no" ? "🚫 Véhicule déclaré non accessible aux fauteuils." : "Accessibilité de ce véhicule non publiée par le réseau : renseignez-vous auprès de lui.")}</div></div>`;
         new maplibregl.Popup().setLngLat(e.lngLat).setDOMContent(box).addTo(map);
       });
       map.on("mouseenter", "rt-vehicles-layer", () => map.getCanvas().style.cursor = "pointer");
@@ -8249,6 +8254,24 @@
       clearTimeout(RT.timer); RT.timer = null; if (RT.abort) RT.abort.abort(); RT.abort = null;
       if (clear && map.getSource("rt-vehicles")) map.getSource("rt-vehicles").setData(rtGeo([]));
     }
+    // Beaucoup de flux GTFS-RT n'autorisent pas CORS : si l'accès direct échoue et qu'un proxy est configuré (modèle contenant {url}), on réessaie par lui
+    async function rtFetch(url, opts, ms) {
+      try { return await fetchWithTimeout(url, opts, ms); }
+      catch (e) {
+        let proxy = ""; try { proxy = (localStorage.getItem("gps_pmr_rt_proxy") || "").trim(); } catch {}
+        if (!proxy || !/^https:\/\/.+\{url\}/.test(proxy) || (e && e.name === "AbortError" && opts && opts.signal && opts.signal.aborted)) throw e;
+        return await fetchWithTimeout(proxy.replace("{url}", encodeURIComponent(url)), opts, ms);
+      }
+    }
+    async function rtLoadAlerts(net, signal) {
+      if (!net.al) return;
+      try {
+        const res = await rtFetch(net.al, { signal }, 9000); if (!res.ok) return;
+        const now = Date.now() / 1000;
+        const lifts = decodeGtfsRtAlerts(new Uint8Array(await res.arrayBuffer())).filter(a => (!a.end || a.end > now) && (!a.start || a.start < now + 3600) && /ascenseur|escalator|elevator|lift|escalier mécanique/i.test(a.header + " " + a.desc));
+        RT.lifts = lifts.map(a => a.header).slice(0, 5);
+      } catch {}
+    }
     async function rtPoll() {
       clearTimeout(RT.timer); RT.timer = null;
       if (!RT.net || !RT.on || !visibleLayers.rt) return;
@@ -8256,13 +8279,14 @@
       if (document.hidden || map.getZoom() < 11 || !navigator.onLine) return next(20000);
       const ctrl = RT.abort = new AbortController(), net = RT.net;
       try {
-        const res = await fetchWithTimeout(net.v, { signal: ctrl.signal }, 9000);
+        const res = await rtFetch(net.v, { signal: ctrl.signal }, 9000);
         if (!res.ok) throw new Error("HTTP " + res.status);
         const list = decodeVehiclePositions(new Uint8Array(await res.arrayBuffer()));
         if (RT.net !== net) return;
         RT.fails = 0; RT.vehicles = list.length; RT.ts = Date.now();
+        if (!RT.alertAt || Date.now() - RT.alertAt > 60000) { RT.alertAt = Date.now(); rtLoadAlerts(net, ctrl.signal); }      // alertes ascenseur du réseau : 1 fois par minute
         if (ensureRtLayer()) map.getSource("rt-vehicles").setData(rtGeo(list));
-        rtInfo(list.length ? `🔴 Temps réel : ${net.t} • ${list.length} véhicule${list.length > 1 ? "s" : ""} (mise à jour ${hhmm(RT.ts)})` : `🔴 ${net.t} : aucun véhicule en circulation signalé pour l'instant.`);
+        rtInfo(list.length ? `🔴 Temps réel : ${net.t} • ${list.length} véhicule${list.length > 1 ? "s" : ""} (mise à jour ${hhmm(RT.ts)})${RT.lifts && RT.lifts.length ? " • ⚠️ " + RT.lifts.length + " alerte(s) ascenseur : " + RT.lifts.join(" ; ") : ""}` : `🔴 ${net.t} : aucun véhicule en circulation signalé pour l'instant.`);
         next(15000);
       } catch (e) {
         if (RT.net !== net || (e && e.name === "AbortError" && ctrl.signal.aborted)) return;
@@ -8279,7 +8303,7 @@
       const net = findPanNetwork(city);
       if (!net) { if (RT.net) { RT.net = null; rtStop(true); } rtInfo(city ? `Pas de flux temps réel trouvé pour ${city} dans le catalogue national.` : ""); return; }
       if (RT.net && RT.net.v === net.v) return;
-      rtStop(true); RT.net = net; RT.fails = 0; ensureRtLayer(); rtPoll();
+      rtStop(true); RT.net = net; RT.fails = 0; RT.lifts = []; RT.alertAt = 0; ensureRtLayer(); rtPoll();
     }
     document.addEventListener("visibilitychange", () => { if (!document.hidden && RT.net && !RT.timer) rtPoll(); });
 
@@ -10166,6 +10190,8 @@
       try { PmrLayers.enabled = localStorage.getItem("gps_pmr_live_layer") !== "0"; } catch {}
       const chk = document.getElementById("pmrLayerChk"); if (chk) { chk.checked = PmrLayers.enabled; chk.addEventListener("change", () => PmrLayers.setEnabled(chk.checked)); }
       const btn = document.getElementById("pmrRefreshBtn"); if (btn) btn.addEventListener("click", () => PmrDataUpdater.refresh());
+      const px = document.getElementById("rtProxyInput");
+      if (px) { try { px.value = localStorage.getItem("gps_pmr_rt_proxy") || ""; } catch {} px.addEventListener("change", () => { const v = px.value.trim(); try { localStorage.setItem("gps_pmr_rt_proxy", /^https:\/\/.+\{url\}/.test(v) ? v : ""); } catch {} if (v && !/^https:\/\/.+\{url\}/.test(v)) setStatus("Le proxy doit commencer par https:// et contenir {url}.", "error"); }); }
       PmrLayers.init();
       PmrDataUpdater.restoreFromCache().finally(() => { if (PmrLayers.enabled && navigator.onLine && map.getZoom() >= PMR_CFG.minZoom) PmrDataUpdater.loadView().catch(() => {}); });
       map.on("moveend", () => PmrDataUpdater.scheduleMove());
