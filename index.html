@@ -22,6 +22,9 @@
   <link rel="preconnect" href="https://data.geopf.fr" crossorigin />
   <link rel="preconnect" href="https://overpass.kumi.systems" crossorigin />
   <link rel="preconnect" href="https://tabular-api.data.gouv.fr" crossorigin />
+  <link rel="preconnect" href="https://data.gouv.fr" crossorigin />
+  <link rel="preconnect" href="https://transport.data.gouv.fr" crossorigin />
+  <link rel="preconnect" href="https://overpass.private.coffee" crossorigin />
   <link rel="preconnect" href="https://valhalla1.openstreetmap.de" crossorigin />
   <link rel="preconnect" href="https://api.open-meteo.com" crossorigin />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css'" />
@@ -1428,6 +1431,13 @@
       </details>
 
       <!-- HORS LIGNE -->
+      <details class="card" id="pmrDataCard">
+        <summary class="sub" style="cursor:pointer; font-weight:700;">🗺️ Données d'accessibilité (France entière)</summary>
+        <div class="sub" style="margin-top:6px;">Trottoirs, escaliers, bordures, travaux, toilettes et places PMR autour de la carte, colorés selon <b>votre</b> fauteuil : 🟢 praticable • 🟠 difficile • 🔴 bloquant.</div>
+        <label class="row" style="gap:8px; margin:8px 0;"><input type="checkbox" id="pmrLayerChk" checked /> Afficher sur la carte</label>
+        <div class="row"><button id="pmrRefreshBtn" class="primary" type="button">🔄 Actualiser les données</button></div>
+        <div id="pmrDataStatus" class="sub" style="margin-top:6px;" aria-live="polite"></div>
+      </details>
       <details class="card" id="packCard">
         <summary class="sub" style="cursor:pointer;font-weight:700;">📴 Hors ligne : télécharger une zone</summary>
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
@@ -3040,6 +3050,9 @@
         } catch {}
       }
 
+      if (!altitudes || altitudes.length < 2) {
+        try { altitudes = await PmrElevation.openMeteo(sampled); } catch { altitudes = null; }      // dernier recours : Open-Meteo Elevation
+      }
       if (!altitudes || altitudes.length < 2) return null;
 
       let ascent = 0, descent = 0;
@@ -3480,6 +3493,7 @@
 
     function updateProfileUI() {
       const wc = getWc();
+      if (typeof pmrReclassifyDebounced === "function") pmrReclassifyDebounced();
       const manualSlope = wcSettings.slope != null ? wcSettings.slope : 5;
       const electricSlope = wcSettings.slope != null ? wcSettings.slope : 10;
       document.getElementById("btnManual").textContent = `♿ Manuel (≤ ${manualSlope}%)`;
@@ -3731,10 +3745,12 @@
         unknownKerbs: haz ? haz.unknownKerbs : 0
       };
       route.alerts = [...(slopes || []), ...(haz ? haz.alerts : [])].sort((a, b) => a.along - b.along);
+      route.alerts.forEach(a => { if (!a.id) a.id = (a.kind || "al") + ":" + Math.round(a.along / 10); });
       renderAlerts(route);
       drawAlertsOnMap(route);
       variantAnalysisDone(route);
       persistLastRoute();
+      if (typeof pmrAugmentRoute === "function") pmrAugmentRoute(route);      // + obstacles des données nationales (pmr-live-data) et météo
     }
 
     function fmtAlong(d) { return d >= 1000 ? (d / 1000).toFixed(1) + " km" : Math.round(d) + " m"; }
@@ -3791,10 +3807,10 @@
       const list = currentRoute && currentRoute.alerts;
       if (!list || !list.length || !nav) return;
       for (let i = 0; i < list.length; i++) {
-        const key = "al:" + i;
+        const key = "al:" + (list[i].id || i);
         if (nav.spoken.has(key)) continue;
         const ahead = list[i].along - nav.progress;
-        if (ahead <= 45 && ahead > -10) {
+        if (ahead <= (list[i].severity >= 3 ? 70 : 45) && ahead > -10) {
           nav.spoken.add(key);
           speakFR(list[i].voice, true);
           if (list[i].severity >= 3 && "vibrate" in navigator) navigator.vibrate([120, 80, 120]);
@@ -4718,6 +4734,7 @@
 
     function setAvoidCobbles(on, recompute = true) {
       avoidCobbles = !!on;
+      if (typeof pmrReclassifyDebounced === "function") pmrReclassifyDebounced();
       try { localStorage.setItem(COBBLE_KEY, on ? "1" : "0"); } catch {}
       const c = document.getElementById("wcAvoidCobbles"); if (c) c.checked = avoidCobbles;
       const h = document.getElementById("cobbleHint");
@@ -8124,7 +8141,7 @@
     map.on("click", e => {
       const lay = ["tram-lines", "bus-lines-layer"].filter(id => map.getLayer(id));
       if (!lay.length) return;
-      const blockers = ["pois-layer", "pois-clusters", "parkings-unclustered", "parkings-clusters", "tram-stops-layer", "bus-stops-layer", "works-layer", "rt-vehicles-layer"].filter(id => map.getLayer(id));
+      const blockers = ["pois-layer", "pois-clusters", "parkings-unclustered", "parkings-clusters", "tram-stops-layer", "bus-stops-layer", "works-layer", "rt-vehicles-layer", "pmr-points-layer", "pmr-ways-layer"].filter(id => map.getLayer(id));
       const r = 7, bbox = [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
       if (blockers.length && map.queryRenderedFeatures(bbox, { layers: blockers }).length) return;
       const f = map.queryRenderedFeatures(bbox, { layers: lay })[0];
@@ -8760,10 +8777,10 @@
       if (st.glyphs) fonts.forEach(f => ["0-255", "256-511"].forEach(r => urls.push(st.glyphs.replace("{fontstack}", encodeURIComponent(f)).replace("{range}", r))));
       if (st.sprite && typeof st.sprite === "string") ["", "@2x"].forEach(s => [".json", ".png"].forEach(e => urls.push(st.sprite + s + e)));
       urls.push(MAP_CLEAR_STYLE);
-      urls = [...new Set(urls)].slice(0, 2500);
+      urls = [...new Set(urls)].slice(0, 3000);
       let done = 0, ok = 0, i = 0;
       const worker = async () => { while (i < urls.length) { const u = urls[i++]; try { const r = await fetch(u); if (r.ok) ok++; await r.arrayBuffer(); } catch {} onProg(++done, urls.length); } };
-      await Promise.all(Array.from({ length: 6 }, worker));
+      await Promise.all(Array.from({ length: 4 }, worker));      // 4 requêtes en parallèle au maximum
       return { ok: ok > 0, n: ok, total: urls.length };
     }
     async function packDownload() {
@@ -8794,10 +8811,13 @@
         packProg(62, "Ascenseurs et accueil des gares…");
         const stations = [...merged.tram.values()].filter(s => s.isSncf), lifts = {};
         try { const rows = await sncfLoadRows(); if (rows) stations.forEach(s => { const m = sncfRowsFor(rows.rows, s.name); if (m.length) lifts[normStation(s.name)] = m; }); } catch {}
-        packProg(66, "Carte (tuiles, polices, pictogrammes)…");
-        const tiles = await packTiles(lat, lon, rKm * 1.15, (d, t) => packProg(66 + 32 * d / t, `Carte : ${d}/${t} éléments…`));
+        packProg(64, "Données d'accessibilité (trottoirs, bordures, obstacles)…");
+        let pmrKeys = [];
+        try { const pf = await PmrDataUpdater.prefetchArea(lat, lon, rKm, (d, t) => packProg(64 + 14 * d / t, `Accessibilité : zone ${d}/${t}…`)); pmrKeys = pf.keys; } catch (e) { if (packCancelled) throw e; }
+        packProg(78, "Carte (tuiles, polices, pictogrammes)…");
+        const tiles = await packTiles(lat, lon, rKm * 1.15, (d, t) => packProg(78 + 20 * d / t, `Carte : ${d}/${t} éléments…`));
         const pack = { id: city.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + (big ? "g" : "v"), name: city + (big ? " (grande zone)" : ""), city, lat, lon, radiusKm: rKm, ts: Date.now(), complete,
-          osmPlaces: [...merged.places.values()], osmTramStops: [...merged.tram.values()], osmBusStops: [...merged.bus.values()], al, tramFeatures: tramF, busFeatures: busF, irigo, muni, lifts, liftsTs: Date.now(), tiles: { n: tiles.n, ok: tiles.ok, reason: tiles.reason || "" } };
+          osmPlaces: [...merged.places.values()], osmTramStops: [...merged.tram.values()], osmBusStops: [...merged.bus.values()], al, tramFeatures: tramF, busFeatures: busF, irigo, muni, lifts, liftsTs: Date.now(), pmrKeys, tiles: { n: tiles.n, ok: tiles.ok, reason: tiles.reason || "" } };
         await IDB.put(pack); await packList(true);
         packProg(100, tiles.ok ? "✅ Pack enregistré." : "✅ Données enregistrées (carte non mémorisée, voir ci-dessous).");
         renderPacks();
@@ -8809,7 +8829,7 @@
         if (e && /quota|storage/i.test(e.name + e.message)) gid("packTxt").textContent = "Espace de stockage insuffisant sur l'appareil.";
       } finally { packBusy = false; packCancelled = false; gid("packBtn").disabled = false; gid("packCancelBtn").style.display = "none"; setTimeout(() => { if (!packBusy) packProg(null, gid("packTxt").textContent); }, 4000); }
     }
-    async function packDelete(id) { try { await IDB.del(id); } catch {} await packList(true); renderPacks(); }
+    async function packDelete(id) { try { const pk = (await packList()).find(x => x.id === id); if (pk && pk.pmrKeys) await PmrDataUpdater.deleteKeys(pk.pmrKeys); } catch {} try { await IDB.del(id); } catch {} await packList(true); renderPacks(); }
     async function renderPacks() {
       const el = gid("packList"); if (!el) return;
       const l = await packList(true);
@@ -9471,6 +9491,688 @@
       try { if (localStorage.getItem(WATCH_KEY) === "1" && "Notification" in window && Notification.permission === "granted") watchAlerts.on = true; } catch {}
       refreshWatchAlertUI();
     })();
+
+    // =====================================================================================
+    // COUVERTURE NATIONALE : PmrDataUpdater + couches carte + routage PMR + altimétrie
+    // =====================================================================================
+    const PMR_CFG = {
+      overpass: ["https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass-api.de/api/interpreter"],
+      tabular: "https://tabular-api.data.gouv.fr/api/resources/",
+      // Identifiants data.gouv.fr (vérifiés sur les pages des jeux de données). L'API tabulaire n'accepte pas
+      // tous les fichiers (taille) : chaque source est donc testée et ignorée proprement si elle n'est pas disponible.
+      resources: {
+        acceslibre: "93ae96a7-1db7-4cb4-a9f1-6d778370b640",   // Accèslibre (CSV ~500 Mo : peut être refusé par l'API tabulaire)
+        bnls: "e32f7675-913b-4e01-b8c8-0a29733e4407",         // Base nationale des lieux de stationnement (marquée « obsolète » sur data.gouv)
+        pan: "69cf54c6-6591-4920-b1d6-2a5292964606"           // Arrêts de transport en France (PAN) : pas de champ accessibilité documenté
+      },
+      cell: 0.03,            // taille d'une cellule de chargement (degrés, ≈ 3,3 km × 2,2 km)
+      maxViewCells: 6,
+      cacheName: "gps-pmr-data-v1",      // purgé par « Actualiser les données » (message CLEAR_PMR_DATA_CACHE)
+      packCacheName: "gps-pmr-pmrpack-v1", // données des packs hors ligne : jamais purgées par l'actualisation
+      ttlMin: 30, cacheTtlH: 12, maxFeatures: 8000, minZoom: 13
+    };
+    const PMR_RANK = { ok: 0, warning: 1, blocked: 2 };
+
+    // ---------- Lecture des valeurs OSM ----------
+    function pmrParseCm(v, kerb) {
+      if (v == null) return null;
+      const m = String(v).trim().toLowerCase().replace(",", ".").match(/^(-?\d+(?:\.\d+)?)\s*(cm|mm|m)?$/);
+      if (!m) return null;
+      const n = parseFloat(m[1]), u = m[2];
+      if (u === "cm") return n; if (u === "mm") return n / 10; if (u === "m") return n * 100;
+      return kerb ? (n < 1 ? n * 100 : n) : (n <= 5 ? n * 100 : n);
+    }
+    function pmrParseIncline(v) {
+      if (v == null) return null;
+      const m = String(v).trim().replace(",", ".").match(/^(-?\d+(?:\.\d+)?)\s*(%|°)?$/);
+      if (!m) return null;
+      const n = Math.abs(parseFloat(m[1]));
+      return m[2] === "°" ? Math.round(Math.tan(n * Math.PI / 180) * 1000) / 10 : n;
+    }
+    const PMR_KIND_FR = { sidewalk: "Trottoir / cheminement", crossing: "Passage piéton", steps: "Escalier", kerb: "Bordure", elevator: "Ascenseur", ramp: "Rampe", works: "Travaux", toilets: "Toilettes", parking: "Place PMR", entrance: "Entrée", stop: "Arrêt de transport", erp: "Établissement (Accèslibre)" };
+    const PMR_LINE_KINDS = new Set(["sidewalk", "crossing", "steps", "works", "ramp"]);
+
+    // ---------- Classification selon le gabarit du fauteuil ----------
+    function pmrSettings() {
+      const wc = getWc();
+      return { largeur_cm: wc.width, pente_max_pct: wc.maxSlope, bordure_max_cm: wc.maxCurb, eviter_paves: !!avoidCobbles };
+    }
+    function pmrClassify(p, s) {
+      let st = "ok", why = "", known = false;
+      const note = (lvl, msg) => { known = true; if (PMR_RANK[lvl] > PMR_RANK[st] || !why) { if (PMR_RANK[lvl] >= PMR_RANK[st]) { st = lvl; why = msg; } } };
+      const COBBLES = ["cobblestone", "sett", "unhewn_cobblestone"], HARD = ["sand", "mud", "pebblestone", "rock", "snow", "ice", "stepping_stones"], SOFT = ["dirt", "ground", "earth", "grass", "gravel", "fine_gravel", "woodchips", "unpaved"];
+      if (p.kind === "steps") note(p.ramp === "yes" || p.ramp === "wheelchair" ? "warning" : "blocked", p.ramp ? "Escalier avec rampe" : "Escalier" + (p.steps ? ` (${p.steps} marches)` : ""));
+      if (p.kind === "works") note("blocked", "Travaux / voie en construction");
+      if (p.kind === "elevator") note(p.wheelchair === "no" ? "blocked" : "ok", p.wheelchair === "no" ? "Ascenseur non accessible" : "Ascenseur");
+      if (p.kind === "kerb" || p.kerbCm != null) {
+        const max = s.bordure_max_cm;
+        if (p.kerbCm != null) {
+          if (p.kerbCm > max) note("blocked", `Bordure de ${Math.round(p.kerbCm * 10) / 10} cm > ${max} cm tolérés`);
+          else if (p.kerbCm > max * 0.6 && p.kerbCm > 0) note("warning", `Bordure de ${Math.round(p.kerbCm * 10) / 10} cm (proche de votre limite)`);
+          else note("ok", p.kerbCm === 0 ? "Bordure à niveau" : `Bordure de ${Math.round(p.kerbCm * 10) / 10} cm`);
+        } else if (p.kerb === "flush" || p.kerb === "lowered") note("ok", p.kerb === "flush" ? "Bordure à niveau" : "Bordure abaissée");
+        else if (p.kerb === "raised") note("warning", "Bordure surélevée (hauteur inconnue)");
+        else if (p.kerb === "rolled") note("warning", "Bordure arrondie (hauteur inconnue)");
+      }
+      if (p.widthCm != null) {
+        const lbl = p.widthEst ? "Largeur estimée " : "Largeur ";
+        if (p.widthCm < s.largeur_cm) note("blocked", `${lbl}${Math.round(p.widthCm)} cm < fauteuil ${s.largeur_cm} cm`);
+        else if (p.widthCm < s.largeur_cm + 10) note("warning", `${lbl}${Math.round(p.widthCm)} cm : passage très juste`);
+        else note("ok", `${lbl}${Math.round(p.widthCm)} cm`);
+      }
+      if (p.doorCm != null) {
+        if (p.doorCm < s.largeur_cm) note("blocked", `Porte de ${Math.round(p.doorCm)} cm < fauteuil ${s.largeur_cm} cm`);
+        else if (p.doorCm < s.largeur_cm + 10) note("warning", `Porte de ${Math.round(p.doorCm)} cm : passage très juste`);
+      }
+      if (p.inclinePct != null) {
+        if (p.inclinePct > s.pente_max_pct) note("blocked", `Pente ${p.inclinePct} % > ${s.pente_max_pct} % tolérés`);
+        else if (p.inclinePct > s.pente_max_pct * 0.7) note("warning", `Pente ${p.inclinePct} % (proche de votre limite)`);
+        else note("ok", `Pente ${p.inclinePct} %`);
+      }
+      if (p.wheelchair === "no") note("blocked", "Non accessible en fauteuil (OSM)");
+      else if (p.wheelchair === "limited") note("warning", "Accessibilité partielle (OSM)");
+      else if (p.wheelchair === "yes") note("ok", "Accessible en fauteuil (OSM)");
+      if (p.surface) {
+        const sf = p.surface;
+        if (COBBLES.includes(sf)) note(s.eviter_paves ? "warning" : "ok", s.eviter_paves ? "Pavés : vous avez demandé de les éviter" : "Pavés");
+        else if (HARD.includes(sf)) note("blocked", "Revêtement impraticable (" + sf + ")");
+        else if (SOFT.includes(sf)) note("warning", "Revêtement meuble (" + sf + ")");
+        else note("ok", "Revêtement : " + sf);
+      }
+      if (p.smoothness) {
+        if (["very_bad", "horrible", "very_horrible", "impassable"].includes(p.smoothness)) note("blocked", "Sol très dégradé (" + p.smoothness + ")");
+        else if (p.smoothness === "bad") note("warning", "Sol dégradé");
+        else if (["excellent", "good", "intermediate"].includes(p.smoothness)) note("ok", "Sol en bon état");
+      }
+      if (p.kind === "toilets") note(p.wheelchair === "no" ? "blocked" : "ok", "Toilettes adaptées");
+      if (p.kind === "parking") note("ok", "Place de stationnement PMR" + (p.capacityDisabled ? ` (${p.capacityDisabled})` : ""));
+      if (p.kind === "erp") {
+        if (p.doorCm == null && p.plainPied === false && !p.rampe) note("warning", "Marche à l'entrée, pas de rampe indiquée");
+        else if (p.plainPied === true || p.rampe === true) note("ok", p.plainPied ? "Entrée de plain-pied" : "Entrée avec rampe");
+        if (p.sanitaires === true) note("ok", "Sanitaires adaptés");
+      }
+      return { status: st, reason: why || (PMR_KIND_FR[p.kind] || ""), known };
+    }
+
+    // ---------- Normalisation OSM / sources nationales → GeoJSON ----------
+    function pmrOsmFeature(el, s) {
+      const t = el.tags || {};
+      let kind = null;
+      const stopWc = t.wheelchair && (t.highway === "bus_stop" || t.railway === "tram_stop" || t.railway === "station" || t.public_transport === "platform" || t.public_transport === "stop_position");
+      if (t.highway === "steps") kind = "steps";
+      else if (t.highway === "construction") kind = "works";
+      else if (t.highway === "elevator") kind = "elevator";
+      else if (t["toilets:wheelchair"] || (t.amenity === "toilets" && t.wheelchair)) kind = "toilets";
+      else if (t.parking_space === "disabled" || t["capacity:disabled"]) kind = "parking";
+      else if (t.entrance) kind = "entrance";
+      else if (stopWc) kind = "stop";
+      else if (t.kerb || t["kerb:height"] || t.barrier === "kerb") kind = "kerb";
+      else if (/^(footway|path|pedestrian)$/.test(t.highway || "")) kind = (t.footway === "crossing" || t.footway === "sidewalk") ? (t.footway === "crossing" ? "crossing" : "sidewalk") : (t.ramp ? "ramp" : "sidewalk");
+      if (!kind) return null;
+      let geometry = null;
+      if (el.type === "way" && el.geometry && el.geometry.length > 1 && PMR_LINE_KINDS.has(kind)) geometry = { type: "LineString", coordinates: el.geometry.map(g => [g.lon, g.lat]) };
+      else {
+        const lat = el.lat != null ? el.lat : (el.center && el.center.lat), lon = el.lon != null ? el.lon : (el.center && el.center.lon);
+        if (lat == null || lon == null) return null;
+        geometry = { type: "Point", coordinates: [lon, lat] };
+      }
+      const wRaw = t.width != null ? t.width : t.est_width;
+      const p = {
+        id: `osm:${el.type}/${el.id}`, src: "osm", kind, name: t.name || t.ref || "",
+        widthCm: pmrParseCm(wRaw), widthEst: t.width == null && t.est_width != null,
+        inclinePct: pmrParseIncline(t.incline), kerbCm: pmrParseCm(t["kerb:height"], true), kerb: t.kerb || null,
+        surface: t.surface || null, smoothness: t.smoothness || null, wheelchair: t.wheelchair || t["toilets:wheelchair"] || null,
+        tactile: t.tactile_paving || null, ramp: t.ramp === "yes" || t["ramp:wheelchair"] === "yes" ? "yes" : (t.ramp || null),
+        steps: t.step_count || null, capacityDisabled: t["capacity:disabled"] || null,
+        doorCm: kind === "entrance" ? pmrParseCm(t["door:width"] || t.width) : null
+      };
+      if (kind === "entrance") p.widthCm = null;
+      if (kind === "toilets" && t["toilets:wheelchair"]) p.wheelchair = t["toilets:wheelchair"];
+      Object.keys(p).forEach(k => { if (p[k] == null || p[k] === "") delete p[k]; });
+      Object.assign(p, pmrClassify(p, s));
+      return { type: "Feature", properties: p, geometry };
+    }
+
+    // ---------- Requête Overpass unique par cellule (3 familles de données) avec bascule automatique ----------
+    function pmrOverpassQL(b) {
+      const bb = `${b.s.toFixed(5)},${b.w.toFixed(5)},${b.n.toFixed(5)},${b.e.toFixed(5)}`;
+      const K = "^(wheelchair|width|est_width|incline|surface|smoothness|tactile_paving|ramp|kerb|kerb:height)$";
+      return `[out:json][timeout:40][maxsize:33554432];
+(
+  way["highway"~"^(footway|path|pedestrian)$"][~"${K}"~"."](${bb});
+  way["footway"="sidewalk"][~"${K}"~"."](${bb});
+  way["highway"="steps"](${bb});
+  way["highway"="construction"](${bb});
+)->.w;
+.w out tags geom qt;
+(
+  node["kerb"~"^(flush|lowered|raised|rolled)$"](${bb});
+  node["kerb:height"](${bb});
+  node["barrier"="kerb"](${bb});
+  node["highway"="elevator"](${bb});
+  nwr["toilets:wheelchair"](${bb});
+  nwr["amenity"="toilets"]["wheelchair"](${bb});
+  nwr["parking_space"="disabled"](${bb});
+  nwr["capacity:disabled"](${bb});
+  node["entrance"]["wheelchair"~"^(yes|limited|no)$"](${bb});
+  node["highway"="bus_stop"]["wheelchair"](${bb});
+  node["railway"="tram_stop"]["wheelchair"](${bb});
+  nwr["public_transport"="platform"]["wheelchair"](${bb});
+)->.n;
+.n out tags center qt;`;
+    }
+    async function pmrOverpass(ql) {
+      let lastErr = null;
+      for (const ep of PMR_CFG.overpass) {                       // bascule automatique : un miroir qui échoue ou est saturé passe la main au suivant
+        try {
+          const r = await fetchWithTimeout(ep, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: "data=" + encodeURIComponent(ql) }, 30000);
+          if (!r.ok) { lastErr = new Error(`${new URL(ep).hostname} : HTTP ${r.status}`); continue; }
+          const j = await r.json();
+          if (j && j.remark && /runtime error|timed out|out of memory/i.test(j.remark) && !(j.elements || []).length) { lastErr = new Error(j.remark); continue; }
+          return j;
+        } catch (e) { lastErr = e; }
+      }
+      throw lastErr || new Error("Overpass indisponible");
+    }
+
+    // ---------- Sources data.gouv.fr (API tabulaire) ----------
+    const pmrColsMem = {};
+    async function pmrTabularColumns(rid) {
+      if (pmrColsMem[rid]) return pmrColsMem[rid];
+      try { const c = JSON.parse(localStorage.getItem("pmr_cols_" + rid) || "null"); if (c && Date.now() - c.ts < 7 * 864e5) return pmrColsMem[rid] = c.cols; } catch {}
+      const r = await fetchWithTimeout(`${PMR_CFG.tabular}${rid}/profile/`, {}, 8000);
+      if (!r.ok) throw new Error(r.status === 404 ? "fichier non disponible dans l'API tabulaire" : "HTTP " + r.status);
+      const j = await r.json();
+      const pr = j.profile || {};
+      const cols = Array.isArray(pr.header) ? pr.header : Object.keys(pr.columns || {});
+      if (!cols.length) throw new Error("colonnes introuvables");
+      pmrColsMem[rid] = cols;
+      try { localStorage.setItem("pmr_cols_" + rid, JSON.stringify({ ts: Date.now(), cols })); } catch {}
+      return cols;
+    }
+    // L'API tabulaire n'a pas de filtre « bbox » natif : on l'émule avec des bornes sur les colonnes latitude / longitude.
+    async function pmrTabularBbox(rid, b, maxPages) {
+      const cols = await pmrTabularColumns(rid);
+      const find = re => cols.find(c => re.test(c));
+      const latC = find(/^(lat|latitude|ylat|y_lat|stop_lat|coord_?y|y)$/i), lonC = find(/^(lon|lng|long|longitude|xlong|x_long|stop_lon|coord_?x|x)$/i);
+      if (!latC || !lonC) throw new Error("colonnes latitude/longitude introuvables");
+      const q = { [latC + "__greater"]: b.s, [latC + "__less"]: b.n, [lonC + "__greater"]: b.w, [lonC + "__less"]: b.e, page_size: "50" };
+      const rows = []; let total = 0;
+      for (let page = 1; page <= maxPages; page++) {
+        const r = await fetchWithTimeout(`${PMR_CFG.tabular}${rid}/data/?` + new URLSearchParams({ ...q, page: String(page) }).toString(), {}, 9000);
+        if (!r.ok) { if (page === 1) throw new Error("HTTP " + r.status); break; }
+        const j = await r.json();
+        rows.push(...(j.data || [])); total = (j.meta && j.meta.total) || rows.length;
+        if (rows.length >= total || !(j.data || []).length) break;
+      }
+      return { rows, cols, latC, lonC, total };
+    }
+    const pmrBool = v => v == null || v === "" ? null : (/^(true|t|oui|yes|1|vrai)$/i.test(String(v).trim()) ? true : (/^(false|f|non|no|0|faux)$/i.test(String(v).trim()) ? false : null));
+    function pmrPickCol(cols, re) { return cols.find(c => re.test(c)); }
+    function pmrRowsToFeatures(srcId, kind, res, s) {
+      const { rows, cols, latC, lonC } = res, out = [];
+      const nameC = pmrPickCol(cols, /^(nom|name|titre|nom_lieu|nom_parking|stop_name)$/i) || pmrPickCol(cols, /nom|name|libell/i);
+      const pmrC = pmrPickCol(cols, /^nb_pmr$|pmr|handicap|gig|gic/i);
+      const wcC = pmrPickCol(cols, /wheelchair/i);
+      const plainC = pmrPickCol(cols, /plain_?pied/i), rampC = pmrPickCol(cols, /rampe/i), sanC = pmrPickCol(cols, /sanitaires.*adapt|sanitaires_adapt/i);
+      const doorC = pmrPickCol(cols, /(porte|entree).*largeur|largeur.*(porte|entree)/i);
+      rows.forEach((r, i) => {
+        const lat = parseFloat(String(r[latC]).replace(",", ".")), lon = parseFloat(String(r[lonC]).replace(",", "."));
+        if (!isFinite(lat) || !isFinite(lon)) return;
+        const p = { id: `${srcId}:${r.__id != null ? r.__id : i}`, src: srcId, kind, name: nameC && r[nameC] ? String(r[nameC]) : "" };
+        if (kind === "parking") {
+          const n = pmrC ? parseInt(r[pmrC], 10) : NaN;
+          if (pmrC && /^nb_pmr$|pmr/i.test(pmrC) && !(n > 0)) return;         // on ne garde que les lieux avec places PMR
+          if (n > 0) p.capacityDisabled = String(n);
+        }
+        if (kind === "stop" && wcC) { const v = String(r[wcC]); p.wheelchair = v === "1" || /yes|true/i.test(v) ? "yes" : (v === "2" || /no|false/i.test(v) ? "no" : null); if (!p.wheelchair) delete p.wheelchair; }
+        if (kind === "erp") {
+          if (plainC) p.plainPied = pmrBool(r[plainC]); if (rampC) p.rampe = pmrBool(r[rampC]); if (sanC) p.sanitaires = pmrBool(r[sanC]);
+          if (doorC) { const d = pmrParseCm(r[doorC]); if (d != null) p.doorCm = d; }
+          Object.keys(p).forEach(k => { if (p[k] == null) delete p[k]; });
+        }
+        Object.assign(p, pmrClassify(p, s));
+        out.push({ type: "Feature", properties: p, geometry: { type: "Point", coordinates: [lon, lat] } });
+      });
+      return out;
+    }
+
+    // ---------- Module principal ----------
+    const PmrDataUpdater = (() => {
+      const store = new Map();          // id → Feature
+      const cellsLoaded = new Map();    // clé de cellule → ts
+      const report = {};
+      let inflight = 0, listeners = [], seq = 0, moveTimer = null;
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const cellKey = (i, j) => i + "_" + j;
+      const cellBox = (i, j) => ({ s: j * PMR_CFG.cell, n: (j + 1) * PMR_CFG.cell, w: i * PMR_CFG.cell, e: (i + 1) * PMR_CFG.cell });
+      const cellsFor = (b, cap) => {
+        const g = PMR_CFG.cell, out = [];
+        for (let i = Math.floor(b.w / g); i <= Math.floor(b.e / g); i++) for (let j = Math.floor(b.s / g); j <= Math.floor(b.n / g); j++) out.push([i, j]);
+        const cx = (b.w + b.e) / 2 / g, cy = (b.s + b.n) / 2 / g;
+        out.sort((a, c) => Math.hypot(a[0] + 0.5 - cx, a[1] + 0.5 - cy) - Math.hypot(c[0] + 0.5 - cx, c[1] + 0.5 - cy));
+        return out.slice(0, cap || PMR_CFG.maxViewCells);
+      };
+      const viewBox = () => { const b = map.getBounds(); return { s: b.getSouth(), w: b.getWest(), n: b.getNorth(), e: b.getEast() }; };
+      const cacheOk = () => typeof caches !== "undefined";
+      const cacheKey = k => new Request("https://gps-pmr.local/pmr/" + encodeURIComponent(k));
+
+      async function cacheGet(k, any) {
+        if (!cacheOk()) return null;
+        for (const name of [PMR_CFG.cacheName, PMR_CFG.packCacheName]) {
+          try {
+            const c = await caches.open(name), r = await c.match(cacheKey(k));
+            if (!r) continue;
+            const j = await r.json();
+            if (any || (Date.now() - j.ts) < PMR_CFG.cacheTtlH * 3600e3) return j;
+          } catch {}
+        }
+        return null;
+      }
+      async function cachePut(k, feats, pack) {
+        if (!cacheOk()) return;
+        try { const c = await caches.open(pack ? PMR_CFG.packCacheName : PMR_CFG.cacheName); await c.put(cacheKey(k), new Response(JSON.stringify({ ts: Date.now(), feats }), { headers: { "Content-Type": "application/json" } })); } catch {}
+      }
+
+      // Déduplication : même identifiant OSM = même objet ; sinon, deux points de même nature à moins de 20 m sont fusionnés
+      const SRC_PRIO = { osm: 3, bnls: 2, acceslibre: 2, pan: 1 };
+      function grid(p) { return Math.round(p[0] * 5000) + "_" + Math.round(p[1] * 5000); }   // ≈ 20 m
+      function merge(feats) {
+        const byGrid = new Map();
+        store.forEach(f => { if (f.geometry.type === "Point") byGrid.set(f.properties.kind + "|" + grid(f.geometry.coordinates), f); });
+        let added = 0;
+        feats.forEach(f => {
+          const id = f.properties.id;
+          if (store.has(id)) { const old = store.get(id); if (old.properties.sources) f.properties.sources = old.properties.sources; store.set(id, f); return; }
+          if (f.geometry.type === "Point") {
+            const k = f.properties.kind + "|" + grid(f.geometry.coordinates), ex = byGrid.get(k);
+            if (ex && ex.properties.id !== id) {
+              const better = (SRC_PRIO[f.properties.src] || 0) > (SRC_PRIO[ex.properties.src] || 0);
+              ex.properties.sources = Array.from(new Set([...(ex.properties.sources || [ex.properties.src]), f.properties.src]));
+              if (better) { const sources = ex.properties.sources; store.delete(ex.properties.id); f.properties.sources = sources; store.set(id, f); byGrid.set(k, f); added++; }
+              return;
+            }
+            byGrid.set(k, f);
+          }
+          store.set(id, f); added++;
+        });
+        if (store.size > PMR_CFG.maxFeatures) { const drop = store.size - PMR_CFG.maxFeatures; let i = 0; for (const k of store.keys()) { if (i++ >= drop) break; store.delete(k); } }
+        return added;
+      }
+      function collection() { return { type: "FeatureCollection", features: Array.from(store.values()) }; }
+      function push() { const src = map.getSource("pmr-live-data"); if (src) src.setData(collection()); listeners.forEach(fn => { try { fn(); } catch {} }); }
+      function reclassify() { const s = pmrSettings(); store.forEach(f => { const p = f.properties; Object.assign(p, pmrClassify(p, s)); }); push(); }
+
+      async function osmCell(i, j, opts) {
+        const key = "osm/" + cellKey(i, j);
+        const hit = await cacheGet(key, !navigator.onLine);
+        if (hit) { merge(hit.feats); return { n: hit.feats.length, cached: true }; }
+        if (!navigator.onLine) return { n: 0, offline: true };
+        const json = await pmrOverpass(pmrOverpassQL(cellBox(i, j)));
+        const s = pmrSettings(), feats = [];
+        (json.elements || []).forEach(el => { const f = pmrOsmFeature(el, s); if (f) feats.push(f); });
+        merge(feats);
+        await cachePut(key, feats, opts && opts.pack);
+        return { n: feats.length };
+      }
+      async function tabularBlock(b, opts) {
+        const s = pmrSettings(), out = {};
+        const jobs = [["acceslibre", "acceslibre", "erp"], ["bnls", "bnls", "parking"], ["pan", "pan", "stop"]];
+        await Promise.all(jobs.map(async ([name, srcId, kind]) => {
+          const key = "tab/" + name + "/" + [b.s, b.w, b.n, b.e].map(v => v.toFixed(3)).join("_");
+          try {
+            const hit = await cacheGet(key, !navigator.onLine);
+            if (hit) { merge(hit.feats); out[name] = { ok: true, n: hit.feats.length, cached: true }; return; }
+            if (!navigator.onLine) { out[name] = { ok: false, err: "hors ligne" }; return; }
+            const rid = PMR_CFG.resources[name];
+            const res = await pmrTabularBbox(rid, b, name === "acceslibre" ? 6 : 4);
+            let feats = pmrRowsToFeatures(srcId, kind, res, s);
+            if (name === "pan") {                    // le fichier PAN n'a pas de champ d'accessibilité documenté : on ne garde que s'il en a un
+              if (!pmrPickCol(res.cols, /wheelchair/i)) { out[name] = { ok: false, err: "pas de champ wheelchair_boarding dans ce fichier" }; return; }
+              feats = feats.filter(f => f.properties.wheelchair);
+            }
+            merge(feats); await cachePut(key, feats, opts && opts.pack);
+            out[name] = { ok: true, n: feats.length, truncated: res.total > res.rows.length };
+          } catch (e) { out[name] = { ok: false, err: String(e && e.message || e).slice(0, 80) }; }
+        }));
+        return out;
+      }
+      function boxOfCells(cells) {
+        const bs = cells.map(([i, j]) => cellBox(i, j));
+        return { s: Math.min(...bs.map(x => x.s)), w: Math.min(...bs.map(x => x.w)), n: Math.max(...bs.map(x => x.n)), e: Math.max(...bs.map(x => x.e)) };
+      }
+      async function runPool(items, n, fn, gap) {
+        let k = 0; const res = [];
+        await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+          while (k < items.length) { const it = items[k++]; res.push(await fn(it).catch(e => ({ err: e }))); if (gap) await wait(gap); }
+        }));
+        return res;
+      }
+
+      // Charge un ensemble de cellules (OSM, en parallèle limité) + les sources data.gouv.fr (en parallèle de l'OSM)
+      async function loadCells(cells, opts) {
+        opts = opts || {};
+        const todo = cells.filter(([i, j]) => opts.force || !cellsLoaded.has(cellKey(i, j)) || Date.now() - cellsLoaded.get(cellKey(i, j)) > PMR_CFG.ttlMin * 60000);
+        if (!todo.length) return { n: 0 };
+        inflight++; const my = ++seq; setBusy(true);
+        try {
+          let done = 0;
+          const osmP = runPool(todo, opts.concurrency || 2, async ([i, j]) => {
+            const r = await osmCell(i, j, opts);
+            cellsLoaded.set(cellKey(i, j), Date.now());
+            if (opts.onProgress) opts.onProgress(++done, todo.length);
+            return r;
+          }, opts.gap || 0);
+          const tabP = opts.noTabular ? Promise.resolve(null) : tabularBlock(boxOfCells(todo), opts);
+          const [osmRes, tab] = await Promise.all([osmP, tabP]);
+          const okN = osmRes.filter(r => !r.err).length, errs = osmRes.filter(r => r.err);
+          report.osm = { ok: okN > 0, n: osmRes.reduce((a, r) => a + (r.n || 0), 0), cells: todo.length, failed: errs.length, err: errs[0] && String(errs[0].err.message || errs[0].err).slice(0, 80) };
+          if (tab) Object.assign(report, tab);
+          push(); renderStatus();
+          return { n: store.size, report };
+        } finally { inflight--; if (!inflight) setBusy(false); }
+      }
+      function setBusy(b) { const btn = document.getElementById("pmrRefreshBtn"); if (btn) btn.disabled = b; const st = document.getElementById("pmrDataStatus"); if (st && b) st.textContent = "⏳ Chargement des données d'accessibilité…"; }
+      function renderStatus() {
+        const st = document.getElementById("pmrDataStatus"); if (!st) return;
+        const bits = [];
+        const o = report.osm; if (o) bits.push(o.ok ? `OpenStreetMap ✓ ${o.n}${o.failed ? ` (${o.failed} zone(s) en échec)` : ""}` : `OpenStreetMap ✗ ${o.err || ""}`);
+        [["acceslibre", "Accèslibre"], ["bnls", "Stationnement (BNLS)"], ["pan", "Arrêts (PAN)"]].forEach(([k, lab]) => { const r = report[k]; if (r) bits.push(r.ok ? `${lab} ✓ ${r.n}${r.truncated ? "+" : ""}` : `${lab} — ${r.err}`); });
+        st.textContent = `${store.size} éléments • ` + (bits.join(" • ") || "aucune source interrogée");
+      }
+
+      async function loadView(opts) {
+        if (VIEWER_ID) return null;
+        return loadCells(cellsFor(viewBox()), opts);
+      }
+      // Cellules traversées par un itinéraire (≈ 1 point tous les 150 m), dans l'ordre du trajet
+      function corridorCells(coords, cap) {
+        const seen = new Set(), out = [], g = PMR_CFG.cell; let lastLat = null, lastLon = null;
+        coords.forEach(c => {
+          if (lastLat != null && distanceMeters(lastLat, lastLon, c[1], c[0]) < 150) return;
+          lastLat = c[1]; lastLon = c[0];
+          const k = cellKey(Math.floor(c[0] / g), Math.floor(c[1] / g));
+          if (!seen.has(k)) { seen.add(k); out.push([Math.floor(c[0] / g), Math.floor(c[1] / g)]); }
+        });
+        return out.slice(0, cap || 12);
+      }
+      async function loadCorridor(coords) {
+        return Promise.race([loadCells(corridorCells(coords), { noTabular: true }), wait(18000).then(() => null)]);
+      }
+      // Pré-chargement pour un pack hors ligne (centre + rayon en km)
+      async function prefetchArea(lat, lon, rKm, onProgress) {
+        const dLa = rKm / 111.32, dLo = rKm / (111.32 * Math.cos(lat * Math.PI / 180));
+        const b = { s: lat - dLa, n: lat + dLa, w: lon - dLo, e: lon + dLo };
+        const cells = cellsFor(b, 40);
+        const keys = cells.map(([i, j]) => "osm/" + cellKey(i, j));
+        await loadCells(cells, { pack: true, force: true, concurrency: 2, gap: 250, onProgress });
+        return { cells: cells.length, keys };
+      }
+      async function restoreFromCache() {
+        if (!cacheOk()) return 0;
+        let n = 0;
+        for (const name of [PMR_CFG.cacheName, PMR_CFG.packCacheName]) {
+          try {
+            const c = await caches.open(name);
+            for (const req of await c.keys()) {
+              if (!req.url.startsWith("https://gps-pmr.local/pmr/")) continue;
+              try { const j = await (await c.match(req)).json(); if (navigator.onLine && Date.now() - j.ts > PMR_CFG.cacheTtlH * 3600e3) continue; merge(j.feats || []); n++; } catch {}
+            }
+          } catch {}
+        }
+        if (n) { reclassify(); renderStatus(); }
+        return n;
+      }
+      // Bouton « Actualiser les données » : purge le cache du Service Worker puis recharge les sources
+      async function refresh() {
+        const btn = document.getElementById("pmrRefreshBtn");
+        if (!navigator.onLine) { setStatus("📴 Hors ligne : les données mémorisées restent affichées.", "info"); return; }
+        if (btn) btn.disabled = true;
+        const ack = new Promise(res => {
+          const t = setTimeout(() => res(false), 1800);
+          const h = e => { if (e.data && e.data.type === "PMR_DATA_CACHE_CLEARED") { clearTimeout(t); navigator.serviceWorker.removeEventListener("message", h); res(true); } };
+          if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", h);
+        });
+        let viaSw = false;
+        try { if (navigator.serviceWorker && navigator.serviceWorker.controller) { navigator.serviceWorker.controller.postMessage({ type: "CLEAR_PMR_DATA_CACHE" }); viaSw = await ack; } } catch {}
+        if (!viaSw && cacheOk()) { try { await caches.delete(PMR_CFG.cacheName); } catch {} }   // pas de Service Worker : on purge directement
+        store.clear(); cellsLoaded.clear(); Object.keys(report).forEach(k => delete report[k]);
+        push();
+        try { await loadView({ force: true }); setStatus("✅ Données d'accessibilité actualisées.", "ok"); }
+        catch (e) { setStatus("❌ Actualisation impossible : " + (e && e.message || "erreur"), "error"); }
+        if (btn) btn.disabled = false;
+      }
+      function scheduleMove() {
+        clearTimeout(moveTimer);
+        moveTimer = setTimeout(() => {
+          if (!PmrLayers.enabled || !navigator.onLine || watchMode || map.getZoom() < PMR_CFG.minZoom) return;
+          loadView().catch(() => {});
+        }, 900);
+      }
+      async function deleteKeys(keys) { if (!cacheOk()) return; try { const c = await caches.open(PMR_CFG.packCacheName); await Promise.all((keys || []).map(k => c.delete(cacheKey(k)))); } catch {} }
+      return { store, report, collection, reclassify, loadView, loadCells, loadCorridor, prefetchArea, restoreFromCache, refresh, scheduleMove, renderStatus, deleteKeys, onChange(fn) { listeners.push(fn); }, cellsFor };
+    })();
+
+    // ---------- Couches MapLibre : pmr-ways-layer / pmr-points-layer ----------
+    const PmrLayers = {
+      enabled: true,
+      palette() {
+        const dark = document.body.classList.contains("dark");
+        return dark ? { ok: "#22c55e", warning: "#fbbf24", blocked: "#f87171", stroke: "#0b1220", unk: "#94a3b8" } : { ok: "#16a34a", warning: "#f59e0b", blocked: "#dc2626", stroke: "#ffffff", unk: "#64748b" };
+      },
+      scale() { return document.body.classList.contains("large-mode") ? 1.6 : 1; },
+      colorExpr(p) { return ["match", ["get", "status"], "ok", p.ok, "warning", p.warning, "blocked", p.blocked, p.unk]; },
+      init() {
+        if (VIEWER_ID || !map.getStyle()) return;
+        if (!map.getSource("pmr-live-data")) map.addSource("pmr-live-data", { type: "geojson", data: PmrDataUpdater.collection() });
+        const before = map.getLayer("route-casing") ? "route-casing" : undefined, p = this.palette(), k = this.scale();
+        const vis = this.enabled ? "visible" : "none";
+        if (!map.getLayer("pmr-ways-layer")) map.addLayer({
+          id: "pmr-ways-layer", type: "line", source: "pmr-live-data", filter: ["==", ["geometry-type"], "LineString"], minzoom: 12,
+          layout: { "line-cap": "round", "line-join": "round", visibility: vis },
+          paint: { "line-color": this.colorExpr(p), "line-width": ["interpolate", ["linear"], ["zoom"], 13, 2 * k, 19, 7 * k], "line-opacity": ["case", ["==", ["get", "known"], true], 0.95, 0.4] }
+        }, before);
+        if (!map.getLayer("pmr-points-layer")) map.addLayer({
+          id: "pmr-points-layer", type: "circle", source: "pmr-live-data", filter: ["==", ["geometry-type"], "Point"], minzoom: 12,
+          layout: { visibility: vis },
+          paint: { "circle-color": this.colorExpr(p), "circle-radius": ["interpolate", ["linear"], ["zoom"], 13, 4 * k, 19, 9 * k], "circle-stroke-color": p.stroke, "circle-stroke-width": 2 * k, "circle-opacity": ["case", ["==", ["get", "known"], true], 1, 0.55] }
+        }, before);
+        if (!this._bound) {
+          this._bound = true;
+          const open = e => {
+            const f = e.features && e.features[0]; if (!f) return;
+            const pr = f.properties, col = this.palette()[pr.status] || this.palette().unk;
+            const lab = { ok: "Praticable", warning: "Difficile", blocked: "Bloquant" }[pr.status] || "";
+            const srcs = (() => { try { return JSON.parse(pr.sources || "null"); } catch { return null; } })() || [pr.src];
+            new maplibregl.Popup({ closeButton: true, maxWidth: "260px" }).setLngLat(e.lngLat)
+              .setHTML(`<div style="font:13px system-ui;color:#0f172a"><b>${escapeHTML(PMR_KIND_FR[pr.kind] || pr.kind)}${pr.name ? " — " + escapeHTML(pr.name) : ""}</b><br><span style="color:${col};font-weight:700">● ${lab}</span> ${escapeHTML(pr.reason || "")}<br><span style="color:#64748b;font-size:11px">Source : ${escapeHTML(srcs.join(" + "))}${pr.tactile === "yes" ? " • bandes podotactiles" : ""}</span></div>`).addTo(map);
+          };
+          ["pmr-points-layer", "pmr-ways-layer"].forEach(id => {
+            map.on("click", id, open);
+            map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; });
+            map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
+          });
+          new MutationObserver(() => this.applyTheme()).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+        }
+      },
+      applyTheme() {
+        if (!map.getLayer("pmr-ways-layer")) return;
+        const p = this.palette(), k = this.scale();
+        map.setPaintProperty("pmr-ways-layer", "line-color", this.colorExpr(p));
+        map.setPaintProperty("pmr-ways-layer", "line-width", ["interpolate", ["linear"], ["zoom"], 13, 2 * k, 19, 7 * k]);
+        map.setPaintProperty("pmr-points-layer", "circle-color", this.colorExpr(p));
+        map.setPaintProperty("pmr-points-layer", "circle-radius", ["interpolate", ["linear"], ["zoom"], 13, 4 * k, 19, 9 * k]);
+        map.setPaintProperty("pmr-points-layer", "circle-stroke-color", p.stroke);
+        map.setPaintProperty("pmr-points-layer", "circle-stroke-width", 2 * k);
+      },
+      setEnabled(on) {
+        this.enabled = !!on;
+        try { localStorage.setItem("gps_pmr_live_layer", on ? "1" : "0"); } catch {}
+        ["pmr-ways-layer", "pmr-points-layer"].forEach(id => { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none"); });
+        if (on) PmrDataUpdater.loadView().catch(() => {});
+      }
+    };
+    function pmrReclassifyDebounced() {      // appelée très tôt par updateProfileUI : aucune variable « let » ici (zone morte temporelle)
+      clearTimeout(window.__pmrRT); window.__pmrRT = setTimeout(() => { try { PmrDataUpdater.reclassify(); } catch {} }, 250);
+    }
+
+    // ---------- Altimétrie : IGN Géoplateforme (France entière) puis Open-Meteo Elevation ----------
+    const PmrElevation = {
+      sample(coords, maxPts) {
+        const step = Math.max(1, Math.ceil((coords.length - 1) / (maxPts - 1))), out = [];
+        for (let i = 0; i < coords.length; i += step) out.push(coords[i]);
+        if (out[out.length - 1] !== coords[coords.length - 1]) out.push(coords[coords.length - 1]);
+        return out;
+      },
+      async ign(pts) {
+        const url = `https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json?lon=${encodeURIComponent(pts.map(c => c[0].toFixed(5)).join("|"))}&lat=${encodeURIComponent(pts.map(c => c[1].toFixed(5)).join("|"))}&resource=ign_rge_alti_wld&zonly=true`;
+        const r = await fetchWithTimeout(url, {}, 8000);
+        if (!r.ok) throw new Error("IGN HTTP " + r.status);
+        const j = await r.json();
+        const z = Array.isArray(j.elevations) ? j.elevations : null;
+        if (!z || z.length !== pts.length) throw new Error("IGN réponse inattendue");
+        if (z.filter(v => typeof v !== "number" || v < -500).length > z.length * 0.2) throw new Error("IGN hors couverture");
+        return z;
+      },
+      async openMeteo(pts) {
+        const out = [];
+        for (let i = 0; i < pts.length; i += 100) {                  // 100 points maximum par requête
+          const part = pts.slice(i, i + 100);
+          const r = await fetchWithTimeout(`https://api.open-meteo.com/v1/elevation?latitude=${part.map(c => c[1].toFixed(5)).join(",")}&longitude=${part.map(c => c[0].toFixed(5)).join(",")}`, {}, 8000);
+          if (!r.ok) throw new Error("Open-Meteo HTTP " + r.status);
+          const j = await r.json();
+          if (!Array.isArray(j.elevation) || j.elevation.length !== part.length) throw new Error("Open-Meteo réponse inattendue");
+          out.push(...j.elevation);
+        }
+        return out;
+      },
+      stats(z, pts) {
+        const sm = z.map((v, i) => { const a = z[Math.max(0, i - 1)], b = z[Math.min(z.length - 1, i + 1)]; return (a + v + b) / 3; });   // lissage : le bruit du MNT gonfle sinon le D+
+        let up = 0, down = 0;
+        for (let i = 1; i < sm.length; i++) { const d = sm[i] - sm[i - 1]; if (d > 0.4) up += d; else if (d < -0.4) down -= d; }
+        const steep = [];
+        for (let i = 1; i < pts.length; i++) {
+          const run = distanceMeters(pts[i - 1][1], pts[i - 1][0], pts[i][1], pts[i][0]);
+          if (run >= 20) steep.push({ at: pts[i], pct: Math.round(Math.abs(sm[i] - sm[i - 1]) / run * 1000) / 10 });
+        }
+        return { ascentM: Math.round(up), descentM: Math.round(down), steep };
+      },
+      async profile(coords) {
+        const pts = this.sample(coords, 90);
+        let z = null, source = "";
+        try { z = await this.ign(pts); source = "IGN"; } catch { try { z = await this.openMeteo(pts); source = "Open-Meteo"; } catch {} }
+        if (!z) return null;
+        return { source, ...this.stats(z, pts) };
+      }
+    };
+
+    // ---------- Croisement tracé × obstacles de pmr-live-data × météo ----------
+    const PmrRoute = {
+      async weather(lat, lon) {
+        try {
+          const r = await fetchWithTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,rain,weather_code,wind_speed_10m&timezone=auto`, {}, 5000);
+          if (!r.ok) return null;
+          const c = (await r.json()).current; if (!c) return null;
+          return { wet: (c.precipitation || 0) > 0.1 || (c.rain || 0) > 0.1 || [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 71, 73, 75, 80, 81, 82, 85, 86, 95, 96, 99].includes(c.weather_code), ice: c.temperature_2m != null && c.temperature_2m <= 2, wind: c.wind_speed_10m || 0, temp: c.temperature_2m };
+        } catch { return null; }
+      },
+      // Renvoie des alertes au format de l'application ({id, kind, along, lat, lon, severity, short, voice})
+      intersect(geo, wx) {
+        if (!geo || geo.coords.length < 2) return [];
+        let minLa = 90, maxLa = -90, minLo = 180, maxLo = -180;
+        geo.coords.forEach(c => { minLa = Math.min(minLa, c[1]); maxLa = Math.max(maxLa, c[1]); minLo = Math.min(minLo, c[0]); maxLo = Math.max(maxLo, c[0]); });
+        const m = 0.0003, out = [], slippery = wx && (wx.wet || wx.ice);
+        PmrDataUpdater.store.forEach(f => {
+          const p = f.properties;
+          if (p.status === "ok" || !p.known) return;
+          const pts = f.geometry.type === "Point" ? [f.geometry.coordinates] : f.geometry.coordinates;
+          if (!pts.some(c => c[1] > minLa - m && c[1] < maxLa + m && c[0] > minLo - m && c[0] < maxLo + m)) return;
+          const lim = f.geometry.type === "Point" ? 12 : 7;
+          let best = null;
+          const step = Math.max(1, Math.floor(pts.length / 12));
+          for (let i = 0; i < pts.length; i += step) {
+            const q = projectOnRoute(geo, pts[i][1], pts[i][0]);
+            if (q.off <= lim && (!best || q.off < best.off)) best = { ...q, c: pts[i] };
+          }
+          if (!best) return;
+          let sev = p.status === "blocked" ? 3 : 2, why = p.reason || PMR_KIND_FR[p.kind] || "Passage difficile";
+          if (slippery && sev < 3 && (p.inclinePct != null || p.ramp || /pav|cobble|sett|dégrad|meuble|gravel|dirt|grass/i.test(why + (p.surface || "")))) { sev = 3; why += wx.ice ? " — risque de verglas" : " — sol glissant sous la pluie"; }
+          out.push({
+            id: "pmr:" + p.id, kind: "pmr-live", along: best.along, lat: best.c[1], lon: best.c[0], severity: sev, short: why,
+            voice: `Attention, ${why.charAt(0).toLowerCase() + why.slice(1)}.`
+          });
+        });
+        out.sort((a, b) => a.along - b.along);
+        return out.slice(0, 14);
+      }
+    };
+    // Appelé après analyzeRouteAhead : complète les alertes de l'itinéraire avec les données nationales
+    async function pmrAugmentRoute(route) {
+      try {
+        if (!route || VIEWER_ID || activeTransportTab === "car" || !route.coords || route.coords.length < 2) return;
+        await PmrDataUpdater.loadCorridor(route.coords);
+        if (currentRoute !== route) return;
+        const wx = navigator.onLine ? await PmrRoute.weather(route.coords[0][1], route.coords[0][0]) : null;
+        const live = PmrRoute.intersect(makeRouteGeo(route.coords), wx);
+        if (!live.length || currentRoute !== route) return;
+        const have = route.alerts || [];
+        const fresh = live.filter(a => !have.some(h => h.id === a.id || distanceMeters(h.lat, h.lon, a.lat, a.lon) < 15));   // déjà signalé par l'analyse OSM de l'appli
+        if (!fresh.length) return;
+        fresh.forEach(a => { a.id = a.id || (a.kind + ":" + Math.round(a.along / 10)); });
+        route.alerts = [...have, ...fresh].sort((a, b) => a.along - b.along);
+        if (route.analysis) route.analysis.live = fresh.length;
+        renderAlerts(route); drawAlertsOnMap(route); persistLastRoute();
+      } catch {}
+    }
+
+    // ---------- Routage PMR Valhalla + altimétrie + croisement + batterie ----------
+    // start / end : [lon, lat] ou {lat, lon}. userSettings : { largeur_cm, pente_max_pct, bordure_max_cm, eviter_paves }.
+    async function calculatePmrRoute(start, end, userSettings, opts) {
+      opts = opts || {};
+      const S = Object.assign(pmrSettings(), userSettings || {});
+      const pt = v => Array.isArray(v) ? { lon: v[0], lat: v[1] } : { lon: v.lon != null ? v.lon : v.lng, lat: v.lat };
+      const a = pt(start), b = pt(end);
+      const bordure = S.bordure_max_cm;
+      const payload = {
+        locations: [{ lat: a.lat, lon: a.lon, type: "break" }, { lat: b.lat, lon: b.lon, type: "break" }],
+        costing: "pedestrian",
+        costing_options: { pedestrian: {
+          type: "wheelchair",                                         // profil fauteuil de Valhalla (remplace « wheelchair: true », qui n'est pas une option valide)
+          max_grade: Math.max(1, Math.min(100, Math.round(S.pente_max_pct))),
+          step_penalty: bordure <= 2 ? 10000 : (bordure <= 5 ? 3000 : 400),   // pas d'option « use_steps » : la pénalité d'escalier est le levier réel
+          use_hills: S.pente_max_pct <= 5 ? 0.1 : (S.pente_max_pct <= 8 ? 0.3 : 0.5),
+          avoid_bad_surfaces: S.eviter_paves ? 1.0 : 0.5,             // pénalise pavés et sols irréguliers
+          walking_speed: profile === "manual" ? 4.0 : 5.5
+        } },
+        directions_options: { units: "kilometers", language: "fr-FR" }
+      };
+      const res = await fetchWithTimeout("https://valhalla1.openstreetmap.de/route?json=" + encodeURIComponent(JSON.stringify(payload)), {}, 12000);
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Erreur Valhalla " + res.status);
+      const leg = data.trip.legs[0], coords = decodePolyline6(leg.shape);
+      const distanceM = Math.round(data.trip.summary.length * 1000), durationS = Math.round(data.trip.summary.time);
+      const elev = await PmrElevation.profile(coords).catch(() => null);
+      await PmrDataUpdater.loadCorridor(coords).catch(() => {});
+      const wx = navigator.onLine ? await PmrRoute.weather(a.lat, a.lon) : null;
+      const alerts = PmrRoute.intersect(makeRouteGeo(coords), wx);
+      if (elev) elev.steep.filter(s => s.pct > S.pente_max_pct).forEach(s => alerts.push({ id: "pmr:slope:" + s.at[0].toFixed(5), kind: "pmr-live", along: 0, lat: s.at[1], lon: s.at[0], severity: 3, short: `Pente ${s.pct} % > ${S.pente_max_pct} %`, voice: `Attention, pente de ${Math.round(s.pct)} pour cent, au-dessus de votre limite.` }));
+      if (elev && opts.updateBattery !== false) battOnRoute(distanceM, elev.ascentM, b.lat, b.lon);      // met à jour le calculateur d'autonomie
+      if (opts.speak) { const n = alerts.filter(x => x.severity >= 3).length; if (n) speakFR(`${n} difficulté${n > 1 ? "s" : ""} importante${n > 1 ? "s" : ""} sur ce parcours.`, true); }
+      return { coords, distanceM, durationS, ascentM: elev ? elev.ascentM : null, descentM: elev ? elev.descentM : null, elevationSource: elev ? elev.source : null, weather: wx, alerts };
+    }
+
+    // ---------- Interface : carte « Données accessibilité » ----------
+    function pmrInitUI() {
+      try { PmrLayers.enabled = localStorage.getItem("gps_pmr_live_layer") !== "0"; } catch {}
+      const chk = document.getElementById("pmrLayerChk"); if (chk) { chk.checked = PmrLayers.enabled; chk.addEventListener("change", () => PmrLayers.setEnabled(chk.checked)); }
+      const btn = document.getElementById("pmrRefreshBtn"); if (btn) btn.addEventListener("click", () => PmrDataUpdater.refresh());
+      PmrLayers.init();
+      PmrDataUpdater.restoreFromCache().finally(() => { if (PmrLayers.enabled && navigator.onLine && map.getZoom() >= PMR_CFG.minZoom) PmrDataUpdater.loadView().catch(() => {}); });
+      map.on("moveend", () => PmrDataUpdater.scheduleMove());
+      window.addEventListener("online", () => PmrDataUpdater.scheduleMove());
+    }
+    window.PmrDataUpdater = PmrDataUpdater; window.PmrLayers = PmrLayers; window.calculatePmrRoute = calculatePmrRoute;
+    map.on("load", () => { if (!VIEWER_ID) pmrInitUI(); });
 
     map.on("load", () => {
       if (VIEWER_ID) { initViewer(); return; }
