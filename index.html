@@ -1009,6 +1009,73 @@
       .toolbar button.pill-bar, #fabLocate, .maplibregl-ctrl-group { background: rgba(248,250,252,.96) !important; }
       body.dark .toolbar button.pill-bar, body.dark #fabLocate, body.dark .maplibregl-ctrl-group { background: rgba(15,23,42,.96) !important; }
     }
+    /* =====================================================================
+       MODE MONTRE — Wear OS & écrans ronds : @media (max-width: 280px) ou ?mode=watch (classe body.watch-mode)
+       ===================================================================== */
+    #watchUI { display: none; }
+    .toolbar .tb-menu button.mobile-only { display: none; }
+    @media (max-width: 768px) { .toolbar .tb-menu button.mobile-only { display: inline-flex !important; } }
+    body.watch-forced #wScroll { left: 50%; right: auto; width: min(300px, 100vw); transform: translateX(-50%); border-left: 1px solid #1e293b; border-right: 1px solid #1e293b; }
+    @media (max-width: 280px) {
+    body { background: #000 !important; }
+    body #map, body .sidebar, body .floating-right, body .toolbar, body #fabLocate, body .legend, body #navHud, body #navSide, body #statusBox,
+    body .maplibregl-ctrl-top-right, body .maplibregl-ctrl-bottom-right, body .maplibregl-ctrl-bottom-left, body .viewer-card { display: none !important; }
+    body::after { display: none !important; }
+    body *, body *::before, body *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; text-shadow: none !important; box-shadow: none !important; animation: none !important; }
+    body #watchUI { display: block; position: fixed; inset: 0; z-index: 50; background: #000; color: #fff; }
+    body #wScroll { position: absolute; inset: 0; height: 100vh; height: 100dvh; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    body #wScroll::-webkit-scrollbar { display: none; }
+    body .w-card { height: 100vh; height: 100dvh; scroll-snap-align: start; scroll-snap-stop: always; padding: 14% 12%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; color: #fff; font-size: 18px; line-height: 1.25; }
+    body .w-h { margin: 0; font-size: 18px; font-weight: 800; color: #cbd5e1; }
+    body .w-arrow { width: 34vmin; height: 34vmin; max-width: 120px; max-height: 120px; flex: none; }
+    body .w-flag { font-size: 56px; line-height: 1; }
+    body .w-dist { font-size: 30px; font-weight: 900; line-height: 1.1; }
+    body .w-street { font-size: 18px; font-weight: 700; color: #e2e8f0; overflow-wrap: anywhere; }
+    body .w-sub, body .w-msg { font-size: 18px; color: #cbd5e1; min-height: 1.25em; overflow-wrap: anywhere; }
+    body .w-big { font-size: 56px; font-weight: 900; line-height: 1; }
+    body .w-big.low { color: #fb7185; }
+    body .w-btn { box-sizing: border-box; width: 100%; min-height: 52px; padding: 8px 16px; border-radius: 999px; border: 2px solid #475569; background: #0b0f17; color: #fff; font: 800 18px/1.15 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; cursor: pointer; -webkit-appearance: none; appearance: none; touch-action: manipulation; }
+    body .w-btn.warn { background: #f59e0b; border-color: #fff; color: #000; }
+    body .w-btn.sos { background: #dc2626; border-color: #fff; color: #fff; font-size: 20px; min-height: 60px; }
+    body .w-btn:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+    body .w-dots { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; }
+    body .w-dots i { width: 6px; height: 6px; border-radius: 50%; background: #475569; }
+    body #watchUI [hidden] { display: none !important; }
+    body .watch-bubble { display: none; }
+    }
+
+    body.watch-mode html, body.watch-mode, body.watch-mode body { background: #000 !important; }
+    body.watch-mode #map, body.watch-mode .sidebar, body.watch-mode .floating-right, body.watch-mode .toolbar, body.watch-mode #fabLocate, body.watch-mode .legend, body.watch-mode #navHud, body.watch-mode #navSide, body.watch-mode #statusBox,
+    body.watch-mode .maplibregl-ctrl-top-right, body.watch-mode .maplibregl-ctrl-bottom-right, body.watch-mode .maplibregl-ctrl-bottom-left, body.watch-mode .viewer-card { display: none !important; }
+    body.watch-mode::after { display: none !important; }
+    body.watch-mode *, body.watch-mode *::before, body.watch-mode *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; text-shadow: none !important; box-shadow: none !important; animation: none !important; }
+    body.watch-mode #watchUI { display: block; position: fixed; inset: 0; z-index: 50; background: #000; color: #fff; }
+    body.watch-mode #wScroll { position: absolute; inset: 0; height: 100vh; height: 100dvh; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    body.watch-mode #wScroll::-webkit-scrollbar { display: none; }
+    body.watch-mode .w-card { height: 100vh; height: 100dvh; scroll-snap-align: start; scroll-snap-stop: always; padding: 14% 12%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; color: #fff; font-size: 18px; line-height: 1.25; }
+    body.watch-mode .w-h { margin: 0; font-size: 18px; font-weight: 800; color: #cbd5e1; }
+    body.watch-mode .w-arrow { width: 34vmin; height: 34vmin; max-width: 120px; max-height: 120px; flex: none; }
+    body.watch-mode .w-flag { font-size: 56px; line-height: 1; }
+    body.watch-mode .w-dist { font-size: 30px; font-weight: 900; line-height: 1.1; }
+    body.watch-mode .w-street { font-size: 18px; font-weight: 700; color: #e2e8f0; overflow-wrap: anywhere; }
+    body.watch-mode .w-sub, body.watch-mode .w-msg { font-size: 18px; color: #cbd5e1; min-height: 1.25em; overflow-wrap: anywhere; }
+    body.watch-mode .w-big { font-size: 56px; font-weight: 900; line-height: 1; }
+    body.watch-mode .w-big.low { color: #fb7185; }
+    body.watch-mode .w-btn { box-sizing: border-box; width: 100%; min-height: 52px; padding: 8px 16px; border-radius: 999px; border: 2px solid #475569; background: #0b0f17; color: #fff; font: 800 18px/1.15 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; cursor: pointer; -webkit-appearance: none; appearance: none; touch-action: manipulation; }
+    body.watch-mode .w-btn.warn { background: #f59e0b; border-color: #fff; color: #000; }
+    body.watch-mode .w-btn.sos { background: #dc2626; border-color: #fff; color: #fff; font-size: 20px; min-height: 60px; }
+    body.watch-mode .w-btn:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+    body.watch-mode .w-dots { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; }
+    body.watch-mode .w-dots i { width: 6px; height: 6px; border-radius: 50%; background: #475569; }
+    body.watch-mode #watchUI [hidden] { display: none !important; }
+    body.watch-mode .watch-bubble { display: none; }
+
+    /* Bulle d'aide (alertes montre) */
+    .watch-bubble { position: fixed; z-index: 400; left: 50%; transform: translateX(-50%); bottom: calc(var(--sheet-h, 0px) + 16px + env(safe-area-inset-bottom, 0px)); width: min(420px, calc(100vw - 24px)); box-sizing: border-box;
+      padding: 14px 16px; border-radius: 20px; background: var(--lg-card-bg); border: var(--lg-card-border); box-shadow: var(--lg-card-shadow); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); color: var(--text); font-size: 15px; line-height: 1.4; }
+    .watch-bubble[hidden] { display: none; }
+    .watch-bubble button { margin-top: 10px; width: 100%; min-height: 44px; border-radius: 14px; }
+    body.watch-mode .watch-bubble { display: none !important; }
   </style>
 </head>
 <body>
@@ -1067,6 +1134,7 @@
         <button id="ecoBtn" class="pill-bar" onclick="toggleEcoGlass()" aria-pressed="false" aria-label="Mode éco-batterie : verre sombre sans flou" title="Éco-batterie (verre OLED sans flou)"><span class="ico">🔋</span><span class="lbl">Éco</span></button>
         <button class="pill-bar" onclick="refreshCurrentZone(true)" aria-label="Actualiser les lieux de cette zone" title="Actualiser la zone (R)"><span class="ico">🔄</span><span class="lbl">Cette zone</span></button>
         <button id="installBtn" class="pill-bar install-btn" onclick="installApp()" aria-label="Installer l'application sur cet appareil" title="Installer l'application"><span class="ico">📲</span><span class="lbl">Installer</span></button>
+        <button id="watchAlertBtn2" class="pill-bar mobile-only" onclick="toggleWatchAlerts()" aria-pressed="false" aria-label="Alertes montre : relayer le guidage par notifications" title="Alertes montre"><span class="ico">⌚</span><span class="lbl">Alertes montre</span></button>
         <button class="pill-bar" onclick="openHelp()" aria-label="Aide et raccourcis clavier" title="Raccourcis (?)"><span class="ico">⌨️</span><span class="lbl">Aide</span></button>
       </div>
     </div>
@@ -1203,8 +1271,49 @@
     </table>
     <div class="sub ios-tip" style="margin-bottom:10px;">📲 iPhone / iPad : touchez <b>Partager</b> puis <b>Sur l'écran d'accueil</b> pour utiliser l'appli en plein écran.</div>
     <div class="sub" style="margin-bottom:12px;">Sur mobile : faites glisser la poignée du panneau pour l'agrandir ou le réduire.</div>
+    <div class="sub" style="margin-bottom:6px;"><b>⌚ Montre connectée</b> — le mode montre s'active tout seul sur un écran de 280 px ou moins (ou avec <code>?mode=watch</code>).</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+      <button type="button" onclick="previewWatchMode(true)">⌚ Aperçu Mode Montre</button>
+      <button type="button" onclick="testWatchAlert()">🔔 Tester alerte montre</button>
+    </div>
     <button class="primary" onclick="document.getElementById('helpDlg').close()" style="width:100%;">Fermer</button>
   </dialog>
+  <!-- MODE MONTRE : 4 cartes plein écran (Wear OS / écrans ≤ 280 px ou ?mode=watch). Masqué hors de ce mode. -->
+  <div id="watchUI" role="application" aria-label="Mode montre GPS PMR">
+    <div id="wScroll">
+      <section class="w-card" id="wCard1" aria-label="Guidage pas à pas">
+        <svg id="wArrow" class="w-arrow" viewBox="0 0 100 100" aria-hidden="true"><g id="wArrowG"><path d="M50 8 L82 46 H62 V92 H38 V46 H18 Z" fill="#fff"/></g></svg>
+        <div id="wFlag" class="w-flag" hidden>🏁</div>
+        <div id="wDist" class="w-dist">—</div>
+        <div id="wStreet" class="w-street">Aucun guidage</div>
+        <div id="wEta" class="w-sub"></div>
+        <button id="wStart" class="w-btn" type="button" onclick="startGuidance(false)" hidden>▶ Démarrer</button>
+        <button id="wStop" class="w-btn" type="button" onclick="stopGuidance()" hidden>⏹ Arrêter</button>
+      </section>
+      <section class="w-card" id="wCard2" aria-label="Lieux PMR les plus proches">
+        <h2 class="w-h">Lieux PMR proches</h2>
+        <button class="w-btn" type="button" onclick="watchGoNearest('toilet')">🚻 Toilettes PMR</button>
+        <button class="w-btn" type="button" onclick="watchGoNearest('parking')">🅿 Place PMR</button>
+        <button class="w-btn" type="button" onclick="watchGoNearest('pharmacy')">💊 Pharmacie</button>
+        <div id="wNearMsg" class="w-msg" role="status" aria-live="polite"></div>
+      </section>
+      <section class="w-card" id="wCard3" aria-label="État du fauteuil et signalement">
+        <h2 class="w-h">🔋 Fauteuil</h2>
+        <div id="wBatt" class="w-big">--</div>
+        <div id="wBattKm" class="w-sub"></div>
+        <button class="w-btn warn" type="button" onclick="watchReportObstacle()">⚠ Obstacle ici</button>
+        <div id="wObsMsg" class="w-msg" role="status" aria-live="polite"></div>
+      </section>
+      <section class="w-card" id="wCard4" aria-label="Urgence SOS">
+        <a id="wSos" class="w-btn sos" href="tel:112" onclick="wVibrate([300,100,300])">🆘 SOS / 112</a>
+        <button class="w-btn" type="button" onclick="watchSharePosition()">📍 Partager ma position</button>
+        <div id="wSosMsg" class="w-msg" role="status" aria-live="polite"></div>
+        <button id="wQuit" class="w-btn" type="button" onclick="previewWatchMode(false)" hidden>✕ Quitter l'aperçu</button>
+      </section>
+    </div>
+    <div class="w-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div id="watchBubble" class="watch-bubble" role="status" hidden></div>
   <aside class="sidebar" role="region" aria-label="Panneau de navigation et pratiques PMR">
     <div class="sheet-handle" id="sheetHandle" role="separator" aria-label="Poignée : faire glisser pour agrandir ou réduire le panneau" tabindex="0"><i></i></div>
     <div class="row between sheet-header" id="sheetHeader">
@@ -1367,6 +1476,9 @@
           </div>
           <button id="pmrVoiceBtn" class="pmr-toggle" type="button" role="switch" aria-checked="true" onclick="togglePmrVoice()">
             <span class="pmr-ico" aria-hidden="true">🔊</span><span class="pmr-txt">Guidage vocal PMR<small id="pmrVoiceHint">Annonce directions, bateaux de trottoir et pentes</small></span><span class="pmr-sw" aria-hidden="true"><i></i></span>
+          </button>
+          <button id="watchAlertBtn" class="pmr-toggle" type="button" role="switch" aria-checked="false" onclick="toggleWatchAlerts()">
+            <span class="pmr-ico" aria-hidden="true">⌚</span><span class="pmr-txt">Alertes Montre (Notifications)<small id="watchAlertHint">Guidage relayé sur Apple Watch / Wear OS</small></span><span class="pmr-sw" aria-hidden="true"><i></i></span>
           </button>
           <details class="card" style="padding:8px 10px;">
             <summary class="sub" style="cursor:pointer; font-weight:700;">⚙️ Mon fauteuil (réglages)</summary>
@@ -2097,6 +2209,7 @@
         meState.lat = from.lat + (lat - from.lat) * t;
         meState.lon = from.lon + (lon - from.lon) * t;
         meState.heading = (from.h + dh * t + 360) % 360;
+        if (!meMarker) { meAnim = null; return; }          // la flèche a été retirée pendant l'animation (fin de simulation)
         meMarker.setLngLat([meState.lon, meState.lat]).setRotation(meState.heading);
         meAnim = t < 1 ? requestAnimationFrame(frame) : null;
       };
@@ -2490,6 +2603,7 @@
       if (nav.stepIdx !== prevIdx) {
         const done = steps[nav.stepIdx];
         const nextStart = nav.stepStarts[nav.stepIdx + 1];
+        { const n = steps[nav.stepIdx + 1], dd = nextStart != null ? nextStart - nav.progress : 0; if (n && dd > 250) watchStepNotify(n, dd); }   // long tronçon : la montre est prévenue de la prochaine consigne
         if (done && done.verbalPost && nextStart != null && nextStart - nav.progress > 150) {
           speakFR(done.verbalPost, queue);
         }
@@ -2504,11 +2618,13 @@
         if (crossed.length) {
           crossed.forEach(t => nav.spoken.add(next + ":" + t));
           if (dist > nowDistance()) speakFR(`Dans ${distanceWords(dist)}, ${lowerFirst(steps[next].instruction)}`, queue);
+          if (crossed.includes(guidanceTiers()[1])) watchStepNotify(steps[next], dist);
         }
         if (dist <= nowDistance() && !nav.spoken.has(next + ":now")) {
           nav.spoken.add(next + ":now");
           speakFR(steps[next].instruction);
-          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(150);
+          if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(150);
+          watchStepNotify(steps[next], 0);
         }
       } else if (next === lastIdx) {
         // Dernière « manœuvre » = arrivée : un rappel à 50 m
@@ -2529,6 +2645,7 @@
           speakFR(`${lead} Dans ${distanceWords(nd)}, ${what}`, true);
         }
       }
+      watchBatteryLive();
       updateHud();
     }
     // ===== GUIDANCE-CORE-END =====
@@ -2559,6 +2676,7 @@
     // Affichage minimal pendant le guidage : consigne à venir, distance, durée restante
     function updateHud() {
       if (!nav || !currentRoute) return;
+      try { if (watchMode) watchUpdateGuide(); } catch {}
       const hud = document.getElementById("navHud");
       const steps = currentRoute.steps;
       const next = Math.min(nav.stepIdx + 1, steps.length - 1);
@@ -2609,7 +2727,8 @@
       if (!simActive) onArrivedSafety();
       stopSimulation();
       speakFR("Vous êtes arrivé à destination.");
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+      sendWatchGuidanceNotification("🏁 Arrivé", "Vous êtes arrivé à destination.", "gps-pmr-step");
       updateHud();
       clearTimeout(arriveTimer);
       arriveTimer = setTimeout(() => { if (nav && nav.arrived) stopGuidance(); }, 12000);
@@ -3678,7 +3797,8 @@
         if (ahead <= 45 && ahead > -10) {
           nav.spoken.add(key);
           speakFR(list[i].voice, true);
-          if (list[i].severity >= 3 && navigator.vibrate) navigator.vibrate([120, 80, 120]);
+          if (list[i].severity >= 3 && "vibrate" in navigator) navigator.vibrate([120, 80, 120]);
+          watchAlertNotify(list[i]);
           break;                                                  // une alerte à la fois
         } else if (ahead <= -10) nav.spoken.add(key);            // déjà dépassée
       }
@@ -6203,6 +6323,8 @@
       if (!simulated && safety.autoShare && getSupabaseConfig().enabled && !live.active) { live.auto = true; startLiveShare("moving"); }
       const steps = currentRoute.steps;
       const first = steps[0] ? steps[0].instruction : "Suivez l'itinéraire";
+      watchBattWarned = false;
+      sendWatchGuidanceNotification("🧭 Guidage démarré", first, "gps-pmr-step");
 
       if (simulated) {
         startSimulation();
@@ -6240,6 +6362,7 @@
       stopBackgroundKeepAlive();
       stopNativeBackgroundLocation();
       cancelSpeech();
+      watchClearNotifications();
       gpsHealthStop(); navPaused = false; favSwitch.pending = false; clearTimeout(favSwitch.timer);
       releaseWakeLock();
       document.body.classList.remove("nav-mode");   // réaffiche les menus
@@ -8497,6 +8620,7 @@
       batt.range = r > 3 && r < 200 ? r : 40;
       batt.reserve = s >= 0 && s <= 60 ? s : 15;
       battSave(); battRender();
+      try { watchBatteryCheck(); watchUpdateBatt(); } catch {}
     }
     function battOnRoute(distM, ascentM, destLat, destLon) {
       battLast = { km: distM / 1000, ascentM: ascentM || 0, tour: false, lat: destLat, lon: destLon, label: "Ce trajet" };
@@ -9115,6 +9239,237 @@
           try { localStorage.setItem("gps_pmr_ios_hint", "1"); } catch {}
         }, 8000);
       } catch {}
+    })();
+
+
+    // =====================================================================
+    // ⌚ MODE MONTRE (Wear OS, écrans ≤ 280 px, ?mode=watch) + ALERTES NOTIFICATIONS (Apple Watch / Wear OS)
+    // =====================================================================
+    let watchMode = false, watchForced = false, watchLastStep = -1, watchTimer = 0, watchBattWarned = false;
+    const WATCH_KEY = "gps_pmr_watch_alerts";
+    const watchAlerts = { on: false };
+    const wEl = id => document.getElementById(id);
+    const wVibrate = pat => { try { if ("vibrate" in navigator) navigator.vibrate(pat); } catch {} };
+    const wSleep = ms => new Promise(r => setTimeout(r, ms));
+    const wDistTxt = d => d >= 1000 ? (d / 1000).toFixed(1).replace(".", ",") + " km" : Math.max(0, Math.round(d)) + " m";
+
+    function setWatchMode(on, forced) {
+      watchMode = !!on; watchForced = !!(on && forced);
+      document.body.classList.toggle("watch-mode", watchMode);
+      document.body.classList.toggle("watch-forced", watchForced);
+      const q = wEl("wQuit"); if (q) q.hidden = !watchForced;
+      try { const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", watchMode ? "#000000" : "#0b1120"); } catch {}
+      clearInterval(watchTimer); watchTimer = 0;
+      if (watchMode) {
+        watchTimer = setInterval(() => { try { watchUpdateGuide(); watchUpdateBatt(); } catch {} }, 1500);
+        try { watchUpdateGuide(); watchUpdateBatt(); } catch {}
+        try { const sc = wEl("wScroll"); if (sc) sc.scrollTo({ top: 0 }); } catch {}
+      } else setTimeout(() => { try { map.resize(); } catch {} }, 80);
+    }
+    // Bouton « Aperçu Mode Montre » : bascule ?mode=watch sans recharger
+    function previewWatchMode(on) {
+      try { const u = new URL(location.href); if (on) u.searchParams.set("mode", "watch"); else u.searchParams.set("mode", "phone"); history.replaceState(null, "", u.pathname + u.search + u.hash); } catch {}
+      setWatchMode(!!on, !!on);
+      if (on) { try { const d = wEl("helpDlg"); if (d && d.open) d.close(); } catch {} try { toggleSettingsMenu(false); } catch {} }
+    }
+    (function watchInit() {
+      let mode = null; try { mode = new URLSearchParams(location.search).get("mode"); } catch {}
+      const mq = window.matchMedia ? matchMedia("(max-width: 280px)") : null;
+      const apply = () => { if (mode === "phone") { setWatchMode(false, false); return; } setWatchMode(mode === "watch" || !!(mq && mq.matches), mode === "watch"); };
+      apply();
+      if (mq) { if (mq.addEventListener) mq.addEventListener("change", apply); else if (mq.addListener) mq.addListener(apply); }
+    })();
+
+    // ---- Carte 1 : guidage pas à pas ----
+    function watchArrowDeg(step) {
+      const t = step && step.type, map = { 9: 45, 10: 90, 11: 135, 12: 180, 13: 180, 14: -135, 15: -90, 16: -45 };
+      if (map[t] != null) return map[t];
+      const s = ((step && step.instruction) || "").toLowerCase();
+      if (/demi-tour/.test(s)) return 180;
+      if (/gauche/.test(s)) return /l[ée]g[èe]rement/.test(s) ? -45 : -90;
+      if (/droite/.test(s)) return /l[ée]g[èe]rement/.test(s) ? 45 : 90;
+      return 0;
+    }
+    function watchUpdateGuide() {
+      if (!wEl("wArrow")) return;
+      const arrow = wEl("wArrow"), flag = wEl("wFlag"), start = wEl("wStart"), stop = wEl("wStop");
+      const setTxt = (d, st, eta) => { wEl("wDist").textContent = d; wEl("wStreet").textContent = st; wEl("wEta").textContent = eta || ""; };
+      if (isNavigating && nav && currentRoute) {
+        const steps = currentRoute.steps, next = Math.min(nav.stepIdx + 1, steps.length - 1), st = steps[next];
+        const dist = Math.max(0, Math.round(nav.stepStarts[next] - nav.progress)), remaining = Math.max(0, nav.geo.total - nav.progress);
+        const mins = Math.max(1, Math.round((currentRoute.timeSec || 0) * (remaining / Math.max(1, nav.geo.total)) / 60));
+        stop.hidden = false; start.hidden = true;
+        if (nav.arrived) { arrow.style.display = "none"; flag.hidden = false; setTxt("Arrivé", currentRoute.destName || "", ""); return; }
+        if (nav.rerouting) { arrow.style.display = "none"; flag.hidden = true; setTxt("Recalcul…", "Vous vous éloignez du tracé", ""); return; }
+        const last = next >= steps.length - 1 || (st && (st.type === 4 || st.type === 5 || st.type === 6));
+        arrow.style.display = last ? "none" : ""; flag.hidden = !last;
+        const g = wEl("wArrowG"); if (g) g.setAttribute("transform", `rotate(${watchArrowDeg(st)} 50 50)`);
+        // bateau de trottoir / pente à venir : « 35 m — Bateau trottoir »
+        let head = wDistTxt(dist);
+        const list = currentRoute.alerts || [];
+        for (const a of list) { const ahead = a.along - nav.progress; if (ahead > 80) break; if (ahead > -25) { head = `${ahead > 0 ? wDistTxt(Math.max(5, Math.round(ahead / 5) * 5)) : "Ici"} — ${String(a.short || "").replace(/^[^\p{L}\p{N}]+/u, "")}`; break; } }
+        setTxt(head, (st && (st.street ? st.street : st.instruction)) || "", `${mins} min`);
+        if (nav.stepIdx !== watchLastStep) { if (watchLastStep !== -1) { wVibrate([200, 100, 200]); if (st) speakFR(st.instruction, true); } watchLastStep = nav.stepIdx; }
+      } else {
+        watchLastStep = -1; stop.hidden = true; flag.hidden = true; arrow.style.display = "none";
+        start.hidden = !currentRoute;
+        setTxt(currentRoute ? "Prêt" : "—", currentRoute ? (currentRoute.destName || "Itinéraire calculé") : "Aucun guidage", currentRoute ? "" : "Glissez vers le bas pour choisir un lieu");
+      }
+    }
+
+    // ---- Carte 2 : lieu PMR le plus proche en 1 tap ----
+    function watchPickNearest(cat, pos) {
+      const list = (typeof allPlaces !== "undefined" ? allPlaces : []).filter(p => p && p.cat === cat && isFinite(p.lat) && isFinite(p.lon) && p.access !== "no");
+      const rank = p => p.access === "yes" ? 0 : p.access === "limited" ? 1 : 2;
+      let best = null, bd = 0;
+      for (const tier of [0, 1, 2]) {
+        for (const p of list) if (rank(p) === tier) { const d = geoDist(pos.lat, pos.lon, p.lat, p.lon); if (!best || d < bd) { best = p; bd = d; } }
+        if (best) return { p: best, d: bd };
+      }
+      return null;
+    }
+    async function watchGoNearest(cat) {
+      const msg = wEl("wNearMsg"), ico = { toilet: "🚻", parking: "🅿", pharmacy: "💊" }[cat] || "📍";
+      const pos = currentPosition() || userPos;
+      if (!pos) { msg.textContent = "Position GPS en attente…"; wVibrate([400]); return; }
+      let r = watchPickNearest(cat, pos);
+      if (!r) {
+        msg.textContent = "Chargement de la zone…";
+        try { refreshCurrentZone(true); } catch {}
+        for (let i = 0; i < 20 && !r; i++) { await wSleep(500); r = watchPickNearest(cat, pos); }
+      }
+      if (!r) { msg.textContent = "Aucun lieu trouvé près de vous"; wVibrate([400]); return; }
+      msg.textContent = `${ico} ${r.p.name || ""} — ${wDistTxt(r.d)}`;
+      wVibrate([100]);
+      let ok = false; try { ok = await routeTo(r.p.lat, r.p.lon, r.p.name || "Lieu PMR"); } catch {}
+      if (!ok) { msg.textContent = "Itinéraire impossible"; wVibrate([400]); return; }
+      try { startGuidance(false); } catch {}
+      try { wEl("wScroll").scrollTo({ top: 0, behavior: "smooth" }); } catch {}
+    }
+
+    // ---- Carte 3 : batterie + « Obstacle ici » ----
+    function watchUpdateBatt() {
+      const el = wEl("wBatt"); if (!el || typeof batt === "undefined") return;
+      const pct = batt.pct;
+      if (pct == null || isNaN(pct)) { el.textContent = "--"; el.className = "w-big"; wEl("wBattKm").textContent = "À régler sur le téléphone"; return; }
+      el.textContent = Math.round(pct) + " %"; el.className = "w-big" + (pct <= batt.reserve ? " low" : "");
+      const km = Math.max(0, pct / 100 * batt.range);
+      wEl("wBattKm").textContent = `≈ ${km.toFixed(km < 10 ? 1 : 0).replace(".", ",")} km d'autonomie`;
+    }
+    async function watchReportObstacle() {
+      const msg = wEl("wObsMsg"), pos = currentPosition() || userPos;
+      if (!pos) { msg.textContent = "GPS indisponible"; wVibrate([400]); return; }
+      wVibrate([200, 100, 200]);
+      try {
+        await reportObstacleAtCenter({ pos: { lat: pos.lat, lon: pos.lon }, desc: "Obstacle signalé depuis la montre", category: "Obstacle signalé" });
+        msg.textContent = "✅ Obstacle enregistré"; speakFR("Obstacle enregistré.", true, { force: true });
+      } catch { msg.textContent = "Échec de l'enregistrement"; }
+    }
+
+    // ---- Carte 4 : SOS ----
+    async function watchSharePosition() {
+      const msg = wEl("wSosMsg"), p = sosPosition(), la = p.lat.toFixed(5), lo = p.lon.toFixed(5);
+      const text = `🆘 Besoin d'aide (GPS PMR). Ma position : https://www.openstreetmap.org/?mlat=${la}&mlon=${lo}#map=18/${la}/${lo}`;
+      wVibrate([200, 100, 200]);
+      if (navigator.share) { try { await navigator.share({ title: "Besoin d'aide — GPS PMR", text }); msg.textContent = "✅ Position partagée"; return; } catch (e) { if (e && e.name === "AbortError") return; } }
+      const ok = await copyTextSafe(text); msg.textContent = ok ? "📋 Position copiée" : "Partage impossible";
+    }
+
+    // ---------------------------------------------------------------------
+    // 🔔 Alertes montre : notifications via le Service Worker (relayées par iOS vers l'Apple Watch, par Android vers Wear OS)
+    // ---------------------------------------------------------------------
+    function watchBubble(html, ms = 14000) {
+      const b = wEl("watchBubble"); if (!b) return;
+      b.innerHTML = html + '<button type="button" class="primary" onclick="this.parentNode.hidden = true">J\'ai compris</button>'; b.hidden = false;
+      clearTimeout(watchBubble._t); watchBubble._t = setTimeout(() => { b.hidden = true; }, ms);
+    }
+    function refreshWatchAlertUI() {
+      const on = !!watchAlerts.on;
+      const t = wEl("watchAlertBtn"); if (t) t.setAttribute("aria-checked", on ? "true" : "false");
+      const p = wEl("watchAlertBtn2"); if (p) p.setAttribute("aria-pressed", on ? "true" : "false");
+      const h = wEl("watchAlertHint"); if (h) h.textContent = on ? "Actif : consignes, pentes et batterie envoyées à la montre" : "Guidage relayé sur Apple Watch / Wear OS";
+    }
+    function setWatchAlerts(on) { watchAlerts.on = !!on; try { localStorage.setItem(WATCH_KEY, on ? "1" : "0"); } catch {} refreshWatchAlertUI(); }
+    async function toggleWatchAlerts() {
+      if (watchAlerts.on) { setWatchAlerts(false); watchClearNotifications(); setStatus("🔕 Alertes montre désactivées.", "info"); return false; }
+      if (!("Notification" in window) || !("serviceWorker" in navigator)) { setStatus("🔕 Ce navigateur n'envoie pas de notifications : les alertes montre ne sont pas disponibles.", "warn"); watchBubble("🔕 Ce navigateur ne permet pas les notifications. Essayez Chrome (Android) ou Safari avec l'appli installée (iPhone)."); return false; }
+      // iPhone : les notifications web n'existent que pour une appli ajoutée à l'écran d'accueil
+      if (isIOSDevice() && !isStandaloneApp()) { watchBubble("📲 Sur iPhone, touchez <b>Partager</b> → <b>Sur l'écran d'accueil</b> pour recevoir le guidage sur votre Apple Watch."); return false; }
+      let perm = Notification.permission;
+      if (perm === "default") { try { perm = await Notification.requestPermission(); } catch { perm = "denied"; } }   // uniquement sur action de l'utilisateur
+      if (perm !== "granted") { setWatchAlerts(false); setStatus("🔕 Notifications refusées : autorisez-les dans les réglages du navigateur.", "warn"); return false; }
+      setWatchAlerts(true);
+      setStatus("⌚ Alertes montre activées.", "ok");
+      sendWatchGuidanceNotification("⌚ Alertes montre activées", "Les consignes de guidage arriveront sur votre poignet.", "gps-pmr-info");
+      return true;
+    }
+    async function sendWatchGuidanceNotification(title, body, tag, opts) {
+      opts = opts || {};
+      if (!watchAlerts.on && !opts.force) return false;
+      try {
+        if (!("Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) return false;
+        const reg = await navigator.serviceWorker.ready;
+        const icon = new URL("icons/icon-192.png", location.href).href;          // = /GPS_PMR/icons/icon-192.png une fois en ligne
+        await reg.showNotification(title, {
+          body, tag: tag || "gps-pmr-step", renotify: true, icon, badge: icon, lang: "fr",
+          vibrate: [250, 100, 250], silent: false,
+          actions: [{ action: "next-step", title: "Étape suivante" }, { action: "stop-gps", title: "Arrêter" }],
+          data: { url: location.href.split("#")[0].split("?")[0], t: Date.now() }
+        });
+        return true;
+      } catch { return false; }
+    }
+    function watchStepNotify(step, dist) {
+      if (!watchAlerts.on || !step) return;
+      const ico = (typeof maneuverIcon === "function") ? maneuverIcon(step) : "🧭";
+      sendWatchGuidanceNotification(dist > 5 ? `${ico} Dans ${wDistTxt(dist)}` : `${ico} Maintenant`, step.instruction || "Continuez", "gps-pmr-step");
+    }
+    function watchAlertNotify(a) { if (watchAlerts.on && a) sendWatchGuidanceNotification("⚠️ " + (a.short || "Attention"), a.voice || a.short || "", "gps-pmr-alert"); }
+    function watchBatteryCheck() {
+      if (typeof batt === "undefined" || batt.pct == null) return;
+      if (batt.pct > batt.reserve) { watchBattWarned = false; return; }
+      if (watchBattWarned) return; watchBattWarned = true;
+      sendWatchGuidanceNotification("🔋 Batterie sous la réserve", `Il reste ${Math.round(batt.pct)} % (réserve ${batt.reserve} %). Pensez à recharger.`, "gps-pmr-batt");
+    }
+    function watchBatteryLive() {        // batterie estimée en cours de guidage (charge saisie − consommation du trajet déjà parcouru)
+      try {
+        if (!nav || typeof batt === "undefined" || batt.pct == null || watchBattWarned) return;
+        const est = batt.pct - (nav.progress / 1000) / Math.max(3, batt.range) * 100;
+        if (est > batt.reserve) return;
+        watchBattWarned = true; wVibrate([250, 100, 250]);
+        speakFR(`Attention, la batterie du fauteuil approche de la réserve : environ ${Math.max(0, Math.round(est))} pour cent.`, true);
+        sendWatchGuidanceNotification("🔋 Batterie sous la réserve", `Environ ${Math.max(0, Math.round(est))} % restants (réserve ${batt.reserve} %).`, "gps-pmr-batt");
+      } catch {}
+    }
+    async function watchClearNotifications() {
+      try { if (!("serviceWorker" in navigator)) return; const reg = await navigator.serviceWorker.getRegistration(); if (!reg || !reg.getNotifications) return;
+        for (const n of await reg.getNotifications()) if (/^gps-pmr-(step|alert|batt)/.test(n.tag || "")) n.close(); } catch {}
+    }
+    // Actions des boutons de la notification (voir `notificationclick` dans sw.js)
+    function watchAction(action) {
+      if (action === "stop-gps") { if (isNavigating) { stopGuidance(); setStatus("⏹ Guidage arrêté depuis la montre.", "info"); } return; }
+      if (action === "next-step") {
+        if (!isNavigating || !nav || !currentRoute) return;
+        const steps = currentRoute.steps, j = Math.min(nav.stepIdx + 2, steps.length - 1), st = steps[j];
+        if (!st) return;
+        const d = Math.max(0, Math.round(nav.stepStarts[j] - nav.progress)), txt = `Puis, dans ${wDistTxt(d)} : ${st.instruction}`;
+        speakFR(txt, false, { force: true });
+        sendWatchGuidanceNotification("➡️ Étape suivante", txt, "gps-pmr-step");
+      }
+    }
+    if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { const d = e.data || {}; if (d.type === "watch-action") watchAction(d.action); });
+    // Bouton « Tester alerte montre »
+    async function testWatchAlert() {
+      try { const d = wEl("helpDlg"); if (d && d.open) d.close(); } catch {}
+      wVibrate([200, 100, 200]);
+      if (!watchAlerts.on) { const ok = await toggleWatchAlerts(); if (!ok) return; }
+      const sent = await sendWatchGuidanceNotification("🧭 GPS PMR — test", "Dans 30 m : Bateau de trottoir à droite", "gps-pmr-step", { force: true });
+      setStatus(sent ? "🔔 Alerte de test envoyée : regardez votre montre." : "🔕 Impossible d'envoyer la notification (autorisation ou Service Worker absent).", sent ? "ok" : "warn");
+      if (watchMode) { const m = wEl("wNearMsg"); if (m) m.textContent = sent ? "🔔 Test envoyé" : "Notification impossible"; }
+    }
+    (function watchAlertsRestore() {
+      try { if (localStorage.getItem(WATCH_KEY) === "1" && "Notification" in window && Notification.permission === "granted") watchAlerts.on = true; } catch {}
+      refreshWatchAlertUI();
     })();
 
     map.on("load", () => {

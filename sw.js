@@ -10,7 +10,7 @@
 // Les requêtes POST (Overpass, Valhalla, Supabase écriture) ne passent jamais par le cache ; l'application mémorise
 // elle-même lieux et dernier itinéraire (IndexedDB / localStorage).
 
-const APP_CACHE  = "gps-pmr-app-v5";
+const APP_CACHE  = "gps-pmr-app-v6";
 const TILE_CACHE = "gps-pmr-tiles-v1";
 const DATA_CACHE = "gps-pmr-data-v1";
 const MAX_TILES = 2500;
@@ -121,4 +121,21 @@ self.addEventListener("fetch", event => {
       return hit || (await net) || Response.error();
     })());
   }
+});
+
+
+// ===== Alertes montre : actions des notifications (Étape suivante / Arrêter) =====
+// La page ouverte reçoit l'action par postMessage ; sans page ouverte, un simple clic ouvre l'appli.
+self.addEventListener("notificationclick", event => {
+  const action = event.action || "";
+  event.notification.close();
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    wins.forEach(c => { try { c.postMessage({ type: "watch-action", action: action || "open", tag: event.notification.tag }); } catch (e) {} });
+    if (action === "next-step" || action === "stop-gps") return;                    // actions silencieuses : pas besoin de rouvrir l'appli
+    const target = (event.notification.data && event.notification.data.url) || self.registration.scope;
+    const visible = wins.find(c => "focus" in c);
+    if (visible) { try { return await visible.focus(); } catch (e) {} }
+    return self.clients.openWindow(target);
+  })());
 });
