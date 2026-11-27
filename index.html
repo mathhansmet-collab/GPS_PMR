@@ -757,6 +757,23 @@
       .sidebar .scroll-area { padding-bottom: 16px; }
     }
     @media (prefers-reduced-motion: reduce) { .sidebar, .route-planner, .mode-shell, .card, button { transition: none !important; } }
+
+    /* ===== Cartes de filtres (onglet Pratiques PMR) ===== */
+    #tabDirectory { gap: 22px; }
+    .lg-group { display: flex; flex-direction: column; gap: 12px; }
+    .lg-title { margin: 0; font-size: 15px; font-weight: 800; letter-spacing: .01em; color: var(--text); line-height: 1.2; }
+    .lg-group .chip-wrap { gap: 8px; }
+    .lg-group #dirAccessChips { margin-top: 0; }
+    /* les filtres détaillés passent à la ligne (plus de défilement caché) */
+    .lg-group #dirFineChips { flex-wrap: wrap; overflow: visible; padding-bottom: 0; }
+    .lg-group #dirFineNote { margin: 0; }
+    .lg-group #dirFineChips.fine-stack { display: flex; flex-direction: column; gap: 12px; overflow: visible; padding: 0; }
+    .lg-group .fine-row { gap: 8px; }
+
+    /* ===== Batterie du fauteuil : 3 champs alignés ===== */
+    .batt-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: end; }
+    .batt-fields label { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; min-width: 0; line-height: 1.25; }
+    .sidebar .batt-fields input, .batt-fields input { height: 44px; min-height: 44px !important; width: 100%; box-sizing: border-box; padding: 0 10px; text-align: center; }
   </style>
 </head>
 <body>
@@ -1047,11 +1064,11 @@
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
           <div class="batt-fields">
             <label class="sub">Charge actuelle (%)<input id="battPct" type="number" min="0" max="100" inputmode="numeric" placeholder="ex. 70" oninput="battChanged()" /></label>
-            <label class="sub">Autonomie à 100 % (km)<input id="battRange" type="number" min="5" max="150" inputmode="numeric" oninput="battChanged()" /></label>
+            <label class="sub">Autonomie max (km)<input id="battRange" type="number" min="5" max="150" inputmode="numeric" oninput="battChanged()" /></label>
             <label class="sub">Réserve de sécurité (%)<input id="battReserve" type="number" min="0" max="60" inputmode="numeric" oninput="battChanged()" /></label>
           </div>
           <div class="batt-slot" data-empty="1"></div>
-          <div class="sub">Estimation indicative (distance + dénivelé). Elle dépend de votre fauteuil, de votre poids, du revêtement et de la température : ajustez « Autonomie à 100 % » d'après votre expérience.</div>
+          <div class="sub">Estimation indicative (distance + dénivelé). Elle dépend de votre fauteuil, de votre poids, du revêtement et de la température : ajustez « Autonomie max » d'après votre expérience.</div>
         </div>
       </details>
 
@@ -1232,38 +1249,49 @@
 
       <input id="dirSearch" placeholder="🔍 Filtrer dans cette ville (lieu, rue, bar, salle, tram…)" aria-label="Filtrer les lieux pratiques PMR" oninput="debouncedDirectorySearch()" />
 
-      <div class="chip-wrap" id="dirCatChips">
-        <button class="chip active" onclick="setDirCategory('all', this)">Tout</button>
-        <button class="chip" onclick="setDirCategory('parking', this)">🅿️ Parkings</button>
-        <button class="chip" onclick="setDirCategory('toilet', this)">🚻 Toilettes PMR</button>
-        <button class="chip" onclick="setDirCategory('tram', this)">🚊 Tram / Gares</button>
-        <button class="chip" onclick="setDirCategory('bus', this)">🚌 Bus</button>
-        <button class="chip" onclick="setDirCategory('restaurant', this)">🍽️ Restos</button>
-        <button class="chip" onclick="setDirCategory('bar', this)">🍻 Bars adaptés</button>
-        <button class="chip" onclick="setDirCategory('venue', this)">🎭 Salles adaptées</button>
-        <button class="chip" onclick="setDirCategory('pharmacy', this)">💊 Pharmacies</button>
-        <button class="chip" onclick="setDirCategory('medical', this)">🩺 Médecins</button>
-        <button class="chip" onclick="setDirCategory('market', this)">🛒 Supermarchés</button>
-        <button class="chip" onclick="setDirCategory('admin', this)">🏛️ Administrations</button>
-      </div>
+      <!-- CARTE LIQUID GLASS : BÂTIMENTS -->
+      <section class="card lg-group" id="dirBuildingsCard" aria-labelledby="dirBuildingsTitle">
+        <h2 class="lg-title" id="dirBuildingsTitle">Bâtiments</h2>
+        <div class="chip-wrap" id="dirCatChips">
+          <button class="chip active" onclick="setDirCategory('all', this)">Tout</button>
+          <button class="chip" onclick="setDirCategory('parking', this)">🅿️ Parkings</button>
+          <button class="chip" onclick="setDirCategory('toilet', this)">🚻 Toilettes PMR</button>
+          <button class="chip" onclick="setDirCategory('tram', this)">🚊 Tram / Gares</button>
+          <button class="chip" onclick="setDirCategory('bus', this)">🚌 Bus</button>
+          <button class="chip" onclick="setDirCategory('restaurant', this)">🍽️ Restos</button>
+          <button class="chip" onclick="setDirCategory('bar', this)">🍻 Bars adaptés</button>
+          <button class="chip" onclick="setDirCategory('venue', this)">🎭 Salles adaptées</button>
+          <button class="chip" onclick="setDirCategory('pharmacy', this)">💊 Pharmacies</button>
+          <button class="chip" onclick="setDirCategory('medical', this)">🩺 Médecins</button>
+          <button class="chip" onclick="setDirCategory('market', this)">🛒 Supermarchés</button>
+          <button class="chip" onclick="setDirCategory('admin', this)">🏛️ Administrations</button>
+        </div>
+      </section>
 
-      <div class="chip-wrap" id="dirAccessChips">
-        <button class="chip active" onclick="setDirAccess('all', this)">Tous statuts</button>
-        <button class="chip" onclick="setDirAccess('yes', this)">🟢 Accessibles</button>
-        <button class="chip" onclick="setDirAccess('limited', this)">🟠 Partiels</button>
-        <button class="chip" onclick="setDirAccess('no', this)">🔴 Non accessibles</button>
-      </div>
-
-      <div class="chip-wrap" id="dirFineChips" role="group" aria-label="Filtres détaillés : porte, toilettes, rampe, horaires">
-        <button class="chip" data-f="door80" aria-pressed="false" onclick="toggleFine('door', 80, this)">🚪 Porte ≥ 80 cm</button>
-        <button class="chip" data-f="door90" aria-pressed="false" onclick="toggleFine('door', 90, this)">🚪 ≥ 90 cm</button>
-        <button class="chip" data-f="doorme" aria-pressed="false" onclick="toggleFine('door', -1, this)">🚪 Mon fauteuil</button>
-        <button class="chip" data-f="wc" aria-pressed="false" onclick="toggleFine('wc', true, this)">🚻 WC adaptés</button>
-        <button class="chip" data-f="ramp" aria-pressed="false" onclick="toggleFine('ramp', true, this)">♿ Rampe / plain-pied</button>
-        <button class="chip" data-f="open" aria-pressed="false" onclick="toggleFine('open', true, this)">🟢 Ouvert maintenant</button>
-        <button class="chip" id="fineReset" style="display:none;" onclick="resetFine()">✖ Réinitialiser</button>
-      </div>
-      <div id="dirFineNote" class="sub" style="display:none;"></div>
+      <!-- CARTE LIQUID GLASS : ACCESSIBILITÉ -->
+      <section class="card lg-group" id="dirAccessCard" aria-labelledby="dirAccessTitle">
+        <h2 class="lg-title" id="dirAccessTitle">Accessibilité</h2>
+        <div class="chip-wrap" id="dirAccessChips">
+          <button class="chip active" onclick="setDirAccess('all', this)">Tous statuts</button>
+          <button class="chip" onclick="setDirAccess('yes', this)">🟢 Accessibles</button>
+          <button class="chip" onclick="setDirAccess('limited', this)">🟠 Partiels</button>
+          <button class="chip" onclick="setDirAccess('no', this)">🔴 Non accessibles</button>
+        </div>
+        <div id="dirFineChips" class="fine-stack" role="group" aria-label="Filtres détaillés : porte, toilettes, rampe, horaires">
+          <div class="chip-wrap fine-row" role="group" aria-label="Largeur de porte">
+            <button class="chip" data-f="door80" aria-pressed="false" onclick="toggleFine('door', 80, this)">🚪 Porte ≥ 80 cm</button>
+            <button class="chip" data-f="door90" aria-pressed="false" onclick="toggleFine('door', 90, this)">🚪 ≥ 90 cm</button>
+            <button class="chip" data-f="doorme" aria-pressed="false" onclick="toggleFine('door', -1, this)">🚪 Mon fauteuil</button>
+          </div>
+          <div class="chip-wrap fine-row" role="group" aria-label="Équipements et horaires">
+            <button class="chip" data-f="wc" aria-pressed="false" onclick="toggleFine('wc', true, this)">🚻 WC adaptés</button>
+            <button class="chip" data-f="ramp" aria-pressed="false" onclick="toggleFine('ramp', true, this)">♿ Rampe / plain-pied</button>
+            <button class="chip" data-f="open" aria-pressed="false" onclick="toggleFine('open', true, this)">🟢 Ouvert maintenant</button>
+            <button class="chip" id="fineReset" style="display:none;" onclick="resetFine()">✖ Réinitialiser</button>
+          </div>
+        </div>
+        <div id="dirFineNote" class="sub" style="display:none;"></div>
+      </section>
 
       <details class="card" style="padding:8px 10px;">
         <summary class="sub" style="cursor:pointer; font-weight:700;">☁️ Partage communautaire (Supabase) & Accèslibre</summary>
