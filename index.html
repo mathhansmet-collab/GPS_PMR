@@ -2110,7 +2110,7 @@
       tts.q = []; tts.cur = null; tts.busy = false; clearTimeout(tts.wd); clearTimeout(tts.pt);
       tts.coolUntil = Date.now() + 60;                       // Android : laisser le moteur se vider avant de reparler
       try { if (NATIVE && native.TextToSpeech) native.TextToSpeech.stop(); } catch {}
-      try { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); } catch {}
+      try { if (!!window.speechSynthesis) window.speechSynthesis.cancel(); } catch {}
     }
 
     // Position reçue du service natif (continue écran verrouillé) : même traitement que le GPS du navigateur
@@ -2343,7 +2343,7 @@
       return s;
     }
     function ttsFrenchVoices() {
-      const vs = ("speechSynthesis" in window ? window.speechSynthesis.getVoices() : []) || [];
+      const vs = (!!window.speechSynthesis ? window.speechSynthesis.getVoices() : []) || [];
       return vs.filter(v => ttsLang(v).startsWith("fr")).sort((a, b) => ttsScore(b) - ttsScore(a));
     }
     function pickFrenchVoice() {
@@ -2351,7 +2351,7 @@
       let saved = null; try { saved = localStorage.getItem("gpspmr_tts_voice"); } catch {}
       frVoice = (saved && list.find(v => v.voiceURI === saved)) || list[0] || null;
     }
-    if ("speechSynthesis" in window) {
+    if (!!window.speechSynthesis) {
       pickFrenchVoice();
       try { window.speechSynthesis.addEventListener("voiceschanged", pickFrenchVoice); } catch {}
       window.speechSynthesis.onvoiceschanged = pickFrenchVoice;
@@ -2413,7 +2413,7 @@
           .then(done, done);
         return;
       }
-      if (!("speechSynthesis" in window)) { done(); return; }
+      if (!(!!window.speechSynthesis)) { done(); return; }
       try {
         const synth = window.speechSynthesis;
         if (!frVoice) pickFrenchVoice();
@@ -4704,7 +4704,7 @@
     // =====================================================================
     const PMR_VOICE_KEY = "gps_pmr_voice", COBBLE_KEY = "gps_pmr_avoid_cobbles";
     let avoidCobbles = false;
-    function pmrVoiceSupported() { return "speechSynthesis" in window && typeof SpeechSynthesisUtterance === "function"; }
+    function pmrVoiceSupported() { return !!window.speechSynthesis && typeof SpeechSynthesisUtterance === "function"; }
     function syncPmrVoiceUI() {
       const on = !isMuted, b = document.getElementById("pmrVoiceBtn");
       if (b) {
@@ -6302,7 +6302,7 @@
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState !== "visible" || !isNavigating) return;
-      try { if ("speechSynthesis" in window) window.speechSynthesis.resume(); } catch {}
+      try { if (!!window.speechSynthesis) window.speechSynthesis.resume(); } catch {}
       if (bgAudioEnabled && keepAliveAudio && keepAliveAudio.paused) keepAliveAudio.play().catch(() => {});
     });
 

@@ -1,4 +1,4 @@
-// sw.js — GPS PMR (PWA) · v4
+// sw.js — GPS PMR (PWA) · v7 (cache applicatif gps-pmr-app-v7)
 // À placer À CÔTÉ de index.html (ex. https://<compte>.github.io/GPS_PMR/sw.js). Servi en HTTPS, portée = son dossier.
 //
 // Stratégies :
@@ -13,7 +13,7 @@
 const APP_CACHE  = "gps-pmr-app-v7";
 const TILE_CACHE = "gps-pmr-tiles-v1";
 const DATA_CACHE = "gps-pmr-data-v1";
-const MAX_TILES = 2500;
+const MAX_TILES = 3000;   // = plafond du téléchargement de zone (sinon les premières tuiles d'un pack seraient effacées)
 const MAX_DATA  = 400;
 const NET_TIMEOUT_APP  = 3500;   // ms avant de servir la copie locale d'un fichier de l'appli
 const NET_TIMEOUT_DATA = 7000;
