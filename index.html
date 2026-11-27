@@ -774,6 +774,104 @@
     .batt-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: end; }
     .batt-fields label { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; min-width: 0; line-height: 1.25; }
     .sidebar .batt-fields input, .batt-fields input { height: 44px; min-height: 44px !important; width: 100%; box-sizing: border-box; padding: 0 10px; text-align: center; }
+
+    /* =====================================================================
+       MOBILE & PMR — tiroir 22/52/88 vh, menu Réglages, bouton Ma position,
+       carrousels de filtres, grappes de lieux, nouveaux boutons PMR
+       ===================================================================== */
+    /* Barre d'outils : PC = inchangé ; le menu est « transparent » */
+    .tb-menu { display: contents; }
+    #settingsBtn, #fabLocate { display: none; }
+    .lg-float {
+      background: var(--lg-card-bg); border: var(--lg-card-border); box-shadow: var(--lg-card-shadow);
+      -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); color: var(--text);
+      transition: var(--lg-fx);
+    }
+    body.eco-glass-mode .lg-float {
+      -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+      border: 1px solid transparent; border-top: 1px solid rgba(255,255,255,0.22); border-left: 1px solid rgba(255,255,255,0.14);
+      border-bottom: 1px solid rgba(0,0,0,0.6); border-right: 1px solid rgba(0,0,0,0.35);
+    }
+
+    /* Boutons d'urgence : grille 2 colonnes (+ « Besoin d'aide » pleine largeur) */
+    .emerg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .emerg-grid button { min-height: 56px; line-height: 1.2; }
+    :root { --lg-blk-bg: #ff9f0a; --lg-blk-text: #000; --lg-blk-border: 2px solid #000; }
+    body.eco-glass-mode { --lg-blk-bg: rgba(255,159,10,0.14); --lg-blk-text: #ffb340; --lg-blk-border: 1.5px solid #ffb340; }
+    button.warn.blk { background: var(--lg-blk-bg); color: var(--lg-blk-text); border: var(--lg-blk-border); }
+    .share-trip { width: 100%; border-radius: 18px; font-weight: 800; }
+    body.eco-glass-mode .share-trip { background: rgba(10,132,255,0.18); color: #9fceff; border: 1.5px solid #6cb6ff; }
+    body:not(.eco-glass-mode) .share-trip { background: #0050c8; color: #fff; }
+
+    /* Interrupteur « Guidage vocal PMR » + case pavés */
+    .pmr-toggle { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border-radius: 18px; padding: 8px 14px; min-height: 56px; }
+    .pmr-toggle .pmr-ico { font-size: 22px; }
+    .pmr-toggle .pmr-txt { flex: 1; display: flex; flex-direction: column; font-weight: 800; font-size: 14px; }
+    .pmr-toggle small, .pmr-check small { display: block; font-weight: 500; font-size: 12px; color: var(--lg-sub); line-height: 1.3; margin-top: 2px; }
+    .pmr-sw { width: 50px; height: 30px; border-radius: 999px; background: rgba(120,120,128,.35); position: relative; flex-shrink: 0; transition: var(--lg-fx); }
+    .pmr-sw i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); transition: transform .3s ease; }
+    .pmr-toggle[aria-checked="true"] .pmr-sw { background: #34c759; }
+    .pmr-toggle[aria-checked="true"] .pmr-sw i { transform: translateX(20px); }
+    .pmr-toggle[aria-checked="true"] { border: var(--lg-sel-border); background: var(--lg-sel-bg); }
+    .pmr-check { display: flex; align-items: flex-start; gap: 12px; min-height: 48px; cursor: pointer; font-size: 13.5px; color: var(--text); }
+    .pmr-check input { width: 26px; height: 26px; min-height: 26px !important; flex-shrink: 0; margin: 2px 0 0; accent-color: #0a84ff; }
+
+    /* Grappes de lieux (MapLibre) : le verre est imité par un disque translucide + halo (MapLibre ne sait pas flouter) */
+
+    @media (max-width: 768px) {
+      /* --- Tiroir (Bottom Sheet) : poignée bien visible, cran réduit = en-tête + destination --- */
+      .sheet-handle { height: 30px; margin: -4px 0 -6px; }
+      .sheet-handle i { width: 52px; height: 6px; opacity: .75; background: var(--lg-sub); }
+      body.sheet-min .sidebar .tabs, body.sheet-min #statusBox, body.sheet-min .sb-collapse, body.sheet-min #globalStats,
+      body.sheet-min #plannerCard > .row.between, body.sheet-min .planner-fields .field-box:first-child, body.sheet-min .swap-btn { display: none !important; }
+      body.sheet-min .sidebar .scroll-area { overflow: hidden; }
+      body.sheet-min #tabMap > :not(#plannerCard) { display: none !important; }
+      body.sheet-min #plannerCard { padding: 8px 12px; }
+
+      /* --- Barre d'outils simplifiée : Filtres + Réglages ; le reste dans le menu --- */
+      .toolbar { position: relative; }
+      #settingsBtn { display: inline-flex; }
+      .toolbar button.tb-locate { display: none; }
+      .tb-menu { display: none; }
+      .toolbar.menu-open .tb-menu {
+        display: flex; flex-direction: column; gap: 4px; position: absolute; top: calc(100% + 10px); right: 0; z-index: 30;
+        min-width: 230px; padding: 10px; border-radius: 24px;
+        background: var(--lg-card-bg); border: var(--lg-card-border); box-shadow: var(--lg-card-shadow);
+        -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
+      }
+      body.eco-glass-mode .toolbar.menu-open .tb-menu { -webkit-backdrop-filter: none; backdrop-filter: none; border-top: 1px solid rgba(255,255,255,.22); border-left: 1px solid rgba(255,255,255,.14); border-bottom: 1px solid rgba(0,0,0,.6); }
+      .toolbar.menu-open .tb-menu button.pill-bar {
+        width: 100%; height: auto; min-height: 48px; padding: 10px 14px; justify-content: flex-start; gap: 12px; font-size: 15px; border-radius: 16px;
+        box-shadow: none; background: transparent; border-color: transparent;
+      }
+      .toolbar.menu-open .tb-menu button.pill-bar .lbl { display: inline; }
+      .toolbar.menu-open .tb-menu button.pill-bar[aria-pressed="true"] { background: var(--lg-sel-bg); border: var(--lg-sel-border); }
+      .toolbar button.pill-bar.install-btn.show { display: inline-flex; }
+      #settingsBtn[aria-expanded="true"] { border-color: #0a84ff; }
+
+      /* --- Bouton flottant « Ma position » 52 × 52, au-dessus du tiroir --- */
+      #fabLocate {
+        display: flex; align-items: center; justify-content: center; position: fixed; z-index: 11;
+        width: 52px; height: 52px; min-height: 52px; padding: 0; border-radius: 50%; font-size: 24px; cursor: pointer;
+        right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sheet-h) + 8px + var(--safe-b) + 14px);
+      }
+      body.nav-mode #fabLocate, body.viewer #fabLocate, body.sheet-max #fabLocate { display: none !important; }
+      body:not(.sheet-drag) #fabLocate { transition: bottom .25s ease, var(--lg-fx); }
+
+      /* --- Carrousels horizontaux pour « Bâtiments » et « Accessibilité » --- */
+      #dirCatChips, #dirAccessChips, #dirFineChips .fine-row {
+        display: grid; grid-auto-flow: column; grid-auto-columns: max-content; gap: 8px;
+        overflow-x: auto; overflow-y: hidden; white-space: nowrap; scrollbar-width: none; -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scroll-snap-type: x proximity;
+        margin: 0 -16px; padding: 2px 16px;
+      }
+      #dirCatChips { grid-template-rows: repeat(2, auto); }                 /* 12 pastilles sur 2 lignes compactes */
+      #dirAccessChips, #dirFineChips .fine-row { grid-template-rows: auto; } /* une ligne chacune */
+      #dirCatChips::-webkit-scrollbar, #dirAccessChips::-webkit-scrollbar, #dirFineChips .fine-row::-webkit-scrollbar { display: none; }
+      #dirCatChips .chip, #dirAccessChips .chip, #dirFineChips .chip { white-space: nowrap; scroll-snap-align: start; flex-shrink: 0; }
+      #tabDirectory { gap: 20px; }
+      #dirFineChips, #dirFineChips .fine-row, #dirCatChips, #dirAccessChips { min-width: 0; max-width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -813,16 +911,23 @@
   <div id="navEta" class="nav-eta" aria-live="off"></div>
   <div id="offlineBadge" class="offline-badge" role="status">📴 Hors ligne — le guidage continue sur le tracé enregistré</div>
 
+  <!-- Mobile : gros bouton « Ma position » (52 px) accessible au pouce, au-dessus du tiroir -->
+  <button id="fabLocate" class="lg-float" onclick="recenterOnStart()" aria-label="Ma position : recentrer la carte" title="Ma position"><span aria-hidden="true">🎯</span></button>
+
   <div class="floating-right">
     <div class="toolbar" role="toolbar" aria-label="Outils de la carte">
       <button id="layersBtn" class="pill-bar" onclick="toggleLayersPanel()" aria-expanded="false" aria-controls="layerToggles" aria-label="Afficher ou masquer les filtres de la carte" title="Filtres (C)"><span class="ico"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" aria-hidden="true" style="vertical-align:-0.15em"><path d="M3 4.5h18l-7 8.2v6.3l-4 2v-8.3z" fill="#007aff" stroke="#007aff" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="lbl">Filtres</span></button>
-      <button id="largeModeBtn" class="pill-bar" onclick="toggleLargeMode()" aria-pressed="false" aria-label="Activer le mode gros boutons et grand texte" title="Grand format (L)"><span class="ico">👁️</span><span class="lbl">Grand format</span></button>
-      <button id="darkModeBtn" class="pill-bar" onclick="toggleDarkMode()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit" title="Jour / Nuit (N)"><span class="ico">🌓</span><span class="lbl">Jour / Nuit</span></button>
-      <button id="ecoBtn" class="pill-bar" onclick="toggleEcoGlass()" aria-pressed="false" aria-label="Mode éco-batterie : verre sombre sans flou" title="Éco-batterie (verre OLED sans flou)"><span class="ico">🔋</span><span class="lbl">Éco</span></button>
-      <button class="pill-bar" onclick="recenterOnStart()" aria-label="Recentrer la carte sur ma position actuelle" title="Ma position (G)"><span class="ico">🎯</span><span class="lbl">Ma position</span></button>
-      <button class="pill-bar" onclick="refreshCurrentZone(true)" aria-label="Actualiser les lieux de cette zone" title="Actualiser la zone (R)"><span class="ico">🔄</span><span class="lbl">Cette zone</span></button>
-      <button id="installBtn" class="pill-bar install-btn" onclick="installApp()" aria-label="Installer l'application sur cet appareil" title="Installer l'application"><span class="ico">📲</span><span class="lbl">Installer</span></button>
-      <button class="pill-bar" onclick="openHelp()" aria-label="Aide et raccourcis clavier" title="Raccourcis (?)"><span class="ico">⌨️</span><span class="lbl">Aide</span></button>
+      <!-- Mobile : « Réglages » regroupe les pilules secondaires (sur PC le menu est transparent : display: contents) -->
+      <button id="settingsBtn" class="pill-bar" onclick="toggleSettingsMenu()" aria-expanded="false" aria-controls="tbMenu" aria-label="Réglages de l'affichage" title="Réglages"><span class="ico">⚙️</span><span class="lbl">Réglages</span></button>
+      <button id="recenterBtn" class="pill-bar tb-locate" onclick="recenterOnStart()" aria-label="Recentrer la carte sur ma position actuelle" title="Ma position (G)"><span class="ico">🎯</span><span class="lbl">Ma position</span></button>
+      <div class="tb-menu" id="tbMenu" role="group" aria-label="Réglages">
+        <button id="largeModeBtn" class="pill-bar" onclick="toggleLargeMode()" aria-pressed="false" aria-label="Activer le mode gros boutons et grand texte" title="Grand format (L)"><span class="ico">👁️</span><span class="lbl">Grand format</span></button>
+        <button id="darkModeBtn" class="pill-bar" onclick="toggleDarkMode()" aria-pressed="false" aria-label="Basculer entre mode jour et mode nuit" title="Jour / Nuit (N)"><span class="ico">🌓</span><span class="lbl">Jour / Nuit</span></button>
+        <button id="ecoBtn" class="pill-bar" onclick="toggleEcoGlass()" aria-pressed="false" aria-label="Mode éco-batterie : verre sombre sans flou" title="Éco-batterie (verre OLED sans flou)"><span class="ico">🔋</span><span class="lbl">Éco</span></button>
+        <button class="pill-bar" onclick="refreshCurrentZone(true)" aria-label="Actualiser les lieux de cette zone" title="Actualiser la zone (R)"><span class="ico">🔄</span><span class="lbl">Cette zone</span></button>
+        <button id="installBtn" class="pill-bar install-btn" onclick="installApp()" aria-label="Installer l'application sur cet appareil" title="Installer l'application"><span class="ico">📲</span><span class="lbl">Installer</span></button>
+        <button class="pill-bar" onclick="openHelp()" aria-label="Aide et raccourcis clavier" title="Raccourcis (?)"><span class="ico">⌨️</span><span class="lbl">Aide</span></button>
+      </div>
     </div>
 
     <div class="pill-bar" id="layerToggles" role="group" aria-label="Filtres de la carte">
@@ -1118,9 +1223,13 @@
           <div id="profileHint" class="sub" style="padding:0 2px;">
             Évite les escaliers, les pavés irréguliers et les côtes &gt; 5%.
           </div>
+          <button id="pmrVoiceBtn" class="pmr-toggle" type="button" role="switch" aria-checked="true" onclick="togglePmrVoice()">
+            <span class="pmr-ico" aria-hidden="true">🔊</span><span class="pmr-txt">Guidage vocal PMR<small id="pmrVoiceHint">Annonce directions, bateaux de trottoir et pentes</small></span><span class="pmr-sw" aria-hidden="true"><i></i></span>
+          </button>
           <details class="card" style="padding:8px 10px;">
             <summary class="sub" style="cursor:pointer; font-weight:700;">⚙️ Mon fauteuil (réglages)</summary>
             <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+              <label class="pmr-check"><input id="wcAvoidCobbles" type="checkbox" onchange="setAvoidCobbles(this.checked)" /><span><b>Éviter pavés et revêtements irréguliers</b><small id="cobbleHint">Le calcul d'itinéraire pénalise au maximum les sols dégradés.</small></span></label>
               <label class="wc-field sub">Largeur du fauteuil (cm)
                 <input id="wcWidth" type="number" min="40" max="120" inputmode="numeric" placeholder="70" /></label>
               <label class="wc-field sub">Pente maximale tolérée (%)
@@ -1231,9 +1340,13 @@
         <div id="pmrTransportActions" class="row"></div>
       </div>
 
-      <div class="row">
-        <button class="warn" style="flex:1;" onclick="reportObstacleAtCenter()" aria-label="Signaler un obstacle au centre de la carte">⚠️ Signaler un obstacle</button>
-        <button class="sos-btn" onclick="triggerHelpShare()" aria-label="Besoin d'aide : partager ma position GPS">🆘 Besoin d'aide</button>
+      <!-- Partage Aidant -->
+      <button id="shareTripBtn" class="primary share-trip" onclick="sharePmrTrip()" aria-label="Partager mon trajet avec un aidant">🤝 Partager mon trajet (Aidant)</button>
+
+      <div class="emerg-grid">
+        <button class="warn" onclick="reportObstacleAtCenter()" aria-label="Signaler un obstacle au centre de la carte">⚠️ Signaler un obstacle</button>
+        <button class="warn blk" onclick="reportBlockedSidewalk()" aria-label="Trottoir barré ou travaux : signaler et recalculer un contournement">🚧 Trottoir barré / Travaux</button>
+        <button class="sos-btn" style="grid-column: 1 / -1;" onclick="triggerHelpShare()" aria-label="Besoin d'aide : partager ma position GPS">🆘 Besoin d'aide</button>
       </div>
     </div>
 
@@ -2042,6 +2155,8 @@
       if (navPaused) { resumeNavigation(); return; }          // en pause : le bouton reprend le guidage
       isMuted = !isMuted;
       if (isMuted) cancelSpeech();
+      try { localStorage.setItem("gps_pmr_voice", isMuted ? "0" : "1"); } catch {}
+      if (typeof syncPmrVoiceUI === "function") syncPmrVoiceUI();
       const btn = document.getElementById("hudMute");
       if (btn) {
         btn.textContent = isMuted ? "🔇" : "🔊";
@@ -4277,6 +4392,94 @@
     })();
     function toggleEcoGlass() { EcoGlass.toggle(); }
 
+
+    // =====================================================================
+    // MOBILE : menu « Réglages » (regroupe Grand format, Jour/Nuit, Éco, Cette zone, Aide, Installer)
+    // =====================================================================
+    function toggleSettingsMenu(force) {
+      const tb = document.querySelector(".toolbar"), b = document.getElementById("settingsBtn");
+      if (!tb || !b) return;
+      const open = typeof force === "boolean" ? force : !tb.classList.contains("menu-open");
+      tb.classList.toggle("menu-open", open);
+      b.setAttribute("aria-expanded", String(open));
+    }
+    document.addEventListener("click", e => {                       // clic ailleurs : on referme
+      const tb = document.querySelector(".toolbar");
+      if (tb && tb.classList.contains("menu-open") && !e.target.closest(".toolbar")) toggleSettingsMenu(false);
+    });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") toggleSettingsMenu(false); });
+
+    // =====================================================================
+    // PMR : guidage vocal (Web Speech API, français), revêtements, trottoir barré, partage Aidant
+    // =====================================================================
+    const PMR_VOICE_KEY = "gps_pmr_voice", COBBLE_KEY = "gps_pmr_avoid_cobbles";
+    let avoidCobbles = false;
+    function pmrVoiceSupported() { return "speechSynthesis" in window && typeof SpeechSynthesisUtterance === "function"; }
+    function syncPmrVoiceUI() {
+      const on = !isMuted, b = document.getElementById("pmrVoiceBtn");
+      if (b) {
+        b.setAttribute("aria-checked", String(on && pmrVoiceSupported()));
+        b.querySelector(".pmr-ico").textContent = on ? "🔊" : "🔇";
+        const h = document.getElementById("pmrVoiceHint");
+        if (h) h.textContent = !pmrVoiceSupported() ? "Voix non disponible sur ce navigateur" : (on ? "Annonce directions, bateaux de trottoir et pentes" : "Voix désactivée");
+      }
+      const m = document.getElementById("hudMute");
+      if (m && !navPaused) { m.textContent = isMuted ? "🔇" : "🔊"; m.setAttribute("aria-pressed", String(isMuted)); }
+    }
+    function setPmrVoice(on, speak = true) {
+      isMuted = !on;
+      try { localStorage.setItem(PMR_VOICE_KEY, on ? "1" : "0"); } catch {}
+      if (!on) { try { cancelSpeech(); } catch {} }
+      else if (speak && pmrVoiceSupported()) speakFR("Guidage vocal PMR activé. Je vous annoncerai les changements de direction, les bateaux de trottoir et les pentes.", false, { force: true });
+      syncPmrVoiceUI();
+    }
+    function togglePmrVoice() { if (!pmrVoiceSupported()) { setStatus("🔇 La synthèse vocale n'est pas disponible sur ce navigateur.", "warn"); return; } setPmrVoice(isMuted); }
+
+    function setAvoidCobbles(on, recompute = true) {
+      avoidCobbles = !!on;
+      try { localStorage.setItem(COBBLE_KEY, on ? "1" : "0"); } catch {}
+      const c = document.getElementById("wcAvoidCobbles"); if (c) c.checked = avoidCobbles;
+      const h = document.getElementById("cobbleHint");
+      if (h) h.textContent = avoidCobbles ? "Actif : sols dégradés pénalisés au maximum (le trajet peut être plus long)." : "Le calcul d'itinéraire pénalise les sols dégradés (au maximum en fauteuil manuel).";
+      if (recompute && currentRoute && !isNavigating) { setStatus("♻️ Recalcul de l'itinéraire avec ce réglage…", "info"); routeTo(currentRoute.destLat, currentRoute.destLon, currentRoute.destName); }
+    }
+
+    // « Trottoir barré / Travaux » : signalement en 1 clic à ma position (sinon centre de carte) puis contournement
+    async function reportBlockedSidewalk() {
+      const pos = (typeof sosPosition === "function") ? sosPosition() : { lat: map.getCenter().lat, lon: map.getCenter().lng };
+      await reportObstacleAtCenter({ desc: "Trottoir barré / Travaux", category: "Trottoir barré / Travaux", pos, quiet: true });
+    }
+
+    // Partage « Aidant » : destination + position + batterie du fauteuil (+ lien de suivi en direct s'il est configuré)
+    async function sharePmrTrip() {
+      const pos = sosPosition();
+      const osm = (la, lo) => `https://www.openstreetmap.org/?mlat=${la.toFixed(6)}&mlon=${lo.toFixed(6)}#map=18/${la.toFixed(6)}/${lo.toFixed(6)}`;
+      const lines = ["🤝 Suivi de mon trajet (GPS PMR)"];
+      if (currentRoute) lines.push(`🎯 Destination : ${currentRoute.destName || "—"}`, osm(currentRoute.destLat, currentRoute.destLon));
+      else lines.push("🎯 Destination : pas encore choisie");
+      lines.push(`📍 Ma position actuelle :`, osm(pos.lat, pos.lon));
+      if (batt && batt.pct != null) lines.push(`🔋 Batterie du fauteuil : ${batt.pct} %`);
+      let live = ""; try { live = liveUrl(); } catch {}
+      if (live) lines.push("🔗 Suivi en direct : " + live);
+      const text = lines.join("\n");
+      if (navigator.share) {
+        try { await navigator.share({ title: "Mon trajet — GPS PMR", text }); setStatus("✅ Trajet partagé.", "ok"); }
+        catch (e) { if (e && e.name !== "AbortError") copyShareText(text); }
+      } else copyShareText(text);
+    }
+    function copyShareText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => setStatus("📋 Message copié : collez-le à votre aidant.", "ok")).catch(() => setStatus("Impossible de copier le message.", "warn"));
+      else setStatus("Partage non disponible sur ce navigateur.", "warn");
+    }
+    (function initPmrPrefs() {
+      let v = null, c = null; try { v = localStorage.getItem(PMR_VOICE_KEY); c = localStorage.getItem(COBBLE_KEY); } catch {}
+      if (v === "0") isMuted = true;
+      avoidCobbles = c === "1";
+      const cb = document.getElementById("wcAvoidCobbles"); if (cb) cb.checked = avoidCobbles;
+      setAvoidCobbles(avoidCobbles, false);
+      syncPmrVoiceUI();
+    })();
+
     // Thème effectif = choix manuel (🌓) OU nuit automatique pendant le guidage (modifiable par le bouton 🌙)
     function refreshTheme() {
       const night = (isNavigating && nightOverride !== null) ? nightOverride
@@ -4904,8 +5107,9 @@
     // Propriétés strictement utiles à la carte (le GeoJSON est recopié à chaque mise à jour : on évite _search, dist, features…)
     function slimPlaceProps(p, color, strokeColor) {
       return {
-        id: p.id, cat: p.cat, name: p.name, address: p.address || "", lat: p.lat, lon: p.lon,
-        access: p.access, accessLabel: p.accessLabel, details: p.details || "",
+        // Aucune valeur « undefined » : elle corrompt les tuiles vectorielles quand la source est regroupée (cluster)
+        id: p.id ?? "", cat: p.cat ?? "", name: p.name ?? "", address: p.address || "", lat: p.lat, lon: p.lon,
+        access: p.access ?? "", accessLabel: p.accessLabel ?? "", details: p.details || "",
         isAcceslibre: !!p.isAcceslibre, isCommunityVerified: !!p.isCommunityVerified, webUrl: p.webUrl || "",
         featuresJSON: JSON.stringify(p.features || []), hours: p.hours || "", alJSON: JSON.stringify(p.al || {}), color, strokeColor
       };
@@ -5069,11 +5273,29 @@
           )
         }))
       };
-      if (map.getSource("pois")) map.getSource("pois").setData(poisGeoJSON);
+      if (map.getSource("pois")) { map.getSource("pois").setData(poisGeoJSON); const pc = map.getSource("pois-count"); if (pc) pc.setData(poisGeoJSON); }
       else {
-        map.addSource("pois", { type: "geojson", data: poisGeoJSON });
+        // Regroupement (clustering) : en dézoomant, les lieux proches sont fondus en pastilles « verre » avec leur nombre
+        map.addSource("pois", { type: "geojson", data: poisGeoJSON, cluster: true, clusterMaxZoom: 16, clusterRadius: 46 });
         map.addLayer({
-          id: "pois-layer", type: "circle", source: "pois",
+          id: "pois-clusters-halo", type: "circle", source: "pois", filter: ["has", "point_count"],
+          paint: { "circle-color": "rgba(255,255,255,0.35)", "circle-blur": 0.7, "circle-radius": ["step", ["get", "point_count"], 25, 20, 30, 80, 36] }
+        });
+        map.addLayer({
+          id: "pois-clusters", type: "circle", source: "pois", filter: ["has", "point_count"],
+          paint: { "circle-color": "rgba(255,255,255,0.86)", "circle-radius": ["step", ["get", "point_count"], 17, 20, 22, 80, 28],
+                   "circle-stroke-width": 2.5, "circle-stroke-color": "rgba(10,132,255,0.85)" }
+        });
+        // Les nombres utilisent des polices (glyphes) téléchargées : on les isole dans une 2e source identique,
+        // pour qu'un échec réseau sur les polices ne fasse jamais disparaître les points ni les grappes.
+        map.addSource("pois-count", { type: "geojson", data: poisGeoJSON, cluster: true, clusterMaxZoom: 16, clusterRadius: 46 });
+        map.addLayer({
+          id: "pois-cluster-count", type: "symbol", source: "pois-count", filter: ["has", "point_count"],
+          layout: { "text-field": "{point_count_abbreviated}", "text-size": 13, "text-allow-overlap": true, ...clusterTextFont() },
+          paint: { "text-color": "#0a2e6e", "text-halo-color": "rgba(255,255,255,0.9)", "text-halo-width": 1 }
+        });
+        map.addLayer({
+          id: "pois-layer", type: "circle", source: "pois", filter: ["!", ["has", "point_count"]],
           paint: {
             "circle-color": ["get", "color"],
             "circle-radius": ["match", ["get", "cat"], "venue", 9, "admin", 8.5, "pharmacy", 8, "medical", 8, "market", 8, "bar", 8, "toilet", 8, 6.5],
@@ -5122,9 +5344,27 @@
       bindMapClickEventsOnce();
     }
 
+    // Police des nombres de grappes : on réutilise une police déjà employée par le style de la carte (elle existe sur son serveur de glyphes)
+    function clusterTextFont() {
+      try {
+        const l = map.getStyle().layers.find(x => x.layout && Array.isArray(x.layout["text-font"]) && x.layout["text-font"].every(f => typeof f === "string"));
+        return l ? { "text-font": l.layout["text-font"] } : {};
+      } catch { return {}; }
+    }
+
     function bindMapClickEventsOnce() {
       if (mapEventsBound) return;
       mapEventsBound = true;
+
+      map.on("click", "pois-clusters", e => {
+        const f = map.queryRenderedFeatures(e.point, { layers: ["pois-clusters"] })[0];
+        if (!f) return;
+        const src = map.getSource("pois");
+        const go = z => map.easeTo({ center: f.geometry.coordinates, zoom: Math.min(18, z) });
+        try { const r = src.getClusterExpansionZoom(f.properties.cluster_id); if (r && r.then) r.then(go).catch(() => go(map.getZoom() + 2)); else go(map.getZoom() + 2); } catch { go(map.getZoom() + 2); }
+      });
+      map.on("mouseenter", "pois-clusters", () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", "pois-clusters", () => map.getCanvas().style.cursor = "");
 
       map.on("click", "parkings-clusters", e => {
         const f = map.queryRenderedFeatures(e.point, { layers: ["parkings-clusters"] })[0];
@@ -5468,7 +5708,7 @@
               pedestrian: {
                 type: "wheelchair", step_penalty: stepPenalty, max_grade: maxGrade,
                 use_hills: maxGrade <= 5 ? 0.1 : (maxGrade <= 8 ? 0.3 : 0.5),
-                avoid_bad_surfaces: profile === "manual" ? 1.0 : 0.4,
+                avoid_bad_surfaces: (avoidCobbles || profile === "manual") ? 1.0 : 0.4,
                 walking_speed: profile === "manual" ? 4.0 : 5.5,
                 ...(tweak || {})
               }
@@ -5819,14 +6059,15 @@
       }, 50);
     }
 
-    async function reportObstacleAtCenter() {
-      const c = map.getCenter();
-      const desc = prompt("Quel obstacle signalez-vous à cet endroit ?", "Véhicule garé sur le trottoir");
+    async function reportObstacleAtCenter(opts = {}) {
+      const mc = map.getCenter();
+      const c = opts.pos ? { lat: opts.pos.lat, lng: opts.pos.lon } : mc;      // « Trottoir barré » : à ma position
+      const desc = opts.desc || prompt("Quel obstacle signalez-vous à cet endroit ?", "Véhicule garé sur le trottoir");
       if (!desc) return;
 
       const obs = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-        category: "Obstacle signalé",
+        category: opts.category || "Obstacle signalé",
         description: desc,
         lat: c.lat,
         lon: c.lng,
@@ -5842,7 +6083,7 @@
             headers: { ...supabaseHeaders(sb.key), "Prefer": "return=representation" },
             body: JSON.stringify({
               id: obs.id,
-              category: "Véhicule sur trottoir",
+              category: opts.category || "Véhicule sur trottoir",
               severity: "Passage impossible",
               latitude: obs.lat,
               longitude: obs.lon,
@@ -6128,12 +6369,14 @@
     }
     function sheetSnaps() {
       const h = window.innerHeight;
-      return [Math.min(150, h * 0.22), Math.round(h * 0.52), Math.round(h * 0.88)];
+      return [Math.round(h * 0.22), Math.round(h * 0.52), Math.round(h * 0.88)];   // 22 / 52 / 88 vh
     }
     function setSheet(px, remember = true) {
       const s = sheetSnaps();
       px = Math.max(s[0], Math.min(s[2], px));
       document.documentElement.style.setProperty("--sheet-h", px + "px");
+      document.body.classList.toggle("sheet-max", isMobileLayout() && px >= s[2] - 8);   // cran étendu : la carte est presque masquée, le bouton flottant s'efface
+      document.body.classList.toggle("sheet-min", isMobileLayout() && px <= s[0] + 8);   // cran réduit : en-tête + destination seulement
       if (remember) { try { localStorage.setItem("gps_pmr_sheet", String(s.findIndex(v => Math.abs(v - px) < 2))); } catch {} }
     }
     function snapSheet(idx) { setSheet(sheetSnaps()[Math.max(0, Math.min(2, idx))]); }
@@ -7511,7 +7754,7 @@
     map.on("click", e => {
       const lay = ["tram-lines", "bus-lines-layer"].filter(id => map.getLayer(id));
       if (!lay.length) return;
-      const blockers = ["pois-layer", "parkings-unclustered", "parkings-clusters", "tram-stops-layer", "bus-stops-layer", "works-layer", "rt-vehicles-layer"].filter(id => map.getLayer(id));
+      const blockers = ["pois-layer", "pois-clusters", "parkings-unclustered", "parkings-clusters", "tram-stops-layer", "bus-stops-layer", "works-layer", "rt-vehicles-layer"].filter(id => map.getLayer(id));
       const r = 7, bbox = [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
       if (blockers.length && map.queryRenderedFeatures(bbox, { layers: blockers }).length) return;
       const f = map.queryRenderedFeatures(bbox, { layers: lay })[0];
