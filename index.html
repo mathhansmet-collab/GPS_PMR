@@ -28,6 +28,7 @@
   <link rel="preconnect" href="https://valhalla1.openstreetmap.de" crossorigin />
   <link rel="preconnect" href="https://api.open-meteo.com" crossorigin />
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css'" />
+  <script async src="https://unpkg.com/three@0.149.0/build/three.min.js" onload="window.dispatchEvent(new Event('three-ready'))" onerror="(function(){var s=document.createElement('script');s.async=true;s.src='https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js';s.onload=function(){window.dispatchEvent(new Event('three-ready'))};document.head.appendChild(s)})()"></script>
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" onerror="document.write('<script src=&quot;https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js&quot;><\/script>')"></script>
   <style>
     :root {
@@ -341,6 +342,9 @@
       position: relative; width: 36px; height: 36px;
       filter: drop-shadow(0 3px 8px rgba(0,0,0,0.42));
     }
+    .nav-arrow-mode { position: absolute; right: -6px; bottom: -6px; font-size: 15px; line-height: 1; background: #fff; border-radius: 50%; padding: 2px; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+    .nav-arrow-mode:empty { display: none; }
+    body.av3d-on .nav-arrow-wrap { visibility: hidden; }
     @keyframes navPulse {
       0% { transform: scale(0.85); opacity: 0.9; }
       70% { transform: scale(1.35); opacity: 0; }
@@ -2209,6 +2213,8 @@
     // POSITION EN TEMPS RÉEL : flèche, cap (GPS + boussole), caméra qui suit
     // =====================================================================================
 
+    function av3(fn, ...a) { const A = window.Navigation3DAvatar; if (A) { try { return A[fn](...a); } catch (e) { console.warn("avatar3d", e); } } }
+
     // Interpolation d'angle sur le plus court chemin (0-360°)
     function angleDiff(from, to) { return ((to - from + 540) % 360) - 180; }
     function smoothAngle(from, to, k) { return (from + angleDiff(from, to) * k + 360) % 360; }
@@ -2220,6 +2226,7 @@
       el.setAttribute("aria-hidden", "true");
       el.innerHTML = `
         <div class="nav-arrow-halo"></div>
+        <span class="nav-arrow-mode" aria-hidden="true"></span>
         <div class="nav-arrow-puck">
           <svg viewBox="0 0 36 36" width="36" height="36">
             <circle cx="18" cy="18" r="15.5" fill="#007aff" stroke="#ffffff" stroke-width="3"/>
@@ -2232,6 +2239,7 @@
         .setRotation(heading)
         .addTo(map);
       meState = { lat, lon, heading };
+      av3("refresh");
     }
 
     // Place la flèche instantanément (sans animation)
@@ -2301,6 +2309,7 @@
       lastFix = { lat, lon, ts: now };
       const duration = dtMs || 600;
       if (!meMarker) placeMe(lat, lon, heading); else moveMe(lat, lon, heading, duration);
+      av3("update", { lat, lon, heading, speed: lastSpeed, dtMs: duration });
 
       if (isNavigating) {
         processGuidance(lat, lon, isSim ? 5 : accuracy);
@@ -2312,6 +2321,10 @@
     // Caméra « style GPS » : centrée sur la flèche (décalée vers le bas), carte orientée dans le sens de la marche
     function followCamera(lat, lon, heading, durationMs) {
       if (!map.loaded() || document.hidden) return;
+      if (av3("uses3D")) {      // avatar 3D : le décalage vers le bas est porté par le padding (posé par enableFollowCamera)
+        map.easeTo({ center: [lon, lat], bearing: heading, pitch: 58, duration: durationMs, easing: t => t, essential: true });
+        return;
+      }
       map.easeTo({
         center: [lon, lat], bearing: heading, pitch: 55,
         offset: [0, Math.round(window.innerHeight * 0.2)],
@@ -2324,7 +2337,12 @@
       const b = document.getElementById("hudRecenter");
       if (b) b.classList.remove("attention");
       const pos = currentPosition();
-      if (pos) {
+      if (pos && av3("uses3D")) {
+        map.easeTo({
+          center: [pos.lon, pos.lat], zoom: 17.5, pitch: 58, bearing: meState.heading,
+          padding: { top: Math.round(window.innerHeight * 0.3), bottom: 0, left: 0, right: 0 }, duration: 500, essential: true
+        });
+      } else if (pos) {
         map.easeTo({
           center: [pos.lon, pos.lat], zoom: 17.8, pitch: 55, bearing: meState.heading,
           offset: [0, Math.round(window.innerHeight * 0.2)], duration: 500, essential: true
@@ -3476,6 +3494,7 @@
     function switchModeTab(mode) {
       const prevMode = activeTransportTab;
       activeTransportTab = mode;
+      av3("setMode", mode);
 
       document.getElementById("panelWheelchair").style.display = mode === "wheelchair" ? "flex" : "none";
       document.getElementById("panelCar").style.display        = mode === "car" ? "flex" : "none";
@@ -3507,7 +3526,8 @@
       }
 
       if (selectedDest && ((prevMode === "car" && mode !== "car") || (prevMode !== "car" && mode === "car"))) {
-        routeTo(selectedDest.lat, selectedDest.lon, selectedDest.name);
+        if (isNavigating) setStatus("🔁 Avatar changé. Le guidage en cours est conservé : arrêtez-le pour recalculer l'itinéraire pour ce mode.", "info");
+        else routeTo(selectedDest.lat, selectedDest.lon, selectedDest.name);
       }
     }
 
@@ -4839,6 +4859,7 @@
         : (userManualTheme ? userManualTheme === "night" : (isDark || EcoGlass.active() || (isNavigating && autoNight)));
       document.body.classList.toggle("dark", night);
       document.body.classList.toggle("eco-glass-mode", night);
+      av3("refresh");
       const dm = document.getElementById("darkModeBtn");
       if (dm) {
         dm.setAttribute("aria-pressed", String(night));
@@ -6365,6 +6386,8 @@
       isNavigating = true;
       autoFollowCamera = true;
       document.body.classList.add("nav-mode");       // masque les menus du haut et du bas
+      av3("setMode", activeTransportTab); av3("start", map);
+      { const p0 = currentPosition(); if (p0) av3("update", { lat: p0.lat, lon: p0.lon, heading: meState.heading, speed: 0, dtMs: 1 }); }
       drawAltLines();
       document.getElementById("hudRecenter").classList.remove("attention");
       const mute = document.getElementById("hudMute");
@@ -6426,6 +6449,7 @@
       gpsHealthStop(); navPaused = false; favSwitch.pending = false; clearTimeout(favSwitch.timer);
       releaseWakeLock();
       document.body.classList.remove("nav-mode");   // réaffiche les menus
+      av3("stop");                                    // retire l'avatar 3D et libère Three.js
       setTimeout(drawAltLines, 80);
       if (!wasNavigating) return;
       if (live.active && live.auto && live.status !== "arrived") stopLiveShare();
@@ -6437,8 +6461,8 @@
       }
       setTimeout(() => {
         map.resize();
-        if (map.getPitch() !== 0 || map.getBearing() !== 0) {
-          map.easeTo({ pitch: 0, bearing: 0, offset: [0, 0], duration: 500 });
+        if (map.getPitch() !== 0 || map.getBearing() !== 0 || map.getPadding().top) {
+          map.easeTo({ pitch: 0, bearing: 0, offset: [0, 0], padding: { top: 0, bottom: 0, left: 0, right: 0 }, duration: 500 });
         }
       }, 50);
     }
@@ -10584,6 +10608,252 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
     }
     async function pmrOfflineFallback(origin, lat, lon) { try { return await PmrOffline.route(origin, lat, lon); } catch { return null; } }
     if (!VIEWER_ID) { map.on("load", () => { try { pmrHandleSharedLink(); pmrConsentInit(); } catch {} }); }
+
+    // =====================================================================================
+    // Navigation3DAvatar : avatar 3D procédural (Three.js + CustomLayerInterface MapLibre)
+    //  • 4 modèles low-poly générés par code (aucun fichier .glb) : fauteuil, voiture, bus, tramway
+    //  • position / cap interpolés à chaque image (60 FPS) entre deux relevés GPS, inclinaison dans les virages
+    //  • feux allumés en mode nuit (body.dark), échelle augmentée en Grand format (body.large-mode)
+    //  • mode Éco (EcoGlass manuel / batterie faible), WebGL2 absent ou Three.js indisponible → marqueur 2.5D léger
+    //  • à l'arrêt du guidage : layer retiré, toutes les ressources Three.js libérées (dispose)
+    // =====================================================================================
+    window.Navigation3DAvatar = (() => {
+      const LAYER_ID = "nav-avatar-3d";
+      const PMR_BLUE = 0x007aff;
+      const MODES = ["wheelchair", "car", "bus", "tram"];
+      // taille visée à l'écran (px CSS) : le modèle est agrandi à bas zoom pour rester lisible, jamais rétréci sous sa taille réelle
+      const TARGET_PX = { wheelchair: 62, car: 86, bus: 118, tram: 150 };
+      const ROLL = { wheelchair: 0.12, car: -0.05, bus: -0.03, tram: 0 };         // gain d'inclinaison (rad par rad/s de rotation)
+      const ICON = { wheelchair: "♿", car: "🚗", bus: "🚌", tram: "🚋" };
+
+      const S = {
+        want: false, mode: "wheelchair", layerOn: false, layer: null, T: null, renderer: null, scene: null, camera: null,
+        model: null, night: null, gl2: null, lastT: 0, pending: false
+      };
+      const cur = { init: false, lng: 0, lat: 0, hdg: 0, roll: 0, rate: 0, speed: 0, spin: 0 };
+      const mv = { fromLng: 0, fromLat: 0, toLng: 0, toLat: 0, t0: 0, dur: 800, hdgTarget: 0 };
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const angDiff = (a, b) => ((b - a + 540) % 360) - 180;
+
+      function hasGL2() {
+        if (S.gl2 == null) { try { S.gl2 = !!document.createElement("canvas").getContext("webgl2"); } catch { S.gl2 = false; } }
+        return S.gl2;
+      }
+      function ecoLow() { try { const s = EcoGlass.state; return !!(s.manual || s.lowBatt); } catch { return false; } }
+      function threeReady() { return typeof window.THREE === "object" && window.THREE && !!window.THREE.WebGLRenderer; }
+      function use3D() { return S.want && threeReady() && hasGL2() && !ecoLow(); }
+
+      // ---------- Construction des modèles ----------
+      function build(mode) {
+        const T = S.T, lamps = [], wheels = [], M = {};
+        const std = (color, o) => new T.MeshStandardMaterial(Object.assign({ color, roughness: 0.55, metalness: 0.12, flatShading: true, side: T.DoubleSide }, o || {}));
+        M.body = std(0xe6ebf1); M.blue = std(PMR_BLUE); M.dark = std(0x23272e); M.tire = std(0x15171a, { roughness: 0.9 });
+        M.rim = std(0xaab3bf, { metalness: 0.5 }); M.glass = std(0x1d2d3d, { metalness: 0.6, roughness: 0.2, transparent: true, opacity: 0.88 });
+        M.grey = std(0xc9d0d9); M.white = std(0xffffff);
+        const lamp = (color, em) => { const m = std(color, { emissive: em, emissiveIntensity: 0.25 }); lamps.push(m); return m; };
+        const g = new T.Group(); g.rotation.order = "ZXY";
+        const box = (w, l, h, x, y, z, mat, parent) => { const m = new T.Mesh(new T.BoxGeometry(w, l, h), mat); m.position.set(x, y, z); (parent || g).add(m); return m; };
+        const wheel = (r, wid, x, y, z, spin) => {
+          const w = new T.Group(); w.position.set(x, y, z);
+          w.add(new T.Mesh(new T.CylinderGeometry(r, r, wid, 14).rotateZ(Math.PI / 2), M.tire));
+          w.add(new T.Mesh(new T.CylinderGeometry(r * 0.58, r * 0.58, wid * 1.06, 10).rotateZ(Math.PI / 2), M.rim));
+          for (let i = 0; i < 3; i++) { const s = new T.Mesh(new T.BoxGeometry(wid * 1.12, r * 1.75, r * 0.1), M.rim); s.rotation.x = i * Math.PI / 3; w.add(s); }
+          g.add(w); if (spin !== false) wheels.push({ o: w, r }); return w;
+        };
+        const radial = (inner, outer) => {
+          const c = document.createElement("canvas"); c.width = c.height = 64; const x = c.getContext("2d");
+          const gr = x.createRadialGradient(32, 32, 2, 32, 32, 31); gr.addColorStop(0, inner); gr.addColorStop(1, outer);
+          x.fillStyle = gr; x.fillRect(0, 0, 64, 64); const t = new T.CanvasTexture(c); return t;
+        };
+        const blob = (w, l) => {     // ombre portée douce au sol
+          const m = new T.Mesh(new T.PlaneGeometry(w, l), new T.MeshBasicMaterial({ map: radial("rgba(0,0,0,.55)", "rgba(0,0,0,0)"), transparent: true, depthWrite: false }));
+          m.position.set(w * 0.05, -l * 0.02, 0.02); g.add(m); return m;
+        };
+        let beam = null, halo = null, len = 4;
+        const addBeam = (w, l, y0) => {
+          const c = document.createElement("canvas"); c.width = 32; c.height = 64; const x = c.getContext("2d");
+          const gr = x.createLinearGradient(0, 64, 0, 0); gr.addColorStop(0, "rgba(255,244,200,.9)"); gr.addColorStop(1, "rgba(255,244,200,0)");
+          x.fillStyle = gr; x.beginPath(); x.moveTo(8, 64); x.lineTo(24, 64); x.lineTo(32, 0); x.lineTo(0, 0); x.closePath(); x.fill();
+          beam = new T.Mesh(new T.PlaneGeometry(w, l), new T.MeshBasicMaterial({ map: new T.CanvasTexture(c), transparent: true, depthWrite: false, blending: T.AdditiveBlending, opacity: 0 }));
+          beam.position.set(0, y0 + l / 2, 0.06); beam.visible = false; g.add(beam);
+        };
+
+        if (mode === "wheelchair") {
+          len = 1.1;
+          wheel(0.30, 0.05, 0.33, -0.12, 0.30); wheel(0.30, 0.05, -0.33, -0.12, 0.30);
+          wheel(0.09, 0.04, 0.22, 0.42, 0.09); wheel(0.09, 0.04, -0.22, 0.42, 0.09);
+          for (const s of [-1, 1]) {
+            box(0.03, 0.62, 0.04, 0.22 * s, 0.05, 0.45, M.dark); box(0.03, 0.04, 0.38, 0.22 * s, 0.36, 0.27, M.dark);
+            box(0.03, 0.03, 0.22, 0.22 * s, 0.42, 0.2, M.dark); box(0.04, 0.36, 0.03, 0.245 * s, 0.0, 0.68, M.dark); box(0.03, 0.15, 0.03, 0.2 * s, -0.3, 0.96, M.dark);
+          }
+          box(0.44, 0.44, 0.07, 0, 0.02, 0.5, M.blue); box(0.44, 0.06, 0.42, 0, -0.21, 0.74, M.blue); box(0.40, 0.16, 0.03, 0, 0.5, 0.12, M.dark);
+          halo = new T.Mesh(new T.CircleGeometry(1.15, 32), new T.MeshBasicMaterial({ map: radial("rgba(0,122,255,.55)", "rgba(0,122,255,0)"), transparent: true, depthWrite: false }));
+          halo.position.z = 0.03; g.add(halo);
+          blob(0.95, 1.35);
+        } else if (mode === "car") {
+          len = 4.2;
+          box(1.78, 4.1, 0.55, 0, 0, 0.55, M.body); box(1.55, 2.1, 0.55, 0, -0.25, 1.08, M.glass); box(1.5, 1.7, 0.06, 0, -0.3, 1.4, M.body);
+          const hood = box(1.7, 1.0, 0.12, 0, 1.35, 0.9, M.body); hood.rotation.x = 0.28;
+          for (const sx of [-1, 1]) for (const sy of [-1, 1]) wheel(0.33, 0.22, 0.92 * sx, 1.3 * sy, 0.33);
+          for (const s of [-1, 1]) { box(0.38, 0.07, 0.14, 0.6 * s, 2.06, 0.68, lamp(0xfff6d6, 0xffe9a0)); box(0.3, 0.06, 0.1, 0.65 * s, -2.06, 0.7, lamp(0xff4040, 0xff2020)); }
+          const disc = new T.Mesh(new T.CylinderGeometry(0.27, 0.27, 0.03, 20).rotateX(Math.PI / 2), M.blue); disc.position.set(0, -0.3, 1.45); g.add(disc);
+          const ring = new T.Mesh(new T.RingGeometry(0.17, 0.21, 20), M.white); ring.position.set(0, -0.3, 1.47); g.add(ring);
+          blob(2.2, 4.8); addBeam(3.2, 7, 2.1);
+        } else if (mode === "bus") {
+          len = 12;
+          box(2.5, 11.8, 2.5, 0, 0, 1.6, M.body); box(2.52, 11.82, 0.5, 0, 0, 0.75, M.blue); box(2.53, 10.2, 0.95, 0, -0.3, 2.15, M.glass);
+          box(2.2, 0.05, 1.25, 0, 5.92, 2.15, M.glass); box(1.9, 0.06, 0.34, 0, 5.93, 2.82, lamp(0xffb020, 0xff9a00));
+          box(2.2, 5, 0.18, 0, -1.5, 2.9, M.grey); box(2.54, 1.2, 1.9, 0, 3.2, 1.3, M.glass); box(2.54, 1.2, 1.9, 0, -1.0, 1.3, M.glass);
+          for (const s of [-1, 1]) { box(0.04, 0.55, 0.55, 1.27 * s, 4.3, 2.6, M.blue); box(0.05, 0.3, 0.3, 1.27 * s, 4.3, 2.6, M.white); }
+          for (const sy of [3.7, -3.3]) for (const sx of [-1, 1]) wheel(0.5, 0.3, 1.18 * sx, sy, 0.5);
+          for (const s of [-1, 1]) { box(0.4, 0.07, 0.16, 0.85 * s, 5.92, 0.75, lamp(0xfff6d6, 0xffe9a0)); box(0.3, 0.06, 0.12, 0.9 * s, -5.92, 0.8, lamp(0xff4040, 0xff2020)); }
+          blob(3.6, 13.5); addBeam(4, 10, 5.95);
+        } else {
+          len = 17.4;
+          const modules = [{ y: 4.35 }, { y: -4.35 }];
+          modules.forEach((m, i) => {
+            box(2.4, 8.2, 2.6, 0, m.y, 1.7, M.body); box(2.42, 8.22, 0.4, 0, m.y, 0.75, M.blue); box(2.43, 7.0, 0.9, 0, m.y, 2.2, M.glass);
+            box(2.0, 7, 0.14, 0, m.y, 3.07, M.grey); box(1.6, 1.4, 0.5, 0, m.y + 2.6, 0.45, M.dark); box(1.6, 1.4, 0.5, 0, m.y - 2.6, 0.45, M.dark);
+            const outer = i === 0 ? 1 : -1;
+            box(2.3, 0.9, 2.1, 0, m.y + outer * 4.5, 1.55, M.body); box(2.0, 0.05, 1.0, 0, m.y + outer * 4.97, 1.9, M.glass);
+            for (const s of [-1, 1]) box(0.34, 0.06, 0.14, 0.7 * s, m.y + outer * 4.99, 0.95, outer > 0 ? lamp(0xfff6d6, 0xffe9a0) : lamp(0xff4040, 0xff2020));
+          });
+          box(2.2, 0.6, 2.4, 0, 0, 1.7, M.dark);
+          box(0.7, 0.9, 0.08, 0, 4.5, 3.2, M.dark);
+          const a1 = box(0.05, 0.05, 1.1, 0, 4.2, 3.7, M.dark); a1.rotation.x = 0.7;
+          const a2 = box(0.05, 0.05, 1.0, 0, 4.0, 4.1, M.dark); a2.rotation.x = -0.7;
+          box(1.5, 0.08, 0.05, 0, 3.9, 4.45, M.dark);
+          blob(3.6, 20); addBeam(3.4, 9, 8.8);
+        }
+        g.userData = { lamps, wheels, beam, halo, len, mode };
+        return g;
+      }
+
+      function disposeModel(g) {
+        if (!g) return;
+        g.traverse(o => {
+          if (o.geometry) o.geometry.dispose();
+          if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); }); }
+        });
+        if (g.parent) g.parent.remove(g);
+      }
+
+      function setModel(mode) {
+        if (!S.scene) return;
+        const old = S.model; S.model = build(mode); S.scene.add(S.model); S.night = null;
+        disposeModel(old);
+      }
+
+      // ---------- Custom layer MapLibre ----------
+      function makeLayer() {
+        return {
+          id: LAYER_ID, type: "custom", renderingMode: "3d",
+          onAdd(map, gl) {
+            const T = S.T = window.THREE;
+            S.scene = new T.Scene(); S.camera = new T.Camera();
+            S.scene.add(new T.HemisphereLight(0xffffff, 0x7a8596, 0.68));
+            const sun = new T.DirectionalLight(0xffffff, 0.55); sun.position.set(-0.7, -0.35, 0.8).normalize(); S.scene.add(sun);
+            S.hemi = S.scene.children[0]; S.sun = sun;
+            S.renderer = new T.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true });
+            S.renderer.autoClear = false;
+            setModel(S.mode);
+          },
+          render(gl, matrix) {
+            if (!S.renderer || !S.model) return;
+            const T = S.T, now = performance.now(), dt = Math.min(0.1, Math.max(0.001, (now - (S.lastT || now)) / 1000)); S.lastT = now;
+            const busy = step(dt, now);
+            const g = S.model, ud = g.userData;
+            const dark = document.body.classList.contains("dark"), large = document.body.classList.contains("large-mode");
+            if (S.night !== dark) {
+              S.night = dark; ud.lamps.forEach(m => { m.emissiveIntensity = dark ? 1.7 : 0.25; });
+              if (ud.beam) { ud.beam.visible = dark; ud.beam.material.opacity = dark ? 0.5 : 0; }
+              S.hemi.intensity = dark ? 0.4 : 0.68; S.sun.intensity = dark ? 0.3 : 0.55;
+            }
+            if (ud.halo) { const p = 0.5 + 0.5 * Math.sin(now / 520); ud.halo.material.opacity = 0.55 + 0.35 * p; ud.halo.scale.setScalar(0.92 + 0.12 * p); }
+            ud.wheels.forEach(w => { w.o.rotation.x = -cur.spin / w.r; });
+            g.rotation.z = -cur.hdg * Math.PI / 180; g.rotation.y = cur.roll;
+            const mc = maplibregl.MercatorCoordinate.fromLngLat([cur.lng, cur.lat], 0), mpu = mc.meterInMercatorCoordinateUnits();
+            const mpp = 78271.517 * Math.cos(cur.lat * Math.PI / 180) / Math.pow(2, map.getZoom());
+            let sc = clamp(TARGET_PX[ud.mode] * mpp / ud.len, 1, 400); if (large) sc *= 1.18;
+            S.scale = sc;
+            const m = new T.Matrix4().fromArray(matrix), l = new T.Matrix4().makeTranslation(mc.x, mc.y, mc.z).scale(new T.Vector3(sc * mpu, -sc * mpu, sc * mpu));
+            S.camera.projectionMatrix = m.multiply(l);
+            if (S.renderer.resetState) S.renderer.resetState(); else S.renderer.state.reset();
+            S.renderer.render(S.scene, S.camera);
+            if (!document.hidden && (busy || ud.halo || ud.beam)) S.map.triggerRepaint();   // 60 FPS tant que l'avatar bouge ou pulse
+          },
+          onRemove() {
+            disposeModel(S.model); S.model = null;
+            if (S.scene) { S.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); }); S.scene = null; }
+            if (S.renderer) { try { S.renderer.dispose(); } catch {} S.renderer = null; }
+            S.camera = null; S.T = null; S.hemi = S.sun = null; S.lastT = 0;
+          }
+        };
+      }
+
+      // ---------- Interpolation (position : lerp entre deux relevés ; cap : slerp exponentiel ; roulis dans les virages) ----------
+      function step(dt, now) {
+        const t = clamp((now - mv.t0) / mv.dur, 0, 1);
+        const px = cur.lng, py = cur.lat;
+        cur.lng = mv.fromLng + (mv.toLng - mv.fromLng) * t; cur.lat = mv.fromLat + (mv.toLat - mv.fromLat) * t;
+        const prev = cur.hdg, k = 1 - Math.exp(-dt / 0.12);
+        cur.hdg = (cur.hdg + angDiff(cur.hdg, mv.hdgTarget) * k + 360) % 360;
+        cur.rate += (angDiff(prev, cur.hdg) / dt - cur.rate) * (1 - Math.exp(-dt / 0.25));
+        const moveM = Math.hypot((cur.lng - px) * 111320 * Math.cos(cur.lat * Math.PI / 180), (cur.lat - py) * 110540);
+        cur.spin += moveM;
+        const gain = ROLL[S.mode] || 0, target = clamp(cur.rate * Math.PI / 180 * gain * 4, -0.17, 0.17) * clamp(cur.speed / 2, 0, 1);
+        cur.roll += (target - cur.roll) * (1 - Math.exp(-dt / 0.2));
+        return t < 1 || Math.abs(angDiff(cur.hdg, mv.hdgTarget)) > 0.3 || Math.abs(cur.roll) > 0.002;
+      }
+
+      // ---------- API ----------
+      function update(o) {
+        if (!o || !isFinite(o.lat) || !isFinite(o.lon)) return;
+        const now = performance.now(), hdg = isFinite(o.heading) ? o.heading : cur.hdg;
+        cur.speed = isFinite(o.speed) ? o.speed : cur.speed;
+        const far = cur.init && Math.hypot((o.lon - cur.lng) * 111320 * Math.cos(o.lat * Math.PI / 180), (o.lat - cur.lat) * 110540) > 250;
+        if (!cur.init || far) { cur.init = true; cur.lng = o.lon; cur.lat = o.lat; cur.hdg = hdg; cur.roll = 0; mv.fromLng = mv.toLng = o.lon; mv.fromLat = mv.toLat = o.lat; mv.t0 = now - 1; mv.dur = 1; }
+        else { mv.fromLng = cur.lng; mv.fromLat = cur.lat; mv.toLng = o.lon; mv.toLat = o.lat; mv.t0 = now; mv.dur = clamp(o.dtMs || 800, 250, 1600); }
+        mv.hdgTarget = hdg;
+        if (S.layerOn && S.map) S.map.triggerRepaint();
+      }
+      function addLayer() {
+        if (S.layerOn || !S.map) return;
+        if (!S.map.getStyle()) { if (!S.pending) { S.pending = true; S.map.once("load", () => { S.pending = false; sync(); }); } return; }
+        S.layer = makeLayer();
+        try { S.map.addLayer(S.layer); S.layerOn = true; S.lastT = 0; } catch { S.layer = null; }
+      }
+      function removeLayer() {
+        if (!S.layerOn) return;
+        try { if (S.map.getLayer(LAYER_ID)) S.map.removeLayer(LAYER_ID); } catch {}
+        S.layerOn = false; S.layer = null;
+      }
+      function sync() {
+        const on = use3D();
+        if (on) addLayer(); else removeLayer();
+        document.body.classList.toggle("av3d-on", on);
+        const badge = document.querySelectorAll(".nav-arrow-mode"); badge.forEach(b => { b.textContent = ICON[S.mode] || ""; });
+        if (S.want && on && S.map) S.map.triggerRepaint();
+      }
+      function setMode(m) {
+        if (!MODES.includes(m)) return;
+        S.mode = m;
+        if (S.layerOn && S.model) setModel(m);
+        sync();
+      }
+      function start(map) {
+        S.map = map || S.map; S.want = true; sync();
+        if (!threeReady() && !S.waiting) { S.waiting = true; window.addEventListener("three-ready", () => { S.waiting = false; sync(); }, { once: true }); }
+      }
+      function stop() { S.want = false; removeLayer(); document.body.classList.remove("av3d-on"); sync(); }
+      function init(map) { S.map = map; }
+      return {
+        init, start, stop, setMode, update, refresh: sync,
+        isActive: () => S.want, uses3D: () => S.layerOn && use3D(),
+        debug: () => ({ want: S.want, layerOn: S.layerOn, use3D: use3D(), three: threeReady(), gl2: hasGL2(), eco: ecoLow(), mode: S.mode, scale: S.scale, cur: Object.assign({}, cur), hasModel: !!S.model, renderer: !!S.renderer })
+      };
+    })();
+    Navigation3DAvatar.init(map);
 
     map.on("load", () => {
       if (VIEWER_ID) { initViewer(); return; }

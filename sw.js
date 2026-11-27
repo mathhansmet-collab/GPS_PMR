@@ -1,4 +1,4 @@
-// sw.js — GPS PMR (PWA) · v7 (cache applicatif gps-pmr-app-v7)
+// sw.js — GPS PMR (PWA) · v8 (cache applicatif gps-pmr-app-v8)
 // À placer À CÔTÉ de index.html (ex. https://<compte>.github.io/GPS_PMR/sw.js). Servi en HTTPS, portée = son dossier.
 //
 // Stratégies :
@@ -10,7 +10,7 @@
 // Les requêtes POST (Overpass, Valhalla, Supabase écriture) ne passent jamais par le cache ; l'application mémorise
 // elle-même lieux et dernier itinéraire (IndexedDB / localStorage).
 
-const APP_CACHE  = "gps-pmr-app-v7";
+const APP_CACHE  = "gps-pmr-app-v8";
 const TILE_CACHE = "gps-pmr-tiles-v1";
 const DATA_CACHE = "gps-pmr-data-v1";
 const MAX_TILES = 3000;   // = plafond du téléchargement de zone (sinon les premières tuiles d'un pack seraient effacées)
@@ -18,6 +18,12 @@ const MAX_DATA  = 400;
 const NET_TIMEOUT_APP  = 3500;   // ms avant de servir la copie locale d'un fichier de l'appli
 const NET_TIMEOUT_DATA = 7000;
 
+// Bibliothèques épinglées, préchargées à l'installation (avatar 3D Three.js + carte MapLibre) : tout fonctionne hors connexion.
+// Deux CDN : si le premier échoue, le second est mémorisé (l'application demande jsDelivr quand unpkg ne répond pas).
+const LIBS = [
+  "https://unpkg.com/three@0.149.0/build/three.min.js", "https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js",
+  "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js", "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+];
 const SHELL = ["./", "index.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 
 const TILE_HOSTS = ["tiles.openfreemap.org", "tile.openstreetmap.org", "a.tile.openstreetmap.org", "b.tile.openstreetmap.org", "c.tile.openstreetmap.org",
@@ -33,6 +39,7 @@ self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(APP_CACHE);
     await Promise.all(SHELL.map(u => cache.add(new Request(u, { cache: "reload" })).catch(() => {})));   // un fichier manquant n'empêche pas l'installation
+    await Promise.all(LIBS.map(u => cache.add(new Request(u, { mode: "cors" })).catch(() => {})));       // idem : l'échec d'un CDN n'empêche pas l'installation
     await self.skipWaiting();
   })());
 });
@@ -128,7 +135,7 @@ self.addEventListener("fetch", event => {
   if (TILE_HOSTS.includes(url.hostname) || LIB_HOSTS.includes(url.hostname)) {
     event.respondWith((async () => {
       const cache = await caches.open(APP_CACHE);
-      const hit = await cache.match(req);
+      const hit = await cache.match(req, { ignoreVary: true });
       const net = fetch(req).then(res => { if (res.ok) cache.put(req, res.clone()); return res; }).catch(() => null);
       return hit || (await net) || Response.error();
     })());
