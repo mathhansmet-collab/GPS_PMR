@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPS PMR — France · Présentation et guide d'installation</title>
+<meta name="description" content="Application gratuite d'itinéraires piétons pour fauteuil roulant et personnes à mobilité réduite : pentes, trottoirs, stationnement PMR, toilettes adaptées. Guide d'installation illustré.">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+:root{--bg:#f6f8fb;--card:#fff;--text:#16202c;--sub:#4a5a6c;--brand:#1a73e8;--ok:#1e8e3e;--line:#d9e0e8}
+@media (prefers-color-scheme:dark){:root{--bg:#10161d;--card:#18212b;--text:#eef2f6;--sub:#a9b6c4;--brand:#6aa6ff;--ok:#5bd17f;--line:#2a3643}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--brand)}
+header.hero{padding:40px 16px 28px;text-align:center;background:linear-gradient(160deg,#1a73e8,#0b4aa8);color:#fff}
+header.hero img{width:84px;height:84px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+header.hero h1{margin:14px 0 6px;font-size:1.9rem}
+header.hero p{max-width:640px;margin:0 auto 18px;opacity:.95}
+.btn{display:inline-block;padding:14px 26px;border-radius:14px;background:#fff;color:#0b4aa8;font-weight:800;text-decoration:none;font-size:1.05rem;min-height:48px}
+main{max-width:860px;margin:0 auto;padding:16px}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 18px;margin:18px 0}
+h2{margin:0 0 10px;font-size:1.35rem} h3{margin:18px 0 6px;font-size:1.1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.feat{border:1px solid var(--line);border-radius:14px;padding:12px 14px}.feat b{display:block}.feat span{color:var(--sub);font-size:.95rem}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px}
+.tabs button{flex:1 1 140px;min-height:48px;border-radius:12px;border:2px solid var(--line);background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+.tabs button[aria-selected=true]{border-color:var(--brand);background:var(--brand);color:#fff}
+.panel[hidden]{display:none}
+ol.steps{list-style:none;counter-reset:s;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+ol.steps li{counter-increment:s;border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+ol.steps li::before{content:counter(s);display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;font-weight:800;margin-bottom:6px}
+ol.steps svg{width:100%;max-width:200px;height:auto;display:block;margin:6px auto}
+ol.steps p{margin:6px 0 0;font-size:.97rem}
+.note{border-left:4px solid var(--brand);padding:8px 12px;background:rgba(26,115,232,.08);border-radius:8px;margin:12px 0;font-size:.95rem}
+.warn{border-left-color:#e8710a;background:rgba(232,113,10,.1)}
+table{width:100%;border-collapse:collapse;font-size:.95rem}td,th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+footer{text-align:center;color:var(--sub);font-size:.9rem;padding:24px 16px 40px}
+</style>
+</head>
+<body>
+<header class="hero">
+  <img src="icons/icon-192.png" alt="Icône de l'application GPS PMR">
+  <h1>GPS PMR — France</h1>
+  <p>Un itinéraire pensé pour le fauteuil roulant et la mobilité réduite : pentes limitées, trottoirs et traversées vérifiés, stationnement PMR, toilettes adaptées. Gratuit, sans compte, sans publicité.</p>
+  <a class="btn" href="index.html">Ouvrir l'application</a>
+</header>
+<main>
+<section aria-labelledby="t1">
+  <h2 id="t1">Ce que fait l'application</h2>
+  <div class="grid">
+    <div class="feat"><b>♿ Itinéraire fauteuil</b><span>Vous choisissez la pente maximale supportée ; le tracé évite les passages trop raides et les colore selon votre limite.</span></div>
+    <div class="feat"><b>🅿️ Porte-à-porte en voiture</b><span>Propose une place PMR près de la destination, puis le dernier trajet en fauteuil. « Retour à ma voiture » inclus.</span></div>
+    <div class="feat"><b>🏠 Favoris un toucher</b><span>Maison, Travail, Médecin, Pharmacie : un appui et le trajet est calculé.</span></div>
+    <div class="feat"><b>🧩 Mode simple et voix</b><span>Grands boutons, texte agrandi, contraste élevé, commandes vocales (selon le navigateur).</span></div>
+    <div class="feat"><b>⌚ Montre</b><span>Vibrations différentes : virage, obstacle, arrivée (selon l'appareil).</span></div>
+    <div class="feat"><b>🔋 Économie de batterie</b><span>Écran sombre et position GPS moins fréquente quand la batterie est faible.</span></div>
+    <div class="feat"><b>🆘 Aide rapide</b><span>Bouton SOS, « je suis bloqué », partage de trajet avec un proche (jamais d'envoi automatique).</span></div>
+    <div class="feat"><b>📴 Hors connexion</b><span>Une fois installée, l'application s'ouvre sans réseau (le calcul d'itinéraire demande une connexion).</span></div>
+  </div>
+</section>
+
+<section aria-labelledby="t2">
+  <h2 id="t2">Installer l'application (30 secondes)</h2>
+  <p>Aucune boutique d'applications n'est nécessaire : l'application s'installe depuis le navigateur et s'ouvre ensuite comme n'importe quelle autre application.</p>
+  <div class="tabs" role="tablist" aria-label="Choisir son appareil">
+    <button role="tab" id="tab-ios" aria-selected="true" aria-controls="p-ios">🍎 iPhone / iPad</button>
+    <button role="tab" id="tab-and" aria-selected="false" aria-controls="p-and">🤖 Android</button>
+    <button role="tab" id="tab-pc" aria-selected="false" aria-controls="p-pc">💻 Ordinateur</button>
+  </div>
+
+  <div class="panel" id="p-ios" role="tabpanel" aria-labelledby="tab-ios">
+    <ol class="steps">
+      <li><svg viewBox="0 0 200 120" role="img" aria-label="Safari ouvert sur l'adresse de l'application"><rect x="4" y="4" width="192" height="112" rx="14" fill="#e8eef6" stroke="#9aa9bb"/><rect x="20" y="16" width="160" height="26" rx="13" fill="#fff" stroke="#9aa9bb"/><text x="100" y="34" text-anchor="middle" font-size="11" fill="#333" font-family="sans-serif">mathhansmet-collab.github.io</text><rect x="20" y="54" width="160" height="50" rx="8" fill="#1a73e8" opacity=".15"/><text x="100" y="84" text-anchor="middle" font-size="13" fill="#1a73e8" font-weight="700" font-family="sans-serif">GPS PMR — France</text></svg><p>Ouvrez l'adresse de l'application avec <b>Safari</b> (pas un autre navigateur).</p></li>
+      <li><svg viewBox="0 0 200 120" role="img" aria-label="Bouton Partager en bas de l'écran"><rect x="4" y="4" width="192" height="112" rx="14" fill="#e8eef6" stroke="#9aa9bb"/><rect x="4" y="82" width="192" height="34" rx="0" fill="#f5f7fa"/><g transform="translate(100 99)" fill="none" stroke="#1a73e8" stroke-width="2.5" stroke-linecap="round"><path d="M0 -10V4M-5 -5L0 -10L5 -5M-8 -2v10h16v-10"/></g><circle cx="100" cy="99" r="18" fill="none" stroke="#e8710a" stroke-width="3"/></svg><p>Touchez le bouton <b>Partager</b> (le carré avec une flèche vers le haut).</p></li>
+      <li><svg viewBox="0 0 200 120" role="img" aria-label="Menu avec « Sur l'écran d'accueil »"><rect x="4" y="4" width="192" height="112" rx="14" fill="#e8eef6" stroke="#9aa9bb"/><rect x="16" y="14" width="168" height="94" rx="12" fill="#fff" stroke="#9aa9bb"/><text x="28" y="40" font-size="11" fill="#555" font-family="sans-serif">Copier</text><rect x="22" y="52" width="156" height="26" rx="8" fill="#1a73e8" opacity=".18" stroke="#e8710a" stroke-width="2"/><text x="28" y="70" font-size="12" fill="#1a73e8" font-weight="700" font-family="sans-serif">⊞ Sur l'écran d'accueil</text><text x="28" y="98" font-size="11" fill="#555" font-family="sans-serif">Ajouter aux favoris</text></svg><p>Faites défiler le menu et choisissez <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>.</p></li>
+    </ol>
+    <div class="note">L'icône <b>GPS PMR</b> apparaît alors sur l'écran d'accueil. Ouvrez-la toujours depuis cette icône.</div>
+    <div class="note warn">Sur iPhone, les vibrations de la montre/téléphone dépendent d'iOS : Safari ne les permet pas toujours, et la commande vocale peut être absente dans l'application installée. Le guidage parlé et les alertes à l'écran fonctionnent.</div>
+  </div>
+
+  <div class="panel" id="p-and" role="tabpanel" aria-labelledby="tab-and" hidden>
+    <ol class="steps">
+      <li><svg viewBox="0 0 200 120" role="img" aria-label="Chrome ouvert sur l'adresse de l'application"><rect x="4" y="4" width="192" height="112" rx="14" fill="#e8eef6" stroke="#9aa9bb"/><rect x="14" y="14" width="150" height="26" rx="13" fill="#fff" stroke="#9aa9bb"/><text x="89" y="31" text-anchor="middle" font-size="10" fill="#333" font-family="sans-serif">mathhansmet-collab.github.io</text><g fill="#555"><circle cx="180" cy="19" r="2.5"/><circle cx="180" cy="27" r="2.5"/><circle cx="180" cy="35" r="2.5"/></g><rect x="20" y="54" width="160" height="50" rx="8" fill="#1a73e8" opacity=".15"/><text x="100" y="84" text-anchor="middle" font-size="13" fill="#1a73e8" font-weight="700" font-family="sans-serif">GPS PMR — France</text></svg><p>Ouvrez l'adresse avec <b>Chrome</b>.</p></li>
+      <li><svg viewBox="0 0 200 120" role="img" aria-label="Menu trois points ouvert"><rect x="4" y="4" width="192" height="112" rx="14" fill="#e8eef6" stroke="#9aa9bb"/><circle cx="180" cy="19" r="14" fill="none" stroke="#e8710a" stroke-width="3"/><g fill="#555"><circle cx="180" cy="13" r="2.5"/><circle cx="180" cy="19" r="2.5"/><circle cx="180" cy="25" r="2.5"/></g><rect x="70" y="38" width="118" height="70" rx="10" fill="#fff" stroke="#9aa9bb"/><text x="80" y="58" font-size="10" fill="#555" font-family="sans-serif">Nouvel onglet</text><text x="80" y="76" font-size="10" fill="#555" font-family="sans-serif">Historique</text></svg><p>Touchez le menu <b>⋮</b> en haut à droite.</p></li>
+      <li><svg viewBox="0 0 200 120" role="img" aria-label="Option Installer l'application"><rect x="4" y="4" width="192" height="112" rx="14" fill="#e8eef6" stroke="#9aa9bb"/><rect x="40" y="14" width="148" height="94" rx="10" fill="#fff" stroke="#9aa9bb"/><rect x="46" y="50" width="136" height="26" rx="8" fill="#1a73e8" opacity=".18" stroke="#e8710a" stroke-width="2"/><text x="54" y="67" font-size="11" fill="#1a73e8" font-weight="700" font-family="sans-serif">Installer l'application</text><text x="54" y="35" font-size="10" fill="#555" font-family="sans-serif">Partager…</text><text x="54" y="96" font-size="10" fill="#555" font-family="sans-serif">Paramètres</text></svg><p>Choisissez <b>« Installer l'application »</b> (ou « Ajouter à l'écran d'accueil »), puis confirmez.</p></li>
+    </ol>
+    <div class="note">Dans l'application, le bouton <b>Installer</b> du menu Réglages fait la même chose en un appui lorsque le navigateur le propose.</div>
+  </div>
+
+  <div class="panel" id="p-pc" role="tabpanel" aria-labelledby="tab-pc" hidden>
+    <ol class="steps">
+      <li><svg viewBox="0 0 200 120" role="img" aria-label="Navigateur avec l'icône d'installation dans la barre d'adresse"><rect x="4" y="4" width="192" height="112" rx="10" fill="#e8eef6" stroke="#9aa9bb"/><rect x="14" y="14" width="172" height="24" rx="12" fill="#fff" stroke="#9aa9bb"/><text x="24" y="30" font-size="10" fill="#333" font-family="sans-serif">mathhansmet-collab.github.io/GPS_PMR/</text><rect x="160" y="18" width="20" height="16" rx="4" fill="none" stroke="#e8710a" stroke-width="2.5"/><path d="M170 21v8m-3-3l3 3l3-3" stroke="#1a73e8" stroke-width="2" fill="none"/></svg><p>Ouvrez l'adresse dans <b>Chrome ou Edge</b>.</p></li>
+      <li><svg viewBox="0 0 200 120" role="img" aria-label="Fenêtre de confirmation d'installation"><rect x="4" y="4" width="192" height="112" rx="10" fill="#e8eef6" stroke="#9aa9bb"/><rect x="50" y="30" width="130" height="70" rx="10" fill="#fff" stroke="#9aa9bb"/><text x="60" y="52" font-size="11" fill="#333" font-family="sans-serif">Installer GPS PMR ?</text><rect x="116" y="68" width="56" height="22" rx="8" fill="#1a73e8"/><text x="144" y="83" text-anchor="middle" font-size="11" fill="#fff" font-weight="700" font-family="sans-serif">Installer</text></svg><p>Cliquez sur l'icône <b>Installer</b> dans la barre d'adresse, puis sur <b>Installer</b>.</p></li>
+    </ol>
+    <div class="note">Sur Firefox ou Safari pour Mac, l'application fonctionne directement dans le navigateur (sans installation).</div>
+  </div>
+</section>
+
+<section aria-labelledby="t3">
+  <h2 id="t3">Premiers pas</h2>
+  <ol>
+    <li>Autorisez la <b>localisation</b> quand le téléphone le demande.</li>
+    <li>Ouvrez <b>🧩 Réglages → Confort</b> : taille du texte, contraste, mode simple, pente maximale supportée.</li>
+    <li>Définissez vos <b>favoris rapides</b> (🏠 💼 🩺 💊) : touchez un bouton vide, cherchez l'adresse, validez.</li>
+    <li>Touchez un favori ou tapez une destination : l'itinéraire s'affiche, puis <b>▶ Y aller</b>.</li>
+  </ol>
+  <h3>Pour les accompagnants (associations, ergothérapeutes, services d'aide)</h3>
+  <p>Le mode simple et les favoris peuvent être préparés avec la personne lors d'un entretien : réglez la taille du texte et la pente maximale, enregistrez ses 4 lieux habituels, puis faites un trajet d'essai ensemble. Les réglages restent sur l'appareil.</p>
+</section>
+
+<section aria-labelledby="t4">
+  <h2 id="t4">Limites à connaître</h2>
+  <table>
+    <tr><th>Sujet</th><th>À savoir</th></tr>
+    <tr><td>Données</td><td>Issues d'OpenStreetMap, d'Accèslibre et de données publiques : elles peuvent être incomplètes ou périmées. Le bouton « Cet accès est faux » permet de signaler une erreur.</td></tr>
+    <tr><td>Pentes</td><td>Calculées à partir de l'altimétrie IGN : estimation, pas une mesure sur place.</td></tr>
+    <tr><td>Stationnement PMR</td><td>Les places libres en temps réel ne sont disponibles que lorsque la ville publie un flux ; sinon l'application propose les places connues.</td></tr>
+    <tr><td>Sécurité</td><td>L'application aide mais ne remplace pas votre vigilance. En cas d'urgence, appelez le 112 (ou le 114 par SMS pour les personnes sourdes ou malentendantes).</td></tr>
+    <tr><td>Vie privée</td><td>Pas de compte obligatoire ; les favoris et réglages restent dans votre appareil.</td></tr>
+  </table>
+</section>
+</main>
+<footer>GPS PMR — France · <a href="index.html">Ouvrir l'application</a></footer>
+<script>
+(function(){
+  var tabs=document.querySelectorAll('[role=tab]');
+  function sel(t){tabs.forEach(function(b){var on=b===t;b.setAttribute('aria-selected',on);document.getElementById(b.getAttribute('aria-controls')).hidden=!on;});}
+  tabs.forEach(function(b){b.addEventListener('click',function(){sel(b);});});
+  var ua=navigator.userAgent||'';
+  if(/Android/i.test(ua))sel(document.getElementById('tab-and'));
+  else if(/iPhone|iPad|iPod/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1))sel(document.getElementById('tab-ios'));
+  else sel(document.getElementById('tab-pc'));
+})();
+</script>
+</body>
+</html>

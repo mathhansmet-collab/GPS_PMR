@@ -1,4 +1,4 @@
-// sw.js — GPS PMR (PWA) · v9 (cache applicatif gps-pmr-app-v9)
+// sw.js — GPS PMR (PWA) · v11 (cache applicatif gps-pmr-app-v11)
 // À placer À CÔTÉ de index.html (ex. https://<compte>.github.io/GPS_PMR/sw.js). Servi en HTTPS, portée = son dossier.
 //
 // Stratégies :
@@ -11,7 +11,7 @@
 // Les requêtes POST (Overpass, Valhalla, Supabase écriture) ne passent jamais par le cache ; l'application mémorise
 // elle-même lieux et dernier itinéraire (IndexedDB / localStorage).
 
-const APP_CACHE  = "gps-pmr-app-v9";
+const APP_CACHE  = "gps-pmr-app-v11";
 const TILE_CACHE = "gps-pmr-tiles-v1";
 const DATA_CACHE = "gps-pmr-data-v1";
 const MAX_TILES = 3000;   // = plafond du téléchargement de zone (sinon les premières tuiles d'un pack seraient effacées)
@@ -25,7 +25,7 @@ const LIBS = [
   "https://unpkg.com/three@0.149.0/build/three.min.js", "https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js",
   "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js", "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
 ];
-const SHELL = ["./", "index.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
+const SHELL = ["./", "index.html", "accueil.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 
 const TILE_HOSTS = ["tiles.openfreemap.org", "tile.openstreetmap.org", "a.tile.openstreetmap.org", "b.tile.openstreetmap.org", "c.tile.openstreetmap.org",
   "basemaps.cartocdn.com", "tiles.basemaps.cartocdn.com", "a.basemaps.cartocdn.com", "b.basemaps.cartocdn.com", "c.basemaps.cartocdn.com", "d.basemaps.cartocdn.com"];
@@ -33,7 +33,7 @@ const LIB_HOSTS  = ["unpkg.com", "cdn.jsdelivr.net"];
 const DATA_HOSTS = ["acceslibre.beta.gouv.fr", "data.angers.fr", "tabular-api.data.gouv.fr", "www.data.gouv.fr", "data.gouv.fr", "transport.data.gouv.fr", "www.irigo.fr", "overpass.private.coffee", "overpass.kumi.systems", "overpass-api.de"];
 // TEMPS RÉEL STRICT (Network-Only) : jamais de position bus/tram périmée, jamais de calcul d'itinéraire ou de météo en cache
 const isRealtime = u =>
-  (u.hostname === "data.angers.fr" && /position|temps-?reel|-tr\//i.test(u.pathname)) ||
+  (u.hostname === "data.angers.fr" && /position|temps-?reel|-tr\/|parking|disponib/i.test(u.pathname)) ||
   u.hostname === "valhalla1.openstreetmap.de" || u.hostname === "api.open-meteo.com" || u.hostname.endsWith(".supabase.co") ||
   /gtfs-?rt|vehicle-?positions|service-?alerts|trip-?updates|realtime|\.pb$/i.test(u.pathname);
 const isIgnTile  = u => u.hostname === "data.geopf.fr" && /\/(wmts|tms)/i.test(u.pathname);

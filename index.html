@@ -375,6 +375,15 @@
     @media (max-width: 768px) { body.one-hand:not(.nav-mode) .floating-right { top: auto; bottom: calc(var(--sheet-h, 52dvh) + 10px); } }
     .cmd-mic.listening { background: #ef4444 !important; color: #fff; animation: navPulse 1.2s infinite ease-out; }
     .nav-side .cmd-mic { background: #fff; }
+    .slot-row { display: flex; gap: 8px; align-items: stretch; margin: 6px 0 8px; }
+    .slot-btn { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 8px 2px; min-height: 54px; border-radius: 14px; border: 2px solid var(--border); background: var(--card, var(--bg)); color: var(--text); font: inherit; cursor: pointer; touch-action: manipulation; }
+    .slot-btn .si { font-size: 1.35em; line-height: 1; } .slot-btn .sl { font-size: .72em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .slot-btn.set { border-color: #1a73e8; } .slot-btn.empty { border-style: dashed; opacity: .75; }
+    .slot-edit { flex: 0 0 40px; border-radius: 14px; border: 2px solid var(--border); background: transparent; color: var(--text); font-size: 1.1em; cursor: pointer; } .slot-edit.on { background: #1a73e8; color: #fff; }
+    .slot-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; max-height: 40dvh; overflow-y: auto; }
+    .slot-opt { text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; display: flex; flex-direction: column; min-height: 44px; }
+    .slot-opt small { opacity: .7; }
+    #slotQ { width: 100%; box-sizing: border-box; padding: 12px; font-size: 1em; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
     .simple-bar { display: none; }
     body.simple:not(.nav-mode) .simple-bar:not([hidden]) { display: flex; }
     body.simple .sidebar, body.simple .floating-right, body.simple .legend { display: none !important; }
@@ -389,6 +398,8 @@
     .detour-bar[hidden] { display: none; } .detour-bar.stuck { border-color: #ef4444; bottom: calc(230px + env(safe-area-inset-bottom)); }
     .pk-row { display: flex; gap: 8px; margin-top: 8px; } .pk-row button { flex: 1; min-height: 52px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; background: #334155; color: #fff; cursor: pointer; } .pk-row button.go { background: #16a34a; }
     .cf-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; } .cf-row input[type=checkbox] { width: 26px; height: 26px; } .cf-row select { min-height: 44px; font-size: 16px; }
+    body.saver *:not(.maplibregl-canvas) { animation: none !important; transition: none !important; }
+    .slope-tg { min-height: 30px; font-size: 12px; padding: 2px 10px; margin-left: 6px; border-radius: 999px; }
     .cf-sep { height: 10px; } #comfortDlg button, #tutoDlg button, #helpObsDlg button { min-height: 48px; margin-top: 6px; }
     .route-bar { margin: 6px 0; } .conf-row { display: flex; align-items: center; gap: 6px; font-size: 13px; } .conf-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex: none; }
     .ps-box { border-top: 1px solid var(--border); padding-top: 6px; margin-top: 2px; } .ps-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 2px 0; }
@@ -1158,11 +1169,19 @@
       <input id="simpleInput" type="text" placeholder="Où allez-vous ?" autocomplete="off" aria-label="Destination" />
       <button type="button" class="cmd-mic" onclick="cmdListen()" aria-label="Parler : dire la destination ou « y aller »">🎙️</button>
     </div>
+    <div class="slot-row" role="group" aria-label="Favoris rapides"></div>
     <div id="simpleList" class="simple-list"></div>
     <div id="simpleSummary" class="simple-sum" aria-live="polite"></div>
     <button id="simpleGo" type="button" class="simple-go" hidden>▶ Y aller</button>
     <div class="simple-foot"><button type="button" onclick="openSos()">🆘 SOS</button><button type="button" onclick="openComfort()">🧩 Réglages</button></div>
   </div>
+  <dialog id="slotDlg" class="big-dlg" aria-labelledby="slotTitle">
+    <div class="row between"><h2 id="slotTitle">Favori rapide</h2><button onclick="slotClose()" aria-label="Fermer">✕</button></div>
+    <p id="slotCur" class="sub"></p>
+    <input id="slotQ" type="text" placeholder="Adresse ou lieu…" autocomplete="off" aria-label="Rechercher une adresse" oninput="slotSearch()">
+    <div id="slotList" class="slot-list"></div>
+    <button id="slotClear" type="button" onclick="slotClearCur()">🗑 Effacer ce favori</button>
+  </dialog>
   <dialog id="comfortDlg" class="big-dlg" aria-labelledby="cfTitle">
     <div class="row between"><h2 id="cfTitle">🧩 Confort & accessibilité</h2><button onclick="closeComfort()" aria-label="Fermer">✕</button></div>
     <label class="cf-row"><span>Taille du texte</span><select id="cfText" onchange="a11yFromForm()"><option value="0">Normale</option><option value="1">Grande</option><option value="2">Très grande</option></select></label>
@@ -1171,6 +1190,10 @@
     <label class="cf-row"><span>Mode une main (boutons à portée du pouce)</span><input id="cfOne" type="checkbox" onchange="a11yFromForm()"></label>
     <label class="cf-row"><span>Main utilisée</span><select id="cfHand" onchange="a11yFromForm()"><option value="r">Droite</option><option value="l">Gauche</option></select></label>
     <label class="cf-row"><span>Mode très simplifié (destination + « Y aller »)</span><input id="cfSimple" type="checkbox" onchange="a11yFromForm()"></label>
+    <label class="cf-row"><span>Pentes en couleur sur le tracé</span><input id="cfSlope" type="checkbox" onchange="prefs2FromForm()"></label>
+    <label class="cf-row"><span>Économie de batterie du téléphone</span><select id="cfSaver" onchange="prefs2FromForm()"><option value="auto">Auto (batterie ≤ 30 %)</option><option value="on">Toujours activée</option><option value="off">Désactivée</option></select></label>
+    <label class="cf-row"><span>Montre : mode discret (pas de « Dans 120 m »)</span><input id="cfDiscreet" type="checkbox" onchange="prefs2FromForm()"></label>
+    <div class="row" style="gap:6px;flex-wrap:wrap;"><span class="sub" style="align-self:center;">Vibrations :</span><button type="button" onclick="vibTest('turn')">📳 Virage</button><button type="button" onclick="vibTest('alert')">📳 Obstacle</button><button type="button" onclick="vibTest('arrive')">📳 Arrivée</button></div>
     <div class="cf-sep"></div>
     <button type="button" class="cmd-mic" onclick="closeComfort();cmdListen()">🎙️ Essayer la commande vocale</button>
     <div class="sub">Dites par exemple : « emmène-moi à la mairie », « y aller », « répète », « arrête », « place occupée », « je suis garé », « retour à ma voiture », « détour », « partage mon trajet », « mode simple », « plus gros », « contraste », « SOS ». Raccourci clavier : V.</div>
@@ -1399,6 +1422,7 @@
   </dialog>
   <dialog id="aboutDlg" class="big-dlg" aria-labelledby="aboutTitle">
     <h2 id="aboutTitle">À propos, données et vie privée</h2>
+    <p class="sub"><a href="accueil.html" target="_blank" rel="noopener">📄 Page de présentation et guide d'installation</a></p>
     <div class="sub" style="line-height:1.5;margin-top:8px;">
       <p><b>GPS PMR — France</b> est un outil d'aide à l'orientation. Il peut comporter des erreurs : les données d'accessibilité sont incomplètes et la prudence de l'utilisateur reste prioritaire. Ce n'est pas un dispositif de sécurité ou d'urgence.</p>
       <p><b>Éditeur</b> : [À compléter : nom / pseudo]. <b>Contact</b> : [À compléter : e-mail]. <b>Hébergement</b> : GitHub Pages (GitHub Inc.).</p>
@@ -1541,6 +1565,7 @@
 
           <button class="swap-btn" aria-label="Inverser le départ et l'arrivée" onclick="swapOriginAndDest()">⇅</button>
         </div>
+        <div class="slot-row" role="group" aria-label="Favoris rapides"></div>
 
         <div id="suggestionsBox" class="suggestions-list" style="display:none;" role="listbox" aria-label="Suggestions d'adresses"></div>
       </div>
@@ -2449,6 +2474,7 @@
     // Caméra « style GPS » : centrée sur la flèche (décalée vers le bas), carte orientée dans le sens de la marche
     function followCamera(lat, lon, heading, durationMs) {
       if (!map.loaded() || document.hidden) return;
+      if (psOn) { const t = Date.now(); if (t - psFc < 1500) return; psFc = t; durationMs = 1500; }      // économie : la caméra se met à jour 1 fois par 1,5 s
       if (av3("uses3D")) {      // avatar 3D : le décalage vers le bas est porté par le padding (posé par enableFollowCamera)
         map.easeTo({ center: [lon, lat], bearing: heading, pitch: 58, duration: durationMs, easing: t => t, essential: true });
         return;
@@ -2838,7 +2864,7 @@
         if (dist <= nowDistance() && !nav.spoken.has(next + ":now")) {
           nav.spoken.add(next + ":now");
           speakFR(steps[next].instruction);
-          if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(150);
+          if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(VIB.turn);
           watchStepNotify(steps[next], 0);
         }
       } else if (next === lastIdx) {
@@ -2945,7 +2971,7 @@
       stopSimulation();
       const backToCar = currentRoute && currentRoute.options && currentRoute.options.isCarReturn;
       speakFR(backToCar ? "Vous êtes revenu à votre voiture." : "Vous êtes arrivé à destination.");
-      if ("vibrate" in navigator) { try { navigator.vibrate([200, 100, 200]); } catch {} }
+      if ("vibrate" in navigator) { try { navigator.vibrate(VIB.arrive); } catch {} }
       if (backToCar) pkReturnArrived();
       sendWatchGuidanceNotification("🏁 Arrivé", "Vous êtes arrivé à destination.", "gps-pmr-step");
       updateHud();
@@ -4006,6 +4032,7 @@
       }
       const zs = await fetchElevations(pts);
       if (!zs) return null;                                   // altimétrie injoignable
+      geo._slope = { ds, zs, limit: wc.maxSlope };
       return slopesFromProfile(ds, zs, wc.maxSlope).map(s => {
         const len = Math.round((s.endD - s.startD) / 10) * 10;
         const p = pointAtDistance(geo, s.startD);
@@ -4105,6 +4132,7 @@
       route.alerts = [];
       route.analysis = { slopes: "pending", hazards: "pending", unknownKerbs: 0 };
       renderAlerts(route);
+      try { lastSlope = null; slopeClear(); } catch {}
       if (activeTransportTab === "car") { route.analysis = null; renderAlerts(route); return; }
 
       const wc = getWc();
@@ -4115,6 +4143,7 @@
       ]);
       if (currentRoute !== route) return;                        // un autre itinéraire a pris la place
 
+      try { if (geo._slope) { lastSlope = { coords: route.coords, ds: geo._slope.ds, zs: geo._slope.zs, limit: geo._slope.limit }; slopeDraw(); } } catch {}
       route.analysis = {
         slopes: slopes ? "ok" : "unavailable",
         hazards: haz ? "ok" : "unavailable",
@@ -4190,7 +4219,7 @@
         if (ahead <= (list[i].severity >= 3 ? 70 : 45) && ahead > -10) {
           nav.spoken.add(key);
           speakFR((ahead > 8 ? `Dans ${distanceWords(Math.max(10, ahead))}, ${lowerFirst(list[i].voice)}` : list[i].voice), true);
-          if (list[i].severity >= 3 && "vibrate" in navigator) navigator.vibrate([120, 80, 120]);
+          if (list[i].severity >= 3 && "vibrate" in navigator) navigator.vibrate(VIB.alert);
           watchAlertNotify(list[i]);
           break;                                                  // une alerte à la fois
         } else if (ahead <= -10) nav.spoken.add(key);            // déjà dépassée
@@ -5021,7 +5050,7 @@
       const st = { battery: null, level: 1, charging: true, supported: false, manual: false, sysDark: false, lowBatt: false };
       const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
       const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
-      function active() { return !!(st.manual || st.lowBatt || st.sysDark); }
+      function active() { return !!(st.manual || st.lowBatt || st.sysDark || psOn === true); }
       function render() {
         const b = document.getElementById("ecoBtn");
         if (b) {
@@ -5034,6 +5063,7 @@
       function recompute() {
         st.lowBatt = st.supported && st.level <= THRESHOLD && !st.charging;
         render();
+        try { psRefresh(); } catch {}
       }
       function toggle() {
         st.manual = !st.manual; lsSet("gps_pmr_eco", st.manual ? "1" : "0");
@@ -7644,7 +7674,7 @@
       try { await rpc("pmr_live_put", { p_id: ensureLiveId(), p_data: data }); live.err = 0; } catch { live.err++; }
       updateLiveUI();
     }
-    function liveTick() { if (live.active && Date.now() - live.lastPush > 7000) pushLive(); }
+    function liveTick() { if (live.active && Date.now() - live.lastPush > (psOn ? 20000 : 7000)) pushLive(); }
     async function startLiveShare(status = "moving") {
       if (!getSupabaseConfig().enabled) { setStatus("📡 Suivi indisponible : renseignez Supabase (onglet « Pratiques PMR »).", "info"); return false; }
       if (!liveBaseUrl()) { setStatus("📡 Renseignez l'adresse publique de l'appli (🆘 → Mes proches et réglages).", "info"); return false; }
@@ -7653,7 +7683,7 @@
       clearInterval(live.timer);
       live.timer = setInterval(() => {
         if (Date.now() - live.startedAt > 6 * 3600e3) { stopLiveShare(); return; }
-        if (Date.now() - live.lastPush > 14000) pushLive();
+        if (Date.now() - live.lastPush > (psOn ? 30000 : 14000)) pushLive();
       }, 5000);
       await pushLive(); updateLiveUI();
       return true;
@@ -8719,7 +8749,7 @@
         if (!net.irigo && (!RT.alertAt || Date.now() - RT.alertAt > 60000)) { RT.alertAt = Date.now(); rtLoadAlerts(net, ctrl.signal); }      // alertes ascenseur du réseau : 1 fois par minute
         if (ensureRtLayer()) map.getSource("rt-vehicles").setData(rtGeo(list));
         rtInfo(list.length ? `🔴 Temps réel : ${net.t} • ${list.length} véhicule${list.length > 1 ? "s" : ""} (mise à jour ${hhmm(RT.ts)})${RT.lifts && RT.lifts.length ? " • ⚠️ " + RT.lifts.length + " alerte(s) ascenseur : " + RT.lifts.join(" ; ") : ""}` : `🔴 ${net.t} : aucun véhicule en circulation signalé pour l'instant.`);
-        next(CONFIG.rtPollMs);
+        next(CONFIG.rtPollMs * (psOn ? 4 : 1));
       } catch (e) {
         if (RT.net !== net || (e && e.name === "AbortError" && ctrl.signal.aborted)) return;
         RT.fails++;
@@ -9887,13 +9917,15 @@
     async function sendWatchGuidanceNotification(title, body, tag, opts) {
       opts = opts || {};
       if (!watchAlerts.on && !opts.force) return false;
+      const kind = opts.kind || watchKind(title, tag);
+      if (watchPrefs.discreet && kind === "soon") return false;      // mode discret : plus de « Dans 120 m », seulement virage, obstacle, arrivée
       try {
         if (!("Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) return false;
         const reg = await navigator.serviceWorker.ready;
         const icon = new URL("icons/icon-192.png", location.href).href;          // = /GPS_PMR/icons/icon-192.png une fois en ligne
         await reg.showNotification(title, {
           body, tag: tag || "gps-pmr-step", renotify: true, icon, badge: icon, lang: "fr",
-          vibrate: [250, 100, 250], silent: false,
+          vibrate: VIB[kind], silent: false,
           actions: [{ action: "next-step", title: "Étape suivante" }, { action: "stop-gps", title: "Arrêter" }],
           data: { url: location.href.split("#")[0].split("?")[0], t: Date.now() }
         });
@@ -11007,7 +11039,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       }
       // 2.5D léger : mode Éco manuel, batterie faible, smartphone tactile d'entrée de gamme (≤ 2 Go de RAM ou ≤ 2 cœurs), ou réglage localStorage gps_pmr_avatar3d = "off"
       function ecoLow() {
-        try { const s = EcoGlass.state; if (s.manual || s.lowBatt) return true; } catch {}
+        try { const s = EcoGlass.state; if (s.manual || s.lowBatt || psOn === true) return true; } catch {}
         try { const o = localStorage.getItem("gps_pmr_avatar3d"); if (o === "off") return true; if (o === "on") return false; } catch {}
         try { if (matchMedia("(pointer: coarse)").matches && ((navigator.deviceMemory && navigator.deviceMemory <= 2) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2))) return true; } catch {}
         return false;
@@ -11282,7 +11314,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       a11y.one = gid("cfOne").checked; a11y.hand = gid("cfHand").value === "l" ? "l" : "r"; a11y.simple = gid("cfSimple").checked;
       a11ySave(); a11yApply();
     }
-    function openComfort() { a11yApply(); const d = gid("comfortDlg"); if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute("open", ""); }
+    function openComfort() { a11yApply(); try { prefs2Sync(); } catch {} const d = gid("comfortDlg"); if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute("open", ""); }
     function closeComfort() { const d = gid("comfortDlg"); if (d.open) d.close(); }
     function comfortDownloadCity() { closeComfort(); const c = gid("packCard"); if (c) c.open = true; const s = gid("packSize"); if (s) s.value = "city"; packDownload(); }
 
@@ -11376,12 +11408,93 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         case "textUp": a11y.text = Math.min(2, (a11y.text == null ? (isLargeMode ? 1 : 0) : a11y.text) + 1); a11ySave(); a11yApply(); break;
         case "textDown": a11y.text = Math.max(0, (a11y.text == null ? (isLargeMode ? 1 : 0) : a11y.text) - 1); a11ySave(); a11yApply(); break;
         case "help": openComfort(); speakFR("Vous pouvez dire : emmène-moi à, y aller, arrête, répète, place occupée, je suis garé, retour à ma voiture, détour, partage mon trajet, S.O.S."); break;
-        case "dest": case "dest-free":
+        case "dest": case "dest-free": {
+          const sid = slotFromSpeech(normCmd(c.arg || ""));
+          if (sid) { const d0 = SLOT_DEFS.find(x => x.id === sid); if (slots[sid]) { say("D'accord, direction " + d0.label.toLowerCase() + "."); slotGo(sid); } else { say(d0.label + " n'est pas encore défini. Appuyez sur son bouton pour le choisir."); slotOpenEdit(sid); } break; }
+        }
           if (isNavigating) { say("Arrêtez le guidage pour changer de destination."); break; }
           navToast("🔎 Recherche de « " + c.arg + " »…", 4000); voiceHandle(c.arg, "dest", []); break;
       }
       return c.intent;
     }
+
+    // ---------- Favoris « un toucher » : Maison / Travail / Médecin / Pharmacie ----------
+    const SLOT_KEY = "gps_pmr_slots_v1";
+    const SLOT_DEFS = [
+      { id: "home", icon: "🏠", label: "Maison", re: /\b(maison|domicile|chez moi)\b/ },
+      { id: "work", icon: "💼", label: "Travail", re: /\b(travail|boulot|bureau)\b/ },
+      { id: "doctor", icon: "🩺", label: "Médecin", re: /\b(medecin|docteur|cabinet medical)\b/ },
+      { id: "pharma", icon: "💊", label: "Pharmacie", re: /\b(pharmacie)\b/ }
+    ];
+    let slots = {}; try { slots = JSON.parse(localStorage.getItem(SLOT_KEY) || "{}") || {}; } catch { slots = {}; }
+    function slotsSave() { try { localStorage.setItem(SLOT_KEY, JSON.stringify(slots)); } catch {} }
+    let slotEditId = null, slotEditMode = false;
+    function slotsRender() {
+      document.querySelectorAll(".slot-row").forEach(row => {
+        row.innerHTML = "";
+        SLOT_DEFS.forEach(d => {
+          const s = slots[d.id], b = document.createElement("button");
+          b.type = "button"; b.className = "slot-btn" + (s ? " set" : " empty"); b.dataset.slot = d.id;
+          b.setAttribute("aria-label", s ? d.label + " : y aller (" + s.name + ")" : d.label + " : non défini, appuyer pour choisir");
+          b.innerHTML = '<span class="si">' + d.icon + '</span><span class="sl">' + d.label + '</span>';
+          let t = null, long = false;
+          b.addEventListener("pointerdown", () => { long = false; t = setTimeout(() => { long = true; slotOpenEdit(d.id); }, 650); });
+          ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => clearTimeout(t)));
+          b.addEventListener("click", () => { if (long) { long = false; return; } if (slotEditMode || !slots[d.id]) slotOpenEdit(d.id); else slotGo(d.id); });
+          row.appendChild(b);
+        });
+        const e = document.createElement("button"); e.type = "button"; e.className = "slot-edit" + (slotEditMode ? " on" : "");
+        e.textContent = slotEditMode ? "✔" : "✎"; e.setAttribute("aria-label", slotEditMode ? "Terminer la modification" : "Modifier les favoris rapides");
+        e.onclick = () => { slotEditMode = !slotEditMode; slotsRender(); };
+        row.appendChild(e);
+      });
+    }
+    function slotGo(id) {
+      const s = slots[id], d = SLOT_DEFS.find(x => x.id === id); if (!s) return false;
+      if (isNavigating) { navToast("Arrêtez le guidage pour changer de destination.", 4000); return false; }
+      navToast(d.icon + " " + d.label + " : calcul de l'itinéraire…", 4000);
+      if (a11y.simple) { gid("simpleInput").value = s.name; gid("simpleSummary").textContent = "⏳ Calcul de l'itinéraire…"; }
+      applyPickedSuggestion("dest", { title: s.name, lat: s.lat, lon: s.lon });
+      return true;
+    }
+    function slotOpenEdit(id) {
+      slotEditId = id; const d = SLOT_DEFS.find(x => x.id === id);
+      gid("slotTitle").textContent = d.icon + " " + d.label; gid("slotQ").value = ""; gid("slotList").innerHTML = "";
+      gid("slotClear").hidden = !slots[id]; gid("slotCur").textContent = slots[id] ? "Actuel : " + slots[id].name : "Pas encore défini.";
+      const dl = gid("slotDlg"); if (dl.showModal) { if (!dl.open) dl.showModal(); } else dl.setAttribute("open", "");
+    }
+    function slotClose() { const dl = gid("slotDlg"); if (dl.open) dl.close(); }
+    function slotSet(item) {
+      if (!slotEditId) return; slots[slotEditId] = { name: item.title, lat: item.lat, lon: item.lon }; slotsSave(); slotClose(); slotsRender();
+      navToast("✅ Enregistré : " + item.title, 3500);
+    }
+    function slotAddItem(box, title, sub, item) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "slot-opt";
+      b.innerHTML = "<b></b><small></small>"; b.firstChild.textContent = title; b.lastChild.textContent = sub || "";
+      b.onclick = () => slotSet(item); box.appendChild(b);
+    }
+    let slotTimer = null;
+    function slotSearch() {
+      const q = gid("slotQ").value.trim(), box = gid("slotList"); clearTimeout(slotTimer);
+      box.innerHTML = "";
+      if (userPos) slotAddItem(box, "📍 Ma position actuelle", "Je suis ici", { title: "Ma position (" + (SLOT_DEFS.find(x => x.id === slotEditId) || {}).label + ")", lat: userPos.lat, lon: userPos.lon });
+      if (selectedDest && selectedDest.lat != null) slotAddItem(box, "🎯 Destination affichée", selectedDest.name, { title: selectedDest.name, lat: selectedDest.lat, lon: selectedDest.lon });
+      if (q.length < 3) return;
+      slotTimer = setTimeout(async () => {
+        try {
+          const res = await fetchAutocompleteSuggestions(q, "dest"); try { gid("suggestionsBox").style.display = "none"; } catch {}
+          if (gid("slotQ").value.trim() !== q) return;
+          (res || []).slice(0, 8).forEach(it => { if (it && it.lat != null) slotAddItem(box, it.title, it.subtitle || it.sub || "", { title: it.title, lat: it.lat, lon: it.lon }); });
+          if (!box.querySelector(".slot-opt:not(.fixed)") && !(res || []).length) { const p = document.createElement("p"); p.className = "sub"; p.textContent = "Aucun résultat."; box.appendChild(p); }
+        } catch {}
+      }, 350);
+    }
+    function slotClearCur() { if (!slotEditId) return; delete slots[slotEditId]; slotsSave(); slotClose(); slotsRender(); navToast("Favori rapide effacé.", 3000); }
+    function slotFromSpeech(norm) {
+      for (const d of SLOT_DEFS) if (d.re.test(norm)) return d.id; return null;
+    }
+    document.addEventListener("DOMContentLoaded", slotsRender);
+    if (document.readyState !== "loading") slotsRender();
 
     // ---------- Détour avant un passage infranchissable ----------
     function detourBarShow(msg) { const b = gid("detourBar"); gid("detourTxt").textContent = msg; b.hidden = false; }
@@ -11499,7 +11612,8 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       for (let d = 0; d <= geo.total + 1; d += step) { const p = pointAtDistance(geo, Math.min(d, geo.total)); pts.push(p.lat.toFixed(5), p.lon.toFixed(5)); }
       const a = pts.join(",");
       const json = await queryOverpass(`[out:json][timeout:20];(way(around:15,${a})["highway"="construction"];way(around:15,${a})["construction"];way(around:12,${a})["highway"~"^(footway|path|pedestrian|steps)$"]["access"~"^(no|private)$"];nwr(around:20,${a})["highway"="elevator"];node(around:12,${a})["barrier"~"^(block|bollard|gate)$"]["access"="no"];);out tags center;`, null, 15000).catch(() => null);
-      if (route._preTok !== tok || currentRoute !== route) return null;
+      if (route._preTok !== tok) return null;
+      if (currentRoute !== route) { if (currentRoute && currentRoute.coords && !currentRoute._preTok) { try { preDepartureCheck(currentRoute); } catch {} } return null; }   // l'itinéraire affiché a changé pendant la requête : on vérifie celui-ci, sinon la barre resterait « en cours »
       if (!json || !Array.isArray(json.elements)) items.push({ l: "unk", t: "Travaux et voies fermées non vérifiés (données injoignables)" });
       else {
         const near = json.elements.filter(el => { const p = el.type === "node" ? el : el.center; return p && projectOnRoute(geo, p.lat, p.lon, -1e9).off <= 25; });
@@ -11634,6 +11748,99 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
       if (!SpeechRec) document.querySelectorAll(".cmd-mic").forEach(b => { b.title = "Commande vocale indisponible sur ce navigateur"; });
       if (!VIEWER_ID && !navigator.webdriver) setTimeout(() => { try { if (!localStorage.getItem(TUTO_KEY) && !gid("tutoDlg").open) openTuto(); } catch {} }, 1800);   // pas en test automatisé
     })();
+
+    // =====================================================================================
+    // PENTES EN COULEUR · VIBRATIONS DISTINCTES (montre) · ÉCONOMIE DE BATTERIE
+    // =====================================================================================
+    const SLOPE_KEY = "gps_pmr_slope_color";
+    let slopeColorOn = (() => { try { return localStorage.getItem(SLOPE_KEY) !== "0"; } catch { return true; } })();
+    let lastSlope = null;
+    function slopeSegments(ds, zs, limit) {
+      const n = zs.length, sm = zs.map((_, i) => { let s = 0, c = 0; for (let k = i - 1; k <= i + 1; k++) if (k >= 0 && k < n) { s += zs[k]; c++; } return s / c; });   // moyenne mobile : lisse le bruit d'altimétrie
+      const out = [];
+      for (let i = 0; i < n - 1; i++) {
+        const dd = ds[i + 1] - ds[i]; if (dd <= 0) continue;
+        const g = (sm[i + 1] - sm[i]) / dd * 100, a = Math.abs(g);
+        out.push({ d0: ds[i], d1: ds[i + 1], g, c: a > limit ? "over" : a >= limit * 0.6 ? "near" : "ok" });
+      }
+      return out;
+    }
+    function slopeClear() {
+      try { const s = map.getSource("route-slope"); if (s) s.setData({ type: "FeatureCollection", features: [] }); } catch {}
+      const b = gid("slopeLegendBar"); if (b) b.innerHTML = "";
+    }
+    function slopeDraw() {
+      const L = lastSlope; if (!L) { slopeClear(); return; }
+      if (!slopeColorOn || activeTransportTab === "car") { slopeClear(); const b = ensureBar("slopeLegendBar"); if (L && activeTransportTab !== "car") b.innerHTML = `<div class="sub">⛰️ Pentes en couleur masquées. <button type="button" class="slope-tg" onclick="slopeToggle()">Afficher</button></div>`; return; }
+      const geo = makeRouteGeo(L.coords), segs = slopeSegments(L.ds, L.zs, L.limit), feats = []; let cur = null;
+      segs.forEach(s => {
+        const pts = [0, 0.5, 1].map(t => { const p = pointAtDistance(geo, s.d0 + (s.d1 - s.d0) * t); return [p.lon, p.lat]; });
+        if (cur && cur.c === s.c) cur.coords.push(...pts.slice(1)); else { cur = { c: s.c, coords: pts }; feats.push(cur); }
+      });
+      const fc = { type: "FeatureCollection", features: feats.map(f => ({ type: "Feature", properties: { c: f.c }, geometry: { type: "LineString", coordinates: f.coords } })) };
+      if (map.getStyle()) {
+        if (map.getSource("route-slope")) map.getSource("route-slope").setData(fc);
+        else {
+          map.addSource("route-slope", { type: "geojson", data: fc });
+          const before = map.getLayer("route-confidence-layer") ? "route-confidence-layer" : (map.getLayer("route-arrows") ? "route-arrows" : undefined);
+          map.addLayer({ id: "route-slope-layer", type: "line", source: "route-slope", layout: { "line-cap": "butt", "line-join": "round" },
+            paint: { "line-width": 6, "line-opacity": 0.9, "line-color": ["match", ["get", "c"], "over", "#ef4444", "near", "#f59e0b", "#22c55e"] } }, before);
+        }
+      }
+      const maxG = Math.round(Math.max(0, ...segs.map(s => Math.abs(s.g))) * 10) / 10, over = segs.filter(s => s.c === "over").reduce((a, s) => a + (s.d1 - s.d0), 0);
+      const b = ensureBar("slopeLegendBar");
+      b.innerHTML = `<div style="font-weight:700;margin-bottom:3px;">⛰️ Pentes sur le tracé <button type="button" class="slope-tg" onclick="slopeToggle()" aria-pressed="true">Masquer</button></div>
+        <div class="conf-row"><span class="conf-dot" style="background:#22c55e"></span> Douce <span class="sub">(moins de ${Math.round(L.limit * 0.6 * 10) / 10} %)</span></div>
+        <div class="conf-row"><span class="conf-dot" style="background:#f59e0b"></span> Proche de votre limite <span class="sub">(${Math.round(L.limit * 0.6 * 10) / 10} à ${L.limit} %)</span></div>
+        <div class="conf-row"><span class="conf-dot" style="background:#ef4444"></span> Au-delà de votre limite <span class="sub">(plus de ${L.limit} %)</span></div>
+        <div class="sub">Pente maximale estimée : ${maxG} %${over > 0 ? ` • environ ${Math.round(over / 10) * 10} m au-delà de votre limite` : " • rien au-delà de votre limite"}. Altimétrie IGN, à vérifier sur place.</div>`;
+    }
+    function slopeToggle() { slopeColorOn = !slopeColorOn; try { localStorage.setItem(SLOPE_KEY, slopeColorOn ? "1" : "0"); } catch {} const c = gid("cfSlope"); if (c) c.checked = slopeColorOn; slopeDraw(); }
+
+    // ---------- Vibrations distinctes (virage / obstacle / arrivée / batterie) ----------
+    const VIB = { soon: [90], turn: [150, 80, 150], alert: [300, 120, 300, 120, 300], arrive: [700, 150, 300], batt: [250, 100, 250, 100, 250], info: [100] };
+    const watchPrefs = { discreet: (() => { try { return localStorage.getItem("gps_pmr_watch_discreet") === "1"; } catch { return false; } })() };
+    function watchKind(title, tag) {
+      const t = String(title || "");
+      if (/^🏁/.test(t) || /arriv/i.test(t)) return "arrive";
+      if (/^🔋/.test(t) || tag === "gps-pmr-batt") return "batt";
+      if (/^(⚠️|🚧|🪜|🅿️)/.test(t) || tag === "gps-pmr-alert") return "alert";
+      if (/^🧭/.test(t) || /^⌚/.test(t) || tag === "gps-pmr-info") return "info";
+      if (/\bDans\b/.test(t)) return "soon";
+      return "turn";
+    }
+    function vibTest(kind) { try { if ("vibrate" in navigator) navigator.vibrate(VIB[kind]); else navToast("Ce téléphone ne permet pas la vibration depuis le navigateur.", 5000); } catch {} }
+
+    // ---------- Économie de batterie du téléphone ----------
+    const PS_KEY = "gps_pmr_saver_v1";
+    var psOn = false, psFc = 0;
+    let psMode = (() => { try { return localStorage.getItem(PS_KEY) || "auto"; } catch { return "auto"; } })();
+    function psWanted() { if (psMode === "off") return false; if (psMode === "on") return true; try { return !!EcoGlass.state.lowBatt; } catch { return false; } }
+    function psRefresh() {
+      const want = psWanted(); if (want === psOn) return;
+      psOn = want; document.body.classList.toggle("saver", psOn);
+      try { map.setPixelRatio(psOn ? 1 : (window.devicePixelRatio || 1)); } catch {}
+      try { av3("refresh"); } catch {}
+      try { refreshTheme(); } catch {}
+      try {
+        if (psOn) rtStop(false);
+        else if (visibleLayers.rt) { RT.on = true; RT.fails = 0; if (RT.net) rtPoll(); else rtSetCity(RT.city || currentCommune); }
+      } catch {}
+      navToast(psOn ? "🔋 Économie de batterie activée : écran sombre, carte allégée, animations et mises à jour réduites." : "🔋 Économie de batterie désactivée.", 6000);
+    }
+    function psSetMode(m) { psMode = /^(auto|on|off)$/.test(m) ? m : "auto"; try { localStorage.setItem(PS_KEY, psMode); } catch {} psRefresh(); }
+
+    // ---------- Réglages (formulaire Confort) ----------
+    function prefs2Sync() {
+      const set = (id, v) => { const e = gid(id); if (e) { if (e.type === "checkbox") e.checked = !!v; else e.value = v; } };
+      set("cfSlope", slopeColorOn); set("cfDiscreet", watchPrefs.discreet); set("cfSaver", psMode);
+    }
+    function prefs2FromForm() {
+      const sl = gid("cfSlope").checked; if (sl !== slopeColorOn) slopeToggle();
+      watchPrefs.discreet = gid("cfDiscreet").checked; try { localStorage.setItem("gps_pmr_watch_discreet", watchPrefs.discreet ? "1" : "0"); } catch {}
+      psSetMode(gid("cfSaver").value);
+    }
+    setTimeout(() => { try { psRefresh(); prefs2Sync(); } catch {} }, 600);
 
     map.on("load", () => {
       if (VIEWER_ID) { initViewer(); return; }
