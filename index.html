@@ -1937,6 +1937,7 @@
       isLargeMode = !isLargeMode;
       document.body.classList.toggle("large-mode", isLargeMode);
       localStorage.setItem("gps_pmr_large_mode", isLargeMode ? "1" : "0");
+      av3("refresh");
       const btn = document.getElementById("largeModeBtn");
       btn.setAttribute("aria-pressed", String(isLargeMode));
       btn.style.borderColor = isLargeMode ? "#007aff" : "";
@@ -7586,7 +7587,6 @@
         if (/^(PH|SH)\b/.test(rule)) continue;                // jours fériés / vacances : non gérés, ignorés
         let pending = new Set(), addTo = new Map();            // jour → intervalles (ajout dans la même règle)
         const pieces = rule.split(/,\s*(?=(?:Mo|Tu|We|Th|Fr|Sa|Su|PH|SH)\b)/);
-        let allDays = null;
         for (const pieceRaw of pieces) {
           let piece = pieceRaw.trim();
           if (/^(PH|SH)\b/.test(piece)) continue;
@@ -9176,7 +9176,7 @@
         clearTimeout(voice.to);
         if (voice.token !== token) return;
         const T = (voice.finalT || voice.cur || input.value).trim(), err = voice.err, cancelled = voice.cancel;
-        const quick = Date.now() - voice.startedAt < 3500, meterWas = !!voice.meterTried;
+        const meterWas = !!voice.meterTried;
         voice.on = false; voice.rec = null; voice.speaking = false; voiceUI(false); voiceMeterStop();
         try { if (navigator.audioSession) navigator.audioSession.type = isNavigating ? "playback" : "auto"; } catch {}
         input.placeholder = voice.prevPh;
@@ -10677,18 +10677,39 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         if (S.gl2 == null) { try { S.gl2 = !!document.createElement("canvas").getContext("webgl2"); } catch { S.gl2 = false; } }
         return S.gl2;
       }
-      function ecoLow() { try { const s = EcoGlass.state; return !!(s.manual || s.lowBatt); } catch { return false; } }
+      // 2.5D léger : mode Éco manuel, batterie faible, smartphone tactile d'entrée de gamme (≤ 2 Go de RAM ou ≤ 2 cœurs), ou réglage localStorage gps_pmr_avatar3d = "off"
+      function ecoLow() {
+        try { const s = EcoGlass.state; if (s.manual || s.lowBatt) return true; } catch {}
+        try { const o = localStorage.getItem("gps_pmr_avatar3d"); if (o === "off") return true; if (o === "on") return false; } catch {}
+        try { if (matchMedia("(pointer: coarse)").matches && ((navigator.deviceMemory && navigator.deviceMemory <= 2) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2))) return true; } catch {}
+        return false;
+      }
       function threeReady() { return typeof window.THREE === "object" && window.THREE && !!window.THREE.WebGLRenderer; }
-      function use3D() { return S.want && threeReady() && hasGL2() && !ecoLow(); }
+      function use3D() { return S.want && !S.lost && threeReady() && hasGL2() && !ecoLow(); }
+
+      // ---------- Ressources partagées (matériaux, textures) : créées une fois, libérées à l'arrêt ----------
+      function sharedMaterials() {
+        if (S.mats) return S.mats;
+        const T = S.T, std = (color, o) => new T.MeshStandardMaterial(Object.assign({ color, roughness: 0.55, metalness: 0.12, flatShading: true, side: T.DoubleSide }, o || {}));
+        return S.mats = {
+          body: std(0xe6ebf1), blue: std(PMR_BLUE), dark: std(0x23272e), tire: std(0x15171a, { roughness: 0.9 }), rim: std(0xaab3bf, { metalness: 0.5 }),
+          glass: std(0x1d2d3d, { metalness: 0.6, roughness: 0.2, transparent: true, opacity: 0.88 }), grey: std(0xc9d0d9), white: std(0xffffff),
+          lampW: std(0xfff6d6, { emissive: 0xffe9a0, emissiveIntensity: 0.25 }), lampR: std(0xff4040, { emissive: 0xff2020, emissiveIntensity: 0.25 }), lampA: std(0xffb020, { emissive: 0xff9a00, emissiveIntensity: 0.25 })
+        };
+      }
+      function sharedTexture(key, draw) {
+        S.tex = S.tex || {};
+        if (!S.tex[key]) { const c = document.createElement("canvas"); draw(c); S.tex[key] = new S.T.CanvasTexture(c); }
+        return S.tex[key];
+      }
+      function disposeShared() {
+        if (S.mats) Object.values(S.mats).forEach(m => m.dispose()); S.mats = null;
+        if (S.tex) Object.values(S.tex).forEach(t => t.dispose()); S.tex = null;
+      }
 
       // ---------- Construction des modèles ----------
       function build(mode) {
-        const T = S.T, lamps = [], wheels = [], M = {};
-        const std = (color, o) => new T.MeshStandardMaterial(Object.assign({ color, roughness: 0.55, metalness: 0.12, flatShading: true, side: T.DoubleSide }, o || {}));
-        M.body = std(0xe6ebf1); M.blue = std(PMR_BLUE); M.dark = std(0x23272e); M.tire = std(0x15171a, { roughness: 0.9 });
-        M.rim = std(0xaab3bf, { metalness: 0.5 }); M.glass = std(0x1d2d3d, { metalness: 0.6, roughness: 0.2, transparent: true, opacity: 0.88 });
-        M.grey = std(0xc9d0d9); M.white = std(0xffffff);
-        const lamp = (color, em) => { const m = std(color, { emissive: em, emissiveIntensity: 0.25 }); lamps.push(m); return m; };
+        const T = S.T, wheels = [], M = sharedMaterials();      // matériaux partagés par les 4 modèles : créés une fois par layer
         const g = new T.Group(); g.rotation.order = "ZXY";
         const box = (w, l, h, x, y, z, mat, parent) => { const m = new T.Mesh(new T.BoxGeometry(w, l, h), mat); m.position.set(x, y, z); (parent || g).add(m); return m; };
         const wheel = (r, wid, x, y, z, spin) => {
@@ -10698,21 +10719,24 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
           for (let i = 0; i < 3; i++) { const s = new T.Mesh(new T.BoxGeometry(wid * 1.12, r * 1.75, r * 0.1), M.rim); s.rotation.x = i * Math.PI / 3; w.add(s); }
           g.add(w); if (spin !== false) wheels.push({ o: w, r }); return w;
         };
-        const radial = (inner, outer) => {
-          const c = document.createElement("canvas"); c.width = c.height = 64; const x = c.getContext("2d");
+        const radial = (key, inner, outer) => sharedTexture(key, c => {
+          c.width = c.height = 64; const x = c.getContext("2d");
           const gr = x.createRadialGradient(32, 32, 2, 32, 32, 31); gr.addColorStop(0, inner); gr.addColorStop(1, outer);
-          x.fillStyle = gr; x.fillRect(0, 0, 64, 64); const t = new T.CanvasTexture(c); return t;
-        };
+          x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+        });
+        const own = m => { m.userData.own = true; return m; };       // matériau propre au modèle (plans d'ombre / halo / faisceau) : libéré avec lui
         const blob = (w, l) => {     // ombre portée douce au sol
-          const m = new T.Mesh(new T.PlaneGeometry(w, l), new T.MeshBasicMaterial({ map: radial("rgba(0,0,0,.55)", "rgba(0,0,0,0)"), transparent: true, depthWrite: false }));
+          const m = new T.Mesh(new T.PlaneGeometry(w, l), own(new T.MeshBasicMaterial({ map: radial("shadow", "rgba(0,0,0,.55)", "rgba(0,0,0,0)"), transparent: true, depthWrite: false })));
           m.position.set(w * 0.05, -l * 0.02, 0.02); g.add(m); return m;
         };
         let beam = null, halo = null, len = 4;
         const addBeam = (w, l, y0) => {
-          const c = document.createElement("canvas"); c.width = 32; c.height = 64; const x = c.getContext("2d");
-          const gr = x.createLinearGradient(0, 64, 0, 0); gr.addColorStop(0, "rgba(255,244,200,.9)"); gr.addColorStop(1, "rgba(255,244,200,0)");
-          x.fillStyle = gr; x.beginPath(); x.moveTo(8, 64); x.lineTo(24, 64); x.lineTo(32, 0); x.lineTo(0, 0); x.closePath(); x.fill();
-          beam = new T.Mesh(new T.PlaneGeometry(w, l), new T.MeshBasicMaterial({ map: new T.CanvasTexture(c), transparent: true, depthWrite: false, blending: T.AdditiveBlending, opacity: 0 }));
+          const tex = sharedTexture("beam", c => {
+            c.width = 32; c.height = 64; const x = c.getContext("2d");
+            const gr = x.createLinearGradient(0, 64, 0, 0); gr.addColorStop(0, "rgba(255,244,200,.9)"); gr.addColorStop(1, "rgba(255,244,200,0)");
+            x.fillStyle = gr; x.beginPath(); x.moveTo(8, 64); x.lineTo(24, 64); x.lineTo(32, 0); x.lineTo(0, 0); x.closePath(); x.fill();
+          });
+          beam = new T.Mesh(new T.PlaneGeometry(w, l), own(new T.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, blending: T.AdditiveBlending, opacity: 0 })));
           beam.position.set(0, y0 + l / 2, 0.06); beam.visible = false; g.add(beam);
         };
 
@@ -10725,7 +10749,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
             box(0.03, 0.03, 0.22, 0.22 * s, 0.42, 0.2, M.dark); box(0.04, 0.36, 0.03, 0.245 * s, 0.0, 0.68, M.dark); box(0.03, 0.15, 0.03, 0.2 * s, -0.3, 0.96, M.dark);
           }
           box(0.44, 0.44, 0.07, 0, 0.02, 0.5, M.blue); box(0.44, 0.06, 0.42, 0, -0.21, 0.74, M.blue); box(0.40, 0.16, 0.03, 0, 0.5, 0.12, M.dark);
-          halo = new T.Mesh(new T.CircleGeometry(1.15, 32), new T.MeshBasicMaterial({ map: radial("rgba(0,122,255,.55)", "rgba(0,122,255,0)"), transparent: true, depthWrite: false }));
+          halo = new T.Mesh(new T.CircleGeometry(1.15, 32), own(new T.MeshBasicMaterial({ map: radial("halo", "rgba(0,122,255,.55)", "rgba(0,122,255,0)"), transparent: true, depthWrite: false })));
           halo.position.z = 0.03; g.add(halo);
           blob(0.95, 1.35);
         } else if (mode === "car") {
@@ -10733,18 +10757,18 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
           box(1.78, 4.1, 0.55, 0, 0, 0.55, M.body); box(1.55, 2.1, 0.55, 0, -0.25, 1.08, M.glass); box(1.5, 1.7, 0.06, 0, -0.3, 1.4, M.body);
           const hood = box(1.7, 1.0, 0.12, 0, 1.35, 0.9, M.body); hood.rotation.x = 0.28;
           for (const sx of [-1, 1]) for (const sy of [-1, 1]) wheel(0.33, 0.22, 0.92 * sx, 1.3 * sy, 0.33);
-          for (const s of [-1, 1]) { box(0.38, 0.07, 0.14, 0.6 * s, 2.06, 0.68, lamp(0xfff6d6, 0xffe9a0)); box(0.3, 0.06, 0.1, 0.65 * s, -2.06, 0.7, lamp(0xff4040, 0xff2020)); }
+          for (const s of [-1, 1]) { box(0.38, 0.07, 0.14, 0.6 * s, 2.06, 0.68, M.lampW); box(0.3, 0.06, 0.1, 0.65 * s, -2.06, 0.7, M.lampR); }
           const disc = new T.Mesh(new T.CylinderGeometry(0.27, 0.27, 0.03, 20).rotateX(Math.PI / 2), M.blue); disc.position.set(0, -0.3, 1.45); g.add(disc);
           const ring = new T.Mesh(new T.RingGeometry(0.17, 0.21, 20), M.white); ring.position.set(0, -0.3, 1.47); g.add(ring);
           blob(2.2, 4.8); addBeam(3.2, 7, 2.1);
         } else if (mode === "bus") {
           len = 12;
           box(2.5, 11.8, 2.5, 0, 0, 1.6, M.body); box(2.52, 11.82, 0.5, 0, 0, 0.75, M.blue); box(2.53, 10.2, 0.95, 0, -0.3, 2.15, M.glass);
-          box(2.2, 0.05, 1.25, 0, 5.92, 2.15, M.glass); box(1.9, 0.06, 0.34, 0, 5.93, 2.82, lamp(0xffb020, 0xff9a00));
+          box(2.2, 0.05, 1.25, 0, 5.92, 2.15, M.glass); box(1.9, 0.06, 0.34, 0, 5.93, 2.82, M.lampA);
           box(2.2, 5, 0.18, 0, -1.5, 2.9, M.grey); box(2.54, 1.2, 1.9, 0, 3.2, 1.3, M.glass); box(2.54, 1.2, 1.9, 0, -1.0, 1.3, M.glass);
           for (const s of [-1, 1]) { box(0.04, 0.55, 0.55, 1.27 * s, 4.3, 2.6, M.blue); box(0.05, 0.3, 0.3, 1.27 * s, 4.3, 2.6, M.white); }
           for (const sy of [3.7, -3.3]) for (const sx of [-1, 1]) wheel(0.5, 0.3, 1.18 * sx, sy, 0.5);
-          for (const s of [-1, 1]) { box(0.4, 0.07, 0.16, 0.85 * s, 5.92, 0.75, lamp(0xfff6d6, 0xffe9a0)); box(0.3, 0.06, 0.12, 0.9 * s, -5.92, 0.8, lamp(0xff4040, 0xff2020)); }
+          for (const s of [-1, 1]) { box(0.4, 0.07, 0.16, 0.85 * s, 5.92, 0.75, M.lampW); box(0.3, 0.06, 0.12, 0.9 * s, -5.92, 0.8, M.lampR); }
           blob(3.6, 13.5); addBeam(4, 10, 5.95);
         } else {
           len = 17.4;
@@ -10754,7 +10778,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
             box(2.0, 7, 0.14, 0, m.y, 3.07, M.grey); box(1.6, 1.4, 0.5, 0, m.y + 2.6, 0.45, M.dark); box(1.6, 1.4, 0.5, 0, m.y - 2.6, 0.45, M.dark);
             const outer = i === 0 ? 1 : -1;
             box(2.3, 0.9, 2.1, 0, m.y + outer * 4.5, 1.55, M.body); box(2.0, 0.05, 1.0, 0, m.y + outer * 4.97, 1.9, M.glass);
-            for (const s of [-1, 1]) box(0.34, 0.06, 0.14, 0.7 * s, m.y + outer * 4.99, 0.95, outer > 0 ? lamp(0xfff6d6, 0xffe9a0) : lamp(0xff4040, 0xff2020));
+            for (const s of [-1, 1]) box(0.34, 0.06, 0.14, 0.7 * s, m.y + outer * 4.99, 0.95, outer > 0 ? M.lampW : M.lampR);
           });
           box(2.2, 0.6, 2.4, 0, 0, 1.7, M.dark);
           box(0.7, 0.9, 0.08, 0, 4.5, 3.2, M.dark);
@@ -10763,7 +10787,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
           box(1.5, 0.08, 0.05, 0, 3.9, 4.45, M.dark);
           blob(3.6, 20); addBeam(3.4, 9, 8.8);
         }
-        g.userData = { lamps, wheels, beam, halo, len, mode };
+        g.userData = { wheels, beam, halo, len, mode };
         return g;
       }
 
@@ -10771,7 +10795,7 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         if (!g) return;
         g.traverse(o => {
           if (o.geometry) o.geometry.dispose();
-          if (o.material) { (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); }); }
+          if (o.material && o.material.userData && o.material.userData.own) o.material.dispose();      // les matériaux/textures partagés survivent au changement de modèle
         });
         if (g.parent) g.parent.remove(g);
       }
@@ -10793,21 +10817,25 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
             const sun = new T.DirectionalLight(0xffffff, 0.55); sun.position.set(-0.7, -0.35, 0.8).normalize(); S.scene.add(sun);
             S.hemi = S.scene.children[0]; S.sun = sun;
             S.renderer = new T.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true });
-            S.renderer.autoClear = false;
+            S.renderer.autoClear = false; S.lost = false;
+            const cv = map.getCanvas();
+            S.onLost = () => { S.lost = true; document.body.classList.remove("av3d-on"); };           // repli instantané sur la flèche 2.5D
+            S.onRestored = () => { S.lost = false; setTimeout(() => { removeLayer(); sync(); }, 250); };   // layer reconstruit sur le nouveau contexte
+            cv.addEventListener("webglcontextlost", S.onLost); cv.addEventListener("webglcontextrestored", S.onRestored);
             setModel(S.mode);
           },
           render(gl, matrix) {
-            if (!S.renderer || !S.model) return;
+            if (!S.renderer || !S.model || S.lost) return;
             const T = S.T, now = performance.now(), dt = Math.min(0.1, Math.max(0.001, (now - (S.lastT || now)) / 1000)); S.lastT = now;
             const busy = step(dt, now);
             const g = S.model, ud = g.userData;
             const dark = document.body.classList.contains("dark"), large = document.body.classList.contains("large-mode");
             if (S.night !== dark) {
-              S.night = dark; ud.lamps.forEach(m => { m.emissiveIntensity = dark ? 1.7 : 0.25; });
+              S.night = dark; [S.mats.lampW, S.mats.lampR, S.mats.lampA].forEach(m => { m.emissiveIntensity = dark ? 1.7 : 0.25; });
               if (ud.beam) { ud.beam.visible = dark; ud.beam.material.opacity = dark ? 0.5 : 0; }
               S.hemi.intensity = dark ? 0.4 : 0.68; S.sun.intensity = dark ? 0.3 : 0.55;
             }
-            if (ud.halo) { const p = 0.5 + 0.5 * Math.sin(now / 520); ud.halo.material.opacity = 0.55 + 0.35 * p; ud.halo.scale.setScalar(0.92 + 0.12 * p); }
+            if (ud.halo) { const p = busy ? 0.5 + 0.5 * Math.sin(now / 520) : 0.5; ud.halo.material.opacity = 0.55 + 0.35 * p; ud.halo.scale.setScalar(0.92 + 0.12 * p); }
             ud.wheels.forEach(w => { w.o.rotation.x = -cur.spin / w.r; });
             g.rotation.z = -cur.hdg * Math.PI / 180; g.rotation.y = cur.roll;
             const mc = maplibregl.MercatorCoordinate.fromLngLat([cur.lng, cur.lat], 0), mpu = mc.meterInMercatorCoordinateUnits();
@@ -10818,11 +10846,13 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
             S.camera.projectionMatrix = m.multiply(l);
             if (S.renderer.resetState) S.renderer.resetState(); else S.renderer.state.reset();
             S.renderer.render(S.scene, S.camera);
-            if (!document.hidden && (busy || ud.halo || ud.beam)) S.map.triggerRepaint();   // 60 FPS tant que l'avatar bouge ou pulse
+            if (busy && document.visibilityState === "visible") S.map.triggerRepaint();   // 60 FPS uniquement tant que l'avatar bouge ou tourne ; au repos : aucun rendu
           },
           onRemove() {
-            disposeModel(S.model); S.model = null;
-            if (S.scene) { S.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); }); S.scene = null; }
+            try { const cv = S.map && S.map.getCanvas(); if (cv) { cv.removeEventListener("webglcontextlost", S.onLost); cv.removeEventListener("webglcontextrestored", S.onRestored); } } catch {}
+            try { disposeModel(S.model); } catch {} S.model = null;
+            try { disposeShared(); } catch {}
+            S.scene = null;
             if (S.renderer) { try { S.renderer.dispose(); } catch {} S.renderer = null; }
             S.camera = null; S.T = null; S.hemi = S.sun = null; S.lastT = 0;
           }
@@ -10884,11 +10914,14 @@ onmessage=e=>{const d=e.data;try{const j=JSON.parse(d.text),els=j.elements||[],o
         if (!threeReady() && !S.waiting) { S.waiting = true; window.addEventListener("three-ready", () => { S.waiting = false; sync(); }, { once: true }); }
       }
       function stop() { S.want = false; removeLayer(); document.body.classList.remove("av3d-on"); sync(); }
-      function init(map) { S.map = map; }
+      function init(map) {
+        S.map = map;
+        document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && S.layerOn && !S.lost) map.triggerRepaint(); });
+      }
       return {
         init, start, stop, setMode, update, refresh: sync,
         isActive: () => S.want, uses3D: () => S.layerOn && use3D(),
-        debug: () => ({ want: S.want, layerOn: S.layerOn, use3D: use3D(), three: threeReady(), gl2: hasGL2(), eco: ecoLow(), mode: S.mode, scale: S.scale, cur: Object.assign({}, cur), hasModel: !!S.model, renderer: !!S.renderer })
+        debug: () => ({ want: S.want, layerOn: S.layerOn, use3D: use3D(), three: threeReady(), gl2: hasGL2(), eco: ecoLow(), mode: S.mode, scale: S.scale, cur: Object.assign({}, cur), hasModel: !!S.model, renderer: !!S.renderer, lost: !!S.lost, mem: S.renderer ? Object.assign({}, S.renderer.info.memory) : null, shared: !!S.mats })
       };
     })();
     Navigation3DAvatar.init(map);
