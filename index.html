@@ -281,6 +281,9 @@
     #tramInfo a { color: #007aff; font-weight: 600; }
     .alt-row { white-space: normal; }
     .alt-main small { white-space: normal; line-height: 1.3; overflow-wrap: anywhere; }
+    #routeToiletsBar { max-width: 100%; min-width: 0; }
+    .toilet-bar-btn { display: block; box-sizing: border-box; width: 100%; max-width: 100%; height: auto !important; min-height: 0; text-align: left; padding: 8px 10px; font-size: 12.5px; line-height: 1.35; white-space: normal !important; overflow: visible !important; overflow-wrap: anywhere; word-break: normal; text-overflow: clip; background: rgba(6,182,212,0.14); border: 1px solid rgba(6,182,212,0.45); }
+    #routeToiletsBar .badge { display: inline-block; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
     .alt-score { flex: none; }
 
     .dir-item {
@@ -1840,12 +1843,12 @@
         <div id="rainAdvice" style="display:none;" aria-live="polite"></div>
         <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px;"><button onclick="quickShare()" aria-label="Partager mon trajet à un proche en un geste">📡 Partager mon trajet</button></div>
         <div id="routeAlts" class="alts" role="radiogroup" aria-label="Choix de l'itinéraire" style="display:none;"></div>
+        <div id="routeToiletsBar" style="margin-bottom:8px;"></div>
         <div id="routeElevationBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
         <div class="batt-slot" data-scope="route" style="margin-bottom:6px;"></div>
         <div id="routeWeatherBar" class="row" style="flex-wrap:wrap; gap:6px; margin-bottom:6px;"></div>
         <div id="routeForecast" class="fc-box" style="display:none;" aria-live="polite"></div>
         <div id="tramInfo" style="display:none;"></div>
-        <div id="routeToiletsBar" style="margin-bottom:8px;"></div>
         <div id="routeHazardsBar" style="margin-bottom:8px;"></div>
         <div class="row" style="margin-bottom:8px; flex-wrap:wrap; gap:6px;">
           <button onclick="precacheRouteTiles()" style="font-size:12.5px;" aria-label="Télécharger la carte du trajet pour l'utiliser hors ligne">📥 Carte hors-ligne du trajet</button>
@@ -2296,8 +2299,11 @@
       nearby.sort((a, b) => a.routeDist - b.routeDist);
       const best = nearby[0];
       const btn = document.createElement("button");
-      btn.style.cssText = "width:100%;text-align:left;padding:8px 10px;font-size:12.5px;background:rgba(6,182,212,0.14);border:1px solid rgba(6,182,212,0.45);";
-      btn.innerHTML = `🚻 <b>${nearby.length} toilette(s) PMR sur ce trajet</b> (la plus proche : ${escapeHTML(best.toilet.name)} à ${best.routeDist} m du tracé) — <u>Voir</u>`;
+      btn.className = "toilet-bar-btn";
+      const tName = String(best.toilet.name || "").replace(/^\s*(les\s+)?toilettes?(\s+(pmr|publiques?|accessibles?))?\s*[:\-–—]\s*/i, "").trim() || "toilettes accessibles";
+      const tn = nearby.length;
+      btn.innerHTML = `🚻 <b>${tn} toilette${tn > 1 ? "s" : ""} PMR</b> · ${tn > 1 ? "la plus proche : " : ""}${escapeHTML(tName)} (${Math.round(best.routeDist)} m)`;
+      btn.setAttribute("aria-label", `${tn} toilette${tn > 1 ? "s" : ""} PMR sur ce trajet, la plus proche : ${tName}, à ${Math.round(best.routeDist)} mètres du tracé. Voir sur la carte.`);
       btn.addEventListener("click", () => {
         map.flyTo({ center: [best.toilet.lon, best.toilet.lat], zoom: 17 });
         openPlacePopup(best.toilet);
@@ -7597,14 +7603,12 @@
       }
       box.innerHTML = L.map(v => {
         const mins = Math.max(1, Math.round(v.timeSec / 60));
-        const d = Math.round((v.timeSec - base.timeSec) / 60);
-        const diff = v === base ? "selon votre profil" : (d === 0 ? "même durée" : (d > 0 ? "+" : "−") + Math.abs(d) + " min");
         const nAl = v.alerts ? v.alerts.length : null;
         const sc = v.score;
         const pill = sc != null ? `${sc}<small>confort</small>` : (v.analysis ? `—<small>confort</small>` : `…<small>analyse</small>`);
         return `<button type="button" class="alt-row ${v.key === variants.sel ? "active" : ""}" role="radio" aria-checked="${v.key === variants.sel}" data-k="${v.key}" aria-label="${v.label}, ${mins} minutes, ${fmtDist(v.lengthM)}${sc != null ? ", confort " + sc + " sur 100" : ""}">
           <span class="alt-ico">${v.ico}</span>
-          <span class="alt-main"><b>${v.label}</b>${best === v ? ' <span class="alt-tag">👍 Meilleur confort</span>' : ""}<small>${mins} min • ${fmtDist(v.lengthM)} • ${diff}${nAl != null ? " • " + nAl + " alerte" + (nAl > 1 ? "s" : "") : ""}${altExtra(v)}</small></span>
+          <span class="alt-main"><b>${v.label}</b>${best === v ? ' <span class="alt-tag">👍 Meilleur confort</span>' : ""}<small>${mins} min · ${fmtDist(v.lengthM)}${v.key === "tram" && v.walkM != null ? " (dont " + fmtDist(v.walkM) + " marche)" : ""}${altExtra(v)}</small></span>
           <span class="alt-score ${scoreClass(sc)}">${pill}</span></button>`;
       }).join("");
       box.style.display = "flex";
@@ -8492,17 +8496,18 @@
       const speed = profile === "manual" ? 1.1 : 1.5;
       return Math.round(walkM * (1 - (v.shelter || 0)) / speed / 60);
     }
-    function altExtra(v) {
+    function altExtra(v) {   // fin de la ligne : pente · alerte · bordures · infos utiles (format court)
       const bits = [];
-      if (v.key === "tram") bits.push("marche " + fmtDist(v.walkM));
-      if (variants.rainy && v.shelter != null) bits.push("☂️ " + Math.round(v.shelter * 100) + " % abrité");
       if (v.alerts) {
-        const sl = v.alerts.filter(a => a.kind === "slope"), mx = sl.reduce((m, a) => Math.max(m, a.peak || a.grade || 0), 0), nc = v.alerts.filter(a => a.kind === "curb").length;
-        bits.push("pente max " + (mx ? Math.round(mx) + " %" : "faible") + " • " + nc + " bordure" + (nc > 1 ? "s" : "") + " à franchir");
+        const sl = v.alerts.filter(a => a.kind === "slope"), mx = sl.reduce((m, a) => Math.max(m, a.peak || a.grade || 0), 0), nc = v.alerts.filter(a => a.kind === "curb").length, na = v.alerts.length;
+        bits.push(mx ? "Pente " + Math.round(mx) + " %" : "Pente faible");
+        if (na > 0) bits.push(na + " alerte" + (na > 1 ? "s" : ""));
+        if (v.key !== "tram" || nc > 0) bits.push(nc + " bordure" + (nc > 1 ? "s" : ""));
       }
+      if (variants.rainy && v.shelter != null) bits.push("☂️ " + Math.round(v.shelter * 100) + " % abrité");
       if (v.key === "tram" && v.notices && v.notices.elevator && v.notices.elevator.length) bits.push("🛗 alerte");
       else if (v.key === "tram" && v.notices && v.notices.line && v.notices.line.length) bits.push("⚠️ perturbation");
-      return bits.length ? " • " + bits.join(" • ") : "";
+      return bits.length ? " · " + bits.join(" · ") : "";
     }
     function renderRainAdvice() {
       const box = gid("rainAdvice"); if (!box) return;
@@ -9254,7 +9259,7 @@
     }
     function battHTML(r) {
       const lab = battLast.label;
-      if (r.level === "unknown") return `<div class="sub">🔋 Indiquez votre niveau de batterie pour être alerté si l'aller-retour devient risqué.</div>`;
+      if (r.level === "unknown") return `<div class="sub">🔋 Renseignez votre batterie pour vérifier l'aller-retour.</div>`;
       const rtTxt = battLast.tour ? `${lab} : ~${r.rt} % de batterie` : `Aller ~${r.one} % • aller-retour ~${r.rt} %`;
       if (r.level === "ok") return `<div class="batt-box batt-ok">🔋 <b>Batterie suffisante</b> — ${rtTxt}. Il vous resterait ~${Math.max(0, r.remainRT)} % ${battLast.tour ? "en fin de parcours" : "après l'aller-retour"}.</div>`;
       const danger = r.level === "danger";
