@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Générateur d'icônes — GPS PMR</title>
+<style>
+  :root { color-scheme: dark; --bg:#0b1120; --txt:#f1f5f9; --sub:#c4cbd8; --glass:linear-gradient(145deg,rgba(20,29,48,.95),rgba(9,13,22,.98)); }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:max(20px,env(safe-area-inset-top)) 16px 40px; background:radial-gradient(1200px 600px at 20% -10%,#0c4a6e55,transparent),var(--bg); color:var(--txt); font:16px/1.45 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif; }
+  main { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  h1 { margin: 0; font-size: 24px; } p { margin: 0; color: var(--sub); }
+  .card { background: var(--glass); border-radius: 24px; padding: 18px; border: 1px solid transparent; border-top-color: rgba(255,255,255,.22); border-left-color: rgba(255,255,255,.14); border-bottom-color: rgba(0,0,0,.6); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 10px 30px rgba(0,0,0,.45); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .item { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+  canvas { width: 160px; height: 160px; border-radius: 22%; background: repeating-conic-gradient(#1e293b 0% 25%, #0f172a 0% 50%) 50% / 16px 16px; }
+  canvas.maskable { border-radius: 50%; }
+  .item small { color: var(--sub); }
+  button { min-height: 48px; padding: 0 18px; border-radius: 16px; border: 1.5px solid #6cb6ff; background: rgba(10,132,255,.2); color: #cfe6ff; font: 700 16px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; cursor: pointer; width: 100%; }
+  button.primary { background: #0a84ff; color: #fff; border-color: #0a84ff; }
+  button:focus-visible { outline: 3px solid #ffd60a; outline-offset: 2px; }
+  ol { margin: 0; padding-left: 22px; color: var(--sub); display: flex; flex-direction: column; gap: 6px; }
+  code { background: rgba(255,255,255,.1); padding: 1px 6px; border-radius: 6px; color: var(--txt); }
+  #msg { min-height: 24px; color: #8be28b; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>🎨 Générateur d'icônes GPS PMR</h1>
+  <p>Icône « Liquid Glass » dessinée dans la page (aucun envoi sur Internet). Téléchargez les 3 fichiers puis placez-les dans le dossier <code>icons/</code> de votre dépôt GitHub.</p></header>
+
+  <section class="card grid" aria-label="Aperçu des icônes">
+    <div class="item"><canvas id="c192" width="192" height="192" aria-label="Aperçu icône 192"></canvas><b>icon-192.png</b><small>192 × 192 px</small><button class="primary" data-dl="192">⬇ Télécharger</button></div>
+    <div class="item"><canvas id="c512" width="512" height="512" aria-label="Aperçu icône 512"></canvas><b>icon-512.png</b><small>512 × 512 px</small><button class="primary" data-dl="512">⬇ Télécharger</button></div>
+    <div class="item"><canvas id="cm" class="maskable" width="512" height="512" aria-label="Aperçu icône maskable"></canvas><b>icon-maskable-512.png</b><small>512 × 512 px · zone sûre 72 % (Android)</small><button class="primary" data-dl="m">⬇ Télécharger</button></div>
+  </section>
+
+  <section class="card" style="display:flex;flex-direction:column;gap:12px;">
+    <button id="all" class="primary">⬇ Télécharger les 3 icônes en 1 clic</button>
+    <button id="apple">＋ Bonus : apple-touch-icon.png (180 × 180, iPhone)</button>
+    <div id="msg" role="status" aria-live="polite"></div>
+    <ol>
+      <li>Sur GitHub, ouvrez le dépôt puis le dossier <code>icons</code> → <b>Add file ▸ Upload files</b>.</li>
+      <li>Glissez les fichiers téléchargés (mêmes noms) → <b>Commit changes</b>.</li>
+      <li>Sur le téléphone, supprimez l'ancienne icône d'accueil et réinstallez l'application pour voir la nouvelle.</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+/* =========================================================================
+   Dessin de l'icône (canvas) — toutes les mesures sont relatives à `size`.
+   safe = part de la surface occupée par le contenu (0.72 pour l'icône « maskable » Android :
+   le système peut rogner jusqu'à 28 % sur les bords, le pictogramme reste donc au centre).
+   ========================================================================= */
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+function drawIcon(canvas, size, safe) {
+  canvas.width = canvas.height = size;
+  const c = canvas.getContext("2d"); c.clearRect(0, 0, size, size);
+
+  // 1) Fond : dégradé bleu nuit #0f172a → #0284c7 (plein cadre, nécessaire pour « maskable » et iOS)
+  const bg = c.createLinearGradient(0, 0, size, size);
+  bg.addColorStop(0, "#0f172a"); bg.addColorStop(1, "#0284c7");
+  c.fillStyle = bg; c.fillRect(0, 0, size, size);
+  // halos lumineux (profondeur « verre »)
+  let g = c.createRadialGradient(size * .25, size * .2, 0, size * .25, size * .2, size * .6);
+  g.addColorStop(0, "rgba(56,189,248,.45)"); g.addColorStop(1, "rgba(56,189,248,0)"); c.fillStyle = g; c.fillRect(0, 0, size, size);
+  g = c.createRadialGradient(size * .85, size * .9, 0, size * .85, size * .9, size * .55);
+  g.addColorStop(0, "rgba(2,132,199,.55)"); g.addColorStop(1, "rgba(2,132,199,0)"); c.fillStyle = g; c.fillRect(0, 0, size, size);
+
+  // 2) Carte vitrée translucide dans la zone sûre
+  const card = size * safe * 0.92, x = (size - card) / 2, y = x, rad = card * 0.26;
+  c.save();
+  c.shadowColor = "rgba(2,8,23,.55)"; c.shadowBlur = size * .05; c.shadowOffsetY = size * .02;
+  rr(c, x, y, card, card, rad);
+  const fill = c.createLinearGradient(x, y, x + card, y + card);
+  fill.addColorStop(0, "rgba(255,255,255,.34)"); fill.addColorStop(.5, "rgba(255,255,255,.14)"); fill.addColorStop(1, "rgba(255,255,255,.07)");
+  c.fillStyle = fill; c.fill(); c.restore();
+  // bordure spéculaire : brillante en haut à gauche, sombre en bas à droite
+  rr(c, x, y, card, card, rad);
+  const edge = c.createLinearGradient(x, y, x + card, y + card);
+  edge.addColorStop(0, "rgba(255,255,255,.95)"); edge.addColorStop(.35, "rgba(255,255,255,.35)"); edge.addColorStop(.7, "rgba(255,255,255,.12)"); edge.addColorStop(1, "rgba(0,0,0,.35)");
+  c.lineWidth = Math.max(2, size * .012); c.strokeStyle = edge; c.stroke();
+  // reflet supérieur
+  c.save(); rr(c, x, y, card, card, rad); c.clip();
+  const gloss = c.createLinearGradient(0, y, 0, y + card * .5);
+  gloss.addColorStop(0, "rgba(255,255,255,.28)"); gloss.addColorStop(1, "rgba(255,255,255,0)");
+  c.fillStyle = gloss; c.fillRect(x, y, card, card * .5); c.restore();
+
+  // 3) Pictogramme fauteuil roulant blanc épuré (grille 100 × 100 centrée dans la carte)
+  const u = card * 0.62 / 100, ox = x + card * .19, oy = y + card * .17;
+  c.save(); c.translate(ox, oy); c.scale(u, u);
+  c.strokeStyle = "#fff"; c.fillStyle = "#fff"; c.lineCap = "round"; c.lineJoin = "round"; c.lineWidth = 8;
+  c.shadowColor = "rgba(2,8,23,.35)"; c.shadowBlur = 6; c.shadowOffsetY = 2;
+  c.beginPath(); c.arc(40, 12, 8.5, 0, Math.PI * 2); c.fill();                       // tête
+  c.beginPath(); c.moveTo(40, 27); c.lineTo(40, 56); c.lineTo(66, 56); c.lineTo(76, 82); c.stroke();   // dos, assise, jambe
+  c.beginPath(); c.moveTo(40, 40); c.lineTo(62, 40); c.stroke();                      // bras
+  c.beginPath(); c.arc(38, 68, 25, Math.PI * .15, Math.PI * 1.62); c.stroke();        // grande roue
+  c.restore();
+
+  // 4) Pastille verte d'accessibilité (coin bas droit) avec coche
+  const pr = card * .15, px = x + card - pr * .95, py = y + card - pr * .95;
+  c.save(); c.shadowColor = "rgba(2,8,23,.5)"; c.shadowBlur = size * .03; c.shadowOffsetY = size * .01;
+  c.beginPath(); c.arc(px, py, pr, 0, Math.PI * 2);
+  const gg = c.createLinearGradient(px - pr, py - pr, px + pr, py + pr); gg.addColorStop(0, "#4ade80"); gg.addColorStop(1, "#16a34a");
+  c.fillStyle = gg; c.fill(); c.restore();
+  c.lineWidth = Math.max(2, size * .012); c.strokeStyle = "rgba(255,255,255,.9)"; c.beginPath(); c.arc(px, py, pr, 0, Math.PI * 2); c.stroke();
+  c.strokeStyle = "#fff"; c.lineWidth = pr * .28; c.lineCap = "round"; c.lineJoin = "round";
+  c.beginPath(); c.moveTo(px - pr * .42, py + pr * .02); c.lineTo(px - pr * .1, py + pr * .34); c.lineTo(px + pr * .46, py - pr * .3); c.stroke();
+}
+
+const SPECS = { "192": { name: "icon-192.png", size: 192, safe: 0.86, el: "c192" }, "512": { name: "icon-512.png", size: 512, safe: 0.86, el: "c512" }, "m": { name: "icon-maskable-512.png", size: 512, safe: 0.72, el: "cm" } };
+const APPLE = { name: "apple-touch-icon.png", size: 180, safe: 0.86 };
+
+function render() { Object.values(SPECS).forEach(s => drawIcon(document.getElementById(s.el), s.size, s.safe)); }
+
+function toBlob(spec) {
+  const cv = document.createElement("canvas"); drawIcon(cv, spec.size, spec.safe);
+  return new Promise(res => cv.toBlob(res, "image/png"));
+}
+async function download(spec) {
+  const blob = await toBlob(spec), a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = spec.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const msg = t => document.getElementById("msg").textContent = t;
+
+document.querySelectorAll("[data-dl]").forEach(b => b.onclick = async () => { await download(SPECS[b.dataset.dl]); msg("✅ " + SPECS[b.dataset.dl].name + " téléchargé."); });
+document.getElementById("all").onclick = async () => {
+  for (const k of ["192", "512", "m"]) { await download(SPECS[k]); await new Promise(r => setTimeout(r, 450)); }   // petit délai : certains navigateurs bloquent les téléchargements simultanés
+  msg("✅ Les 3 icônes sont téléchargées (si le navigateur demande « autoriser plusieurs téléchargements », acceptez).");
+};
+document.getElementById("apple").onclick = async () => { await download(APPLE); msg("✅ apple-touch-icon.png téléchargé."); };
+render();
+</script>
+</body>
+</html>

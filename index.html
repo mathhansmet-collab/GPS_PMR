@@ -2,13 +2,13 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="apple-mobile-web-app-title" content="GPS PMR" />
-  <meta name="theme-color" content="#007aff" />
+  <meta name="theme-color" content="#0b1120" />
   <meta name="application-name" content="GPS PMR" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
@@ -64,7 +64,7 @@
     input { padding: 10px 12px; background: var(--card); color: var(--text); width: 100%; outline: none; }
     input:focus, button:focus-visible { border-color: #007aff; outline: 2px solid rgba(0,122,255,0.45); outline-offset: 1px; }
     button { padding: 9px 12px; font-weight: 600; cursor: pointer; background: var(--card); color: var(--text); }
-    button:hover { filter: brightness(0.96); }
+    @media (hover: hover) { button:hover { filter: brightness(0.96); } }
     button.primary { background: #007aff; color: #fff; border: none; }
     button.go { background: #34c759; color: #fff; border: none; }
     button.warn { background: #ffd60a; color: #000; border: 2px solid #000; }
@@ -155,7 +155,7 @@
       background: transparent;
     }
     .sug-item:last-child { border-bottom: none; }
-    .sug-item:hover { background: rgba(0,122,255,0.10); }
+    @media (hover: hover) { .sug-item:hover { background: rgba(0,122,255,0.10); } }
     .sug-icon {
       width: 30px; height: 30px; border-radius: 50%; background: var(--card);
       display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
@@ -375,7 +375,7 @@
     @media (max-width: 768px) {
       .sidebar, body.large-mode .sidebar {
         top: auto; left: 8px; right: 8px; bottom: 8px;
-        width: auto; height: 54vh; border-radius: 22px; padding: 12px; gap: 9px;
+        width: auto; height: 54vh; height: 54dvh; border-radius: 22px; padding: 12px; gap: 9px;
       }
       .floating-right {
         top: 8px; right: 8px; left: 8px; max-width: none;
@@ -491,8 +491,8 @@
       .floating-right { align-items: flex-end; }
       .toolbar button.pill-bar .lbl { display: none; }
       .toolbar button.pill-bar { width: 46px; height: 46px; min-height: 46px; padding: 0; justify-content: center; font-size: 19px; }
-      #layerToggles.open { flex-wrap: wrap; overflow: visible; max-height: 40vh; overflow-y: auto; align-self: stretch; }
-      #routeBox #routeSteps { max-height: 30vh; }
+      #layerToggles.open { flex-wrap: wrap; overflow: visible; max-height: 40vh; max-height: 40dvh; overflow-y: auto; align-self: stretch; }
+      #routeBox #routeSteps { max-height: 30vh; max-height: 30dvh; }
     }
     @media (pointer: coarse) {
       button, .sug-item { min-height: 44px; }
@@ -501,7 +501,7 @@
       .mic-btn { width: 36px; height: 36px; min-height: 36px !important; font-size: 17px; }
       .field-box .clear-btn { width: 30px; height: 30px; min-height: 30px !important; }
       .field-box { gap: 4px; }
-      .suggestions-list { max-height: 36vh; }
+      .suggestions-list { max-height: 36vh; max-height: 36dvh; }
       .field-box { padding: 2px 6px 2px 10px; }
       .swap-btn { width: 44px; }
       input { min-height: 44px; }
@@ -524,7 +524,7 @@
     .star-fld.on { color: #f59e0b; background: rgba(245,158,11,0.22); }
     .sug-star { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 18px; color: var(--sub); }
     .sug-star.on { color: #f59e0b; }
-    .sug-star:hover { background: rgba(245,158,11,0.18); }
+    @media (hover: hover) { .sug-star:hover { background: rgba(245,158,11,0.18); } }
     .sug-group { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; color: var(--sub); padding: 7px 11px 3px; text-transform: uppercase; background: var(--card); }
     #placesCard { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
     .places-head { gap: 6px; }
@@ -534,7 +534,7 @@
     .seg .cnt { font-size: 11px; opacity: .7; margin-left: 3px; }
     #placesToggle { width: 38px; padding: 0; flex-shrink: 0; }
     #placesCard.collapsed #placesBody, #placesCard.collapsed .places-foot, #placesCard.collapsed #placesFilter { display: none !important; }
-    #placesBody { display: flex; flex-direction: column; gap: 4px; max-height: 36vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    #placesBody { display: flex; flex-direction: column; gap: 4px; max-height: 36vh; max-height: 36dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .place-row { display: flex; align-items: center; gap: 2px; border-radius: 12px; background: var(--card2); border: 1px solid var(--border); }
     .place-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left; background: transparent; border: none; padding: 6px 8px; min-height: 48px; }
     .place-main .pm-txt { display: flex; flex-direction: column; min-width: 0; }
@@ -872,6 +872,45 @@
       #tabDirectory { gap: 20px; }
       #dirFineChips, #dirFineChips .fine-row, #dirCatChips, #dirAccessChips { min-width: 0; max-width: 100%; }
     }
+
+    /* =====================================================================
+       SMARTPHONES iOS / ANDROID (depuis 2020) : encoche, barre d'état, anti-zoom iOS, cibles tactiles
+       ===================================================================== */
+    /* Voile sous la barre d'état (iOS « black-translucent » : texte blanc sur carte claire) — invisible quand l'encoche n'existe pas */
+    body::after { content: ""; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); pointer-events: none; z-index: 9;
+      background: linear-gradient(rgba(11,17,32,0.62), rgba(11,17,32,0)); }
+    .sheet-handle, .sheet-header { touch-action: none !important; }   /* le glissé du tiroir n'est jamais confisqué par le défilement du navigateur */
+    @media (max-width: 768px) {
+      .sheet-header { touch-action: none; cursor: grab; }
+      .sidebar, body.large-mode .sidebar { will-change: transform, height; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+      .toolbar, .floating-right { padding-right: 0; }
+      .offline-badge { top: calc(10px + env(safe-area-inset-top, 0px)); }
+    }
+    @media (max-width: 768px), (pointer: coarse) {
+      /* ≥ 16 px : Safari iOS ne zoome plus à la saisie */
+      input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea { font-size: max(16px, 1rem) !important; }
+      /* ≥ 8 px entre boutons voisins, cibles ≥ 44 px même à 360 px */
+      .sidebar [style*="gap:6px"], .sidebar [style*="gap: 6px"], .sidebar [style*="gap:4px"], .sidebar [style*="gap: 4px"], .sidebar .row { gap: 8px !important; }
+      .sidebar select { min-height: 48px; }
+      .sidebar .tabs, .sidebar .mode-tabs-4, .sidebar .segmented, .sidebar .seg, .sidebar .places-foot, .sidebar .chip-wrap { gap: 8px; }
+      .batt-fields { gap: 12px; }
+    }
+    @media (max-width: 380px) {
+      .batt-fields { gap: 12px; }
+      .batt-fields input { padding-left: 8px; padding-right: 8px; }
+    }
+
+    /* Guide d'installation (iPhone/iPad : Partager → Sur l'écran d'accueil) */
+    .install-guide { position: fixed; inset: 0; z-index: 400; display: none; align-items: flex-end; justify-content: center; background: rgba(8,12,22,0.45);
+      padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+    .install-guide.show { display: flex; }
+    .install-card { width: min(520px, 100%); border-radius: 28px; padding: 20px; background: var(--lg-card-bg); border: var(--lg-card-border); box-shadow: var(--lg-card-shadow);
+      color: var(--text); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); }
+    body.eco-glass-mode .install-card { -webkit-backdrop-filter: none; backdrop-filter: none; border-top: 1px solid rgba(255,255,255,.22); border-left: 1px solid rgba(255,255,255,.14); border-bottom: 1px solid rgba(0,0,0,.6); }
+    .install-card h2 { margin: 0 0 10px; font-size: 19px; }
+    .install-card ol { margin: 0 0 14px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.4; }
+    .install-card .shareglyph { display: inline-block; font-weight: 800; padding: 0 6px; border-radius: 6px; background: rgba(10,132,255,.18); }
+    .install-card button { width: 100%; min-height: 52px; border-radius: 18px; font-weight: 800; }
   </style>
 </head>
 <body>
@@ -913,6 +952,10 @@
 
   <!-- Mobile : gros bouton « Ma position » (52 px) accessible au pouce, au-dessus du tiroir -->
   <button id="fabLocate" class="lg-float" onclick="recenterOnStart()" aria-label="Ma position : recentrer la carte" title="Ma position"><span aria-hidden="true">🎯</span></button>
+
+  <div class="install-guide" id="installGuide" role="dialog" aria-modal="true" aria-labelledby="installTitle" onclick="if(event.target===this)closeInstallGuide()">
+    <div class="install-card"><h2 id="installTitle">📲 Installer GPS PMR</h2><ol id="installSteps"></ol><button class="primary" onclick="closeInstallGuide()">J'ai compris</button></div>
+  </div>
 
   <div class="floating-right">
     <div class="toolbar" role="toolbar" aria-label="Outils de la carte">
@@ -1066,7 +1109,7 @@
   </dialog>
   <aside class="sidebar" role="region" aria-label="Panneau de navigation et pratiques PMR">
     <div class="sheet-handle" id="sheetHandle" role="separator" aria-label="Poignée : faire glisser pour agrandir ou réduire le panneau" tabindex="0"><i></i></div>
-    <div class="row between">
+    <div class="row between sheet-header" id="sheetHeader">
       <div>
         <h1>GPS PMR</h1>
         <div id="globalStats" class="sub">France • Détection de la zone…</div>
@@ -1185,6 +1228,7 @@
           <div class="row" style="gap:6px;flex-wrap:wrap;">
             <select id="packSize" aria-label="Taille de la zone"><option value="city">Ville (≈ 5 km autour du centre de la carte)</option><option value="big">Grande zone (≈ 9 km)</option></select>
             <button id="packBtn" class="primary" onclick="packDownload()">⬇️ Télécharger</button>
+            <button id="packCancelBtn" onclick="packCancel()" style="display:none;" aria-label="Annuler le téléchargement">✖ Annuler</button>
           </div>
           <div id="packBar" style="display:none;height:8px;border-radius:6px;background:var(--card2);overflow:hidden;"><div style="height:100%;width:0;background:#007aff;transition:width .2s;"></div></div>
           <div id="packTxt" class="sub"></div>
@@ -3669,7 +3713,7 @@
     }
 
     if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
-      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => setTimeout(updateOfflineStatus, 1500)).catch(() => {});
+      navigator.serviceWorker.register("sw.js", { scope: "./", updateViaCache: "none" }).then(() => setTimeout(updateOfflineStatus, 1500)).catch(() => {});
       navigator.serviceWorker.addEventListener("controllerchange", updateOfflineStatus);
     }
 
@@ -6369,7 +6413,7 @@
     }
     function sheetSnaps() {
       const h = window.innerHeight;
-      return [Math.round(h * 0.22), Math.round(h * 0.52), Math.round(h * 0.88)];   // 22 / 52 / 88 vh
+      return [Math.round(h * 0.20), Math.round(h * 0.52), Math.round(h * 0.88)];   // 20 / 52 / 88 dvh
     }
     function setSheet(px, remember = true) {
       const s = sheetSnaps();
@@ -6411,6 +6455,15 @@
         setTimeout(() => map.resize(), 260);
       };
       h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+      // L'en-tête (titre + ville) se glisse aussi, sans changer de cran au simple toucher ; le défilement interne n'est pas gêné
+      const hd = document.getElementById("sheetHeader");
+      if (hd) {
+        let hy = 0, hh = 0, hl = 0, hdrag = false;
+        hd.addEventListener("pointerdown", e => { if (!isMobileLayout() || e.target.closest("button, a, input, select")) return; hdrag = true; hy = hl = e.clientY; hh = sb.getBoundingClientRect().height; document.body.classList.add("sheet-drag"); hd.setPointerCapture(e.pointerId); });
+        hd.addEventListener("pointermove", e => { if (!hdrag) return; hl = e.clientY; setSheet(hh + (hy - e.clientY), false); });
+        const hend = () => { if (!hdrag) return; hdrag = false; document.body.classList.remove("sheet-drag"); const cur = sb.getBoundingClientRect().height; snapSheet(nearestSnap(cur, Math.abs(hy - hl) < 6 ? 0 : 0)); setTimeout(() => map.resize(), 260); };
+        hd.addEventListener("pointerup", hend); hd.addEventListener("pointercancel", hend);
+      }
       h.addEventListener("keydown", e => {
         const cur = sb.getBoundingClientRect().height, s = sheetSnaps();
         const idx = s.reduce((b, v, i) => Math.abs(v - cur) < Math.abs(s[b] - cur) ? i : b, 0);
@@ -6514,10 +6567,28 @@
     if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) document.body.classList.add("is-ios");
     // Installation (Android / Chrome / Edge) : bouton affiché seulement si possible
     let deferredInstall = null;
-    window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; document.getElementById("installBtn").classList.add("show"); });
+    const isStandaloneApp = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+    const isIOSDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    // iPhone/iPad : pas d'événement d'installation → le bouton « Installer » ouvre un guide pas à pas
+    function refreshInstallBtn() {
+      const b = document.getElementById("installBtn"); if (!b) return;
+      b.classList.toggle("show", !isStandaloneApp() && (!!deferredInstall || isIOSDevice()));
+    }
+    function showInstallGuide() {
+      const ios = isIOSDevice();
+      const steps = ios
+        ? ["Ouvrez cette page dans <b>Safari</b>.", "Touchez <span class=\"shareglyph\">Partager ⬆︎</span> (carré avec une flèche, en bas ou en haut de l'écran).", "Faites défiler et touchez <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>.", "Ouvrez GPS PMR depuis son icône : plein écran, sans barre Safari."]
+        : ["Ouvrez le menu <b>⋮</b> de votre navigateur.", "Touchez <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>.", "Confirmez : l'icône GPS PMR apparaît sur votre écran d'accueil."];
+      document.getElementById("installSteps").innerHTML = steps.map(t => "<li>" + t + "</li>").join("");
+      document.getElementById("installGuide").classList.add("show");
+    }
+    function closeInstallGuide() { document.getElementById("installGuide").classList.remove("show"); }
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeInstallGuide(); });
+    window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; refreshInstallBtn(); });
+    refreshInstallBtn();
     window.addEventListener("appinstalled", () => { deferredInstall = null; document.getElementById("installBtn").classList.remove("show"); });
     async function installApp() {
-      if (!deferredInstall) return;
+      if (!deferredInstall) { showInstallGuide(); return; }
       deferredInstall.prompt();
       try { await deferredInstall.userChoice; } catch {}
       deferredInstall = null; document.getElementById("installBtn").classList.remove("show");
@@ -6547,6 +6618,25 @@
       };
       vv.addEventListener("resize", upd); vv.addEventListener("scroll", upd); upd();
     }
+    // Raccourcis de l'icône d'accueil (manifest.json) : ?raccourci=itineraire | lieux
+    (function handleHomeShortcut() {
+      let q = ""; try { q = new URLSearchParams(location.search).get("raccourci") || ""; } catch {}
+      if (!q) return;
+      setTimeout(() => {
+        try {
+          if (q === "itineraire") {
+            switchTab("map"); if (typeof switchModeTab === "function") switchModeTab("wheelchair");
+            if (isMobileLayout()) snapSheet(1);
+            const d = document.getElementById("destInput"); if (d) d.focus();
+          } else if (q === "lieux") {
+            switchTab("directory");
+            const b = [...document.querySelectorAll("#dirCatChips .chip")].find(x => /Toilettes/.test(x.textContent)); if (b) setDirCategory("toilet", b);
+            if (isMobileLayout()) snapSheet(2);
+          }
+          history.replaceState(null, "", location.pathname);
+        } catch {}
+      }, 900);
+    })();
     // Suggestions : ↑ ↓ pour choisir, Entrée pour valider (PC), Échap pour fermer
     ["originInput", "destInput"].forEach(id => {
       document.getElementById(id).addEventListener("keydown", e => {
@@ -8359,7 +8449,11 @@
       setStatus(`📴 Données du pack hors ligne « ${pk.city || pk.name} » (téléchargé le ${new Date(pk.ts).toLocaleDateString("fr-FR")}).`, "info");
       return true;
     }
-    function packProg(pct, txt) { const b = gid("packBar"), t = gid("packTxt"); if (b) { b.style.display = pct == null ? "none" : "block"; b.firstElementChild.style.width = Math.round(pct || 0) + "%"; } if (t) t.textContent = txt || ""; }
+    let packCancelled = false;
+    function packCancel() { packCancelled = true; const t = document.getElementById("packTxt"); if (t) t.textContent = "Annulation…"; }
+    function packProg(pct, txt) {
+      if (packCancelled && pct != null && pct < 100) throw new Error("Téléchargement annulé");
+      if (pct != null && txt) txt = `${txt} — ${Math.round(pct)} % téléchargé`; const b = gid("packBar"), t = gid("packTxt"); if (b) { b.style.display = pct == null ? "none" : "block"; b.firstElementChild.style.width = Math.round(pct || 0) + "%"; } if (t) t.textContent = txt || ""; }
     const lon2x = (lon, z) => Math.floor((lon + 180) / 360 * 2 ** z);
     const lat2y = (lat, z) => { const r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 2 ** z); };
     function tileUrls(tpl, lat, lon, rKm, zmin, zmax) {
@@ -8394,7 +8488,7 @@
     async function packDownload() {
       if (packBusy) return;
       if (!navigator.onLine) { setStatus("📴 Vous êtes hors ligne : le téléchargement d'un pack demande une connexion.", "error"); return; }
-      packBusy = true; gid("packBtn").disabled = true;
+      packBusy = true; packCancelled = false; gid("packBtn").disabled = true; gid("packCancelBtn").style.display = "";
       try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch {}   // évite que le navigateur efface le pack quand l'espace manque
       const c = map.getCenter(), lat = c.lat, lon = c.lng, big = gid("packSize").value === "big", rKm = big ? 9 : 5;
       try {
@@ -8428,9 +8522,11 @@
         renderPacks();
         setStatus(`✅ Pack hors ligne « ${pack.name} » : ${pack.osmPlaces.length} lieux, ${pack.osmTramStops.length} stations${tiles.ok ? ", carte mémorisée" : ""}.`, "ok");
       } catch (e) {
-        packProg(null, ""); setStatus("❌ Pack hors ligne : " + (e && e.message || "échec"), "error");
+        const wasCancelled = packCancelled; packCancelled = false; packProg(null, "");
+        if (wasCancelled) setStatus("⏹ Téléchargement hors ligne annulé.", "info");
+        else setStatus("❌ Pack hors ligne : " + (e && e.message || "échec"), "error");
         if (e && /quota|storage/i.test(e.name + e.message)) gid("packTxt").textContent = "Espace de stockage insuffisant sur l'appareil.";
-      } finally { packBusy = false; gid("packBtn").disabled = false; setTimeout(() => { if (!packBusy) packProg(null, gid("packTxt").textContent); }, 4000); }
+      } finally { packBusy = false; packCancelled = false; gid("packBtn").disabled = false; gid("packCancelBtn").style.display = "none"; setTimeout(() => { if (!packBusy) packProg(null, gid("packTxt").textContent); }, 4000); }
     }
     async function packDelete(id) { try { await IDB.del(id); } catch {} await packList(true); renderPacks(); }
     async function renderPacks() {

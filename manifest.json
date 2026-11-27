@@ -2,21 +2,37 @@
   "id": "./",
   "name": "GPS PMR — France",
   "short_name": "GPS PMR",
-  "description": "GPS piéton pour fauteuil roulant et personnes à mobilité réduite : itinéraires accessibles, lieux PMR, guidage vocal.",
+  "description": "GPS piéton pour fauteuil roulant et personnes à mobilité réduite : itinéraires accessibles, lieux PMR, guidage vocal, mode hors ligne.",
   "lang": "fr-FR",
   "dir": "ltr",
-  "start_url": "./",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#007aff",
-  "categories": ["navigation"],
+  "background_color": "#090d16",
+  "theme_color": "#0b1120",
+  "categories": ["navigation", "utilities"],
   "prefer_related_applications": false,
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Itinéraire fauteuil",
+      "short_name": "Itinéraire",
+      "description": "Calculer un itinéraire accessible en fauteuil",
+      "url": "./index.html?raccourci=itineraire",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Lieux & Toilettes PMR",
+      "short_name": "Lieux PMR",
+      "description": "Trouver des toilettes et lieux accessibles",
+      "url": "./index.html?raccourci=lieux",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ]
 }
