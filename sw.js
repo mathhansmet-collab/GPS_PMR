@@ -1,16 +1,17 @@
-// sw.js — GPS PMR (PWA) · v8 (cache applicatif gps-pmr-app-v8)
+// sw.js — GPS PMR (PWA) · v9 (cache applicatif gps-pmr-app-v9)
 // À placer À CÔTÉ de index.html (ex. https://<compte>.github.io/GPS_PMR/sw.js). Servi en HTTPS, portée = son dossier.
 //
 // Stratégies :
 //  • Fichiers de l'application (HTML, manifest, icônes) : RÉSEAU D'ABORD (mises à jour GitHub dès qu'il y a du réseau),
 //    repli sur la copie locale si le réseau est absent ou trop lent → ouverture instantanée hors ligne.
 //  • Tuiles de carte : CACHE D'ABORD dans un cache dédié, plafonné à 2500 entrées.
-//  • Données (Accèslibre, Supabase GET, OpenData…) : RÉSEAU D'ABORD + copie locale (hors ligne = dernières fiches connues).
+//  • Temps réel (positions bus/tram, GTFS-RT, Valhalla, Open-Meteo, Supabase) : RÉSEAU SEUL, jamais mis en cache.
+//  • Données (Accèslibre, OpenData…) : RÉSEAU D'ABORD + copie locale (hors ligne = dernières fiches connues).
 //  • Style de carte et bibliothèques (MapLibre) : copie locale immédiate + mise à jour en arrière-plan.
 // Les requêtes POST (Overpass, Valhalla, Supabase écriture) ne passent jamais par le cache ; l'application mémorise
 // elle-même lieux et dernier itinéraire (IndexedDB / localStorage).
 
-const APP_CACHE  = "gps-pmr-app-v8";
+const APP_CACHE  = "gps-pmr-app-v9";
 const TILE_CACHE = "gps-pmr-tiles-v1";
 const DATA_CACHE = "gps-pmr-data-v1";
 const MAX_TILES = 3000;   // = plafond du téléchargement de zone (sinon les premières tuiles d'un pack seraient effacées)
@@ -30,7 +31,11 @@ const TILE_HOSTS = ["tiles.openfreemap.org", "tile.openstreetmap.org", "a.tile.o
   "basemaps.cartocdn.com", "tiles.basemaps.cartocdn.com", "a.basemaps.cartocdn.com", "b.basemaps.cartocdn.com", "c.basemaps.cartocdn.com", "d.basemaps.cartocdn.com"];
 const LIB_HOSTS  = ["unpkg.com", "cdn.jsdelivr.net"];
 const DATA_HOSTS = ["acceslibre.beta.gouv.fr", "data.angers.fr", "tabular-api.data.gouv.fr", "www.data.gouv.fr", "data.gouv.fr", "transport.data.gouv.fr", "www.irigo.fr", "overpass.private.coffee", "overpass.kumi.systems", "overpass-api.de"];
-const isSupabase = u => u.hostname.endsWith(".supabase.co");
+// TEMPS RÉEL STRICT (Network-Only) : jamais de position bus/tram périmée, jamais de calcul d'itinéraire ou de météo en cache
+const isRealtime = u =>
+  (u.hostname === "data.angers.fr" && /position|temps-?reel|-tr\//i.test(u.pathname)) ||
+  u.hostname === "valhalla1.openstreetmap.de" || u.hostname === "api.open-meteo.com" || u.hostname.endsWith(".supabase.co") ||
+  /gtfs-?rt|vehicle-?positions|service-?alerts|trip-?updates|realtime|\.pb$/i.test(u.pathname);
 const isIgnTile  = u => u.hostname === "data.geopf.fr" && /\/(wmts|tms)/i.test(u.pathname);
 const isStyle    = u => u.pathname.startsWith("/styles/") || /\/style\.json$/.test(u.pathname);   // description de la carte : toujours rafraîchie
 const isTile     = u => (TILE_HOSTS.includes(u.hostname) && !isStyle(u)) || isIgnTile(u);
@@ -101,6 +106,9 @@ self.addEventListener("fetch", event => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
+  // 0) Temps réel : on ne touche à rien, la requête part directement sur le réseau
+  if (url.origin !== self.location.origin && isRealtime(url)) return;
+
   // 1) Fichiers de l'application
   if (url.origin === self.location.origin) {
     event.respondWith((async () => {
@@ -126,7 +134,7 @@ self.addEventListener("fetch", event => {
   }
 
   // 3) Données lieux / accessibilité : réseau d'abord + copie locale
-  if (DATA_HOSTS.includes(url.hostname) || isSupabase(url)) {
+  if (DATA_HOSTS.includes(url.hostname)) {
     event.respondWith(networkFirst(req, DATA_CACHE, NET_TIMEOUT_DATA).catch(() => Response.error()));
     return;
   }

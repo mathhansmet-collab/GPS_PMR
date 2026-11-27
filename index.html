@@ -8231,6 +8231,36 @@
     const PAN_URL = "https://transport.data.gouv.fr/api/datasets";
     const PAN_KEY = "gps_pmr_pan_v2";
     let panIndex = null, panLoading = null, panRetryAt = 0;
+    // Réglages du temps réel (regroupés ici). rtRelay : modèle d'URL d'un relais CORS « https://…{url} » que VOUS hébergez (vide = désactivé).
+    // Aucun relais public tiers n'est codé en dur : il verrait tous vos déplacements.
+    const CONFIG = {
+      irigo: { url: "https://data.angers.fr/api/explore/v2.1/catalog/datasets/bus-tram-position-tr/records", pageSize: 100, maxPages: 4, timeoutMs: 6000 },
+      rtRelay: "", rtRelayTimeoutMs: 4000, rtPollMs: 15000,
+      staticBadge: "ℹ️ Horaires théoriques • Arrêts PMR affichés"
+    };
+    const IRIGO_NET = { t: "Réseau urbain Irigo", irigo: true, v: "irigo:json" };
+    function irigoVehicles(rows) {
+      const out = [];
+      for (const r of rows || []) {
+        const f = (r && (r.fields || r)) || {}; let c = f.coordonnees || f.geo_point_2d || f.position, lat = NaN, lon = NaN;
+        if (Array.isArray(c)) { lat = +c[0]; lon = +c[1]; } else if (c && typeof c === "object") { lat = +(c.lat ?? c.latitude); lon = +(c.lon ?? c.lng ?? c.longitude); }
+        if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180 || (!lat && !lon)) continue;
+        const cap = +f.cap, dest = String(f.dest || f.destination || "").slice(0, 60);
+        out.push({ lat, lon, bearing: isFinite(cap) ? cap : null, speed: null, route: String(f.mnemoligne || f.nomligne || "").slice(0, 20), label: String(f.idvehicule || f.vehicule || "").slice(0, 20), dest,
+          ts: 0, wc: "yes", inferred: true });      // trams Citadis et bus Irigo à plancher bas : accessibilité déduite du matériel, non confirmée véhicule par véhicule
+      }
+      return out;
+    }
+    async function irigoFetch(signal) {
+      const c = CONFIG.irigo, all = [];
+      for (let i = 0; i < c.maxPages; i++) {
+        const res = await fetchWithTimeout(`${c.url}?limit=${c.pageSize}&offset=${i * c.pageSize}`, { signal }, c.timeoutMs);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const j = await res.json(), rows = j.results || j.records || [];
+        all.push(...rows); if (rows.length < c.pageSize) break;
+      }
+      return irigoVehicles(all);
+    }
     const RT = { lifts: [], alertAt: 0, net: null, city: "", timer: null, fails: 0, vehicles: 0, ts: 0, on: true, abort: null };
     function panNorm(s) { return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
     function reducePan(list) {
@@ -8295,7 +8325,7 @@
     }
     function rtGeo(list) {
       return { type: "FeatureCollection", features: list.map(v => ({ type: "Feature", geometry: { type: "Point", coordinates: [v.lon, v.lat] },
-        properties: { route: v.route, label: v.label, speed: v.speed == null ? -1 : Math.round(v.speed * 3.6), age: v.ts ? Math.max(0, Math.round(Date.now() / 1000 - v.ts)) : -1, bearing: v.bearing == null ? 0 : v.bearing, wc: v.wc || "unk" } })) };
+        properties: { route: v.route, label: v.label, dest: v.dest || "", inf: v.inferred ? 1 : 0, speed: v.speed == null ? -1 : Math.round(v.speed * 3.6), age: v.ts ? Math.max(0, Math.round(Date.now() / 1000 - v.ts)) : -1, bearing: v.bearing == null ? 0 : v.bearing, wc: v.wc || "unk" } })) };
     }
     function ensureRtLayer() {
       if (map.getSource("rt-vehicles")) return true;
@@ -8308,9 +8338,9 @@
         const p = e.features && e.features[0] && e.features[0].properties; if (!p) return;
         const box = document.createElement("div");
         box.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;"><div style="font-weight:700;">🔴 Véhicule en temps réel</div>
-          <div class="sub">${p.route ? "Ligne (id réseau) : " + escapeHTML(p.route) : ""}${p.label ? " • véhicule " + escapeHTML(p.label) : ""}</div>
+          <div class="sub">${p.route ? "Ligne : " + escapeHTML(p.route) : ""}${p.dest ? " → " + escapeHTML(p.dest) : ""}${p.label ? " • véhicule " + escapeHTML(p.label) : ""}</div>
           <div class="sub">${p.speed >= 0 ? "Vitesse ≈ " + p.speed + " km/h • " : ""}${p.age >= 0 ? "position il y a " + p.age + " s" : ""}</div>
-          <div class="sub">${p.wc === "yes" ? "♿ Véhicule déclaré accessible aux fauteuils par le réseau." : (p.wc === "no" ? "🚫 Véhicule déclaré non accessible aux fauteuils." : "Accessibilité de ce véhicule non publiée par le réseau : renseignez-vous auprès de lui.")}</div></div>`;
+          <div class="sub">${p.wc === "yes" ? (p.inf ? "♿ Probablement accessible (plancher bas) — déduit du matériel Irigo, non confirmé pour ce véhicule." : "♿ Véhicule déclaré accessible aux fauteuils par le réseau.") : (p.wc === "no" ? "🚫 Véhicule déclaré non accessible aux fauteuils." : "Accessibilité de ce véhicule non publiée par le réseau : renseignez-vous auprès de lui.")}</div></div>`;
         new maplibregl.Popup().setLngLat(e.lngLat).setDOMContent(box).addTo(map);
       });
       map.on("mouseenter", "rt-vehicles-layer", () => map.getCanvas().style.cursor = "pointer");
@@ -8329,9 +8359,9 @@
     async function rtFetch(url, opts, ms) {
       try { return await fetchWithTimeout(url, opts, ms); }
       catch (e) {
-        let proxy = ""; try { proxy = (localStorage.getItem("gps_pmr_rt_proxy") || "").trim(); } catch {}
+        let proxy = CONFIG.rtRelay || ""; try { proxy = (localStorage.getItem("gps_pmr_rt_proxy") || proxy).trim(); } catch {}
         if (!proxy || !/^https:\/\/.+\{url\}/.test(proxy) || (e && e.name === "AbortError" && opts && opts.signal && opts.signal.aborted)) throw e;
-        return await fetchWithTimeout(proxy.replace("{url}", encodeURIComponent(url)), opts, ms);
+        return await fetchWithTimeout(proxy.replace("{url}", encodeURIComponent(url)), opts, Math.min(ms, CONFIG.rtRelayTimeoutMs));
       }
     }
     async function rtLoadAlerts(net, signal) {
@@ -8350,28 +8380,36 @@
       if (document.hidden || map.getZoom() < 11 || !navigator.onLine) return next(20000);
       const ctrl = RT.abort = new AbortController(), net = RT.net;
       try {
-        const res = await rtFetch(net.v, { signal: ctrl.signal }, 9000);
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const list = decodeVehiclePositions(new Uint8Array(await res.arrayBuffer()));
+        let list;
+        if (net.irigo) list = await irigoFetch(ctrl.signal);
+        else {
+          const res = await rtFetch(net.v, { signal: ctrl.signal }, 9000);
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          list = decodeVehiclePositions(new Uint8Array(await res.arrayBuffer()));
+        }
         if (RT.net !== net) return;
         RT.fails = 0; RT.vehicles = list.length; RT.ts = Date.now();
-        if (!RT.alertAt || Date.now() - RT.alertAt > 60000) { RT.alertAt = Date.now(); rtLoadAlerts(net, ctrl.signal); }      // alertes ascenseur du réseau : 1 fois par minute
+        if (!net.irigo && (!RT.alertAt || Date.now() - RT.alertAt > 60000)) { RT.alertAt = Date.now(); rtLoadAlerts(net, ctrl.signal); }      // alertes ascenseur du réseau : 1 fois par minute
         if (ensureRtLayer()) map.getSource("rt-vehicles").setData(rtGeo(list));
         rtInfo(list.length ? `🔴 Temps réel : ${net.t} • ${list.length} véhicule${list.length > 1 ? "s" : ""} (mise à jour ${hhmm(RT.ts)})${RT.lifts && RT.lifts.length ? " • ⚠️ " + RT.lifts.length + " alerte(s) ascenseur : " + RT.lifts.join(" ; ") : ""}` : `🔴 ${net.t} : aucun véhicule en circulation signalé pour l'instant.`);
-        next(15000);
+        next(CONFIG.rtPollMs);
       } catch (e) {
         if (RT.net !== net || (e && e.name === "AbortError" && ctrl.signal.aborted)) return;
         RT.fails++;
-        if (RT.fails >= 3) { rtInfo(`ℹ️ Temps réel indisponible pour ${net.t} (flux non accessible depuis le navigateur ou hors service).`); return; }
+        if (RT.fails >= 3) {      // pas de message d'erreur bloquant : lignes et arrêts PMR statiques à la place, nouvel essai plus tard
+          rtInfo(`${CONFIG.staticBadge} — ${net.t}`);
+          ["tram", "bus"].forEach(k => { if (!visibleLayers[k]) { const chip = document.querySelector(`[data-layer="${k}"]`); if (chip) toggleMapLayer(k, chip); } });
+          return next(60000);
+        }
         next(8000 * RT.fails);
       }
     }
     async function rtSetCity(city) {
       if (!RT.on) return;
       RT.city = city || "";
-      const idx = await loadPanIndex();
-      if (!idx) return;
-      const net = findPanNetwork(city);
+      const c0 = map.getCenter(), angers = city ? /^(angers|avrille|trelaze|les ponts de ce|saint barthelemy d anjou|beaucouze|bouchemaine|ecouflant|sainte gemmes sur loire|verrieres en anjou|mure erigne|saint sylvain d anjou|cantenay epinard|montreuil juigne|saint leger de linieres|soulaire et bourg|la meignanne|pellouailles les vignes|briollay|soucelles|rives du loir en anjou)\b/.test(panNorm(city)) : isNearAngers(c0.lat, c0.lng);
+      if (!angers) { const idx = await loadPanIndex(); if (!idx) return; }      // Angers : flux JSON compatible navigateur, sans catalogue national ni CORS
+      const net = angers ? IRIGO_NET : findPanNetwork(city);
       if (!net) { if (RT.net) { RT.net = null; rtStop(true); } rtInfo(city ? `Pas de flux temps réel trouvé pour ${city} dans le catalogue national.` : ""); return; }
       if (RT.net && RT.net.v === net.v) return;
       rtStop(true); RT.net = net; RT.fails = 0; RT.lifts = []; RT.alertAt = 0; ensureRtLayer(); rtPoll();
