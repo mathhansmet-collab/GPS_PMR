@@ -357,6 +357,22 @@
       display: flex; align-items: center; justify-content: center;
       border: 2.5px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.35);
     }
+    .pk-pin { padding: 3px 8px; border-radius: 999px; font: 700 12px/1.2 system-ui, sans-serif; color: #fff; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.35); border: 2px solid #fff; }
+    .pk-pin.parked { background: #7c3aed; font-size: 13px; }
+    .nav-toast { display: none; position: fixed; z-index: 46; left: 50%; transform: translateX(-50%); top: calc(96px + env(safe-area-inset-top)); width: min(520px, calc(100% - 24px)); background: rgba(20,23,28,.94); color: #fff; font: 600 14px/1.3 system-ui, sans-serif; padding: 10px 14px; border-radius: 14px; text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+    .pk-actions { position: fixed; z-index: 47; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom)); width: min(440px, calc(100% - 24px)); flex-direction: column; gap: 10px; }
+    .pk-actions button { min-height: 60px; font-size: 19px; font-weight: 800; border: none; border-radius: 18px; color: #fff; box-shadow: 0 8px 22px rgba(0,0,0,.4); cursor: pointer; }
+    .pk-actions button[hidden] { display: none; }
+    .pk-occ { background: #d97706; } .pk-parked { background: #16a34a; }
+    .pk-return { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); bottom: calc(120px + env(safe-area-inset-bottom)); gap: 8px; }
+    .pk-return button { min-height: 52px; padding: 0 20px; border-radius: 999px; border: none; background: #7c3aed; color: #fff; font-size: 17px; font-weight: 800; box-shadow: 0 6px 18px rgba(0,0,0,.4); cursor: pointer; }
+    .pk-return button.pk-free { background: #475569; padding: 0 16px; }
+    .pk-return-done { position: fixed; z-index: 70; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(380px, calc(100% - 28px)); background: #14171c; color: #fff; border-radius: 20px; padding: 18px; text-align: center; box-shadow: 0 14px 40px rgba(0,0,0,.5); }
+    .pk-return-done[hidden] { display: none; }
+    .pk-return-done .pk-row { display: flex; gap: 10px; margin-top: 14px; }
+    .pk-return-done button { flex: 1; min-height: 52px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; background: #334155; color: #fff; cursor: pointer; }
+    .pk-return-done button.go { background: #16a34a; }
+    .pk-pin.live { background: #16a34a; } .pk-pin.street { background: #007aff; }
     .parking-pin {
       width: 30px; height: 30px; border-radius: 9px;
       background: #007aff; color: #fff; font-weight: 900; font-size: 14px;
@@ -1092,6 +1108,22 @@
       <div id="hudNext" class="hud-next"></div>
     </div>
   </div>
+  <div id="navToast" class="nav-toast" role="status" aria-live="polite"></div>
+  <div id="pkActions" class="pk-actions" style="display:none;">
+    <button id="pkOccBtn" type="button" class="pk-occ" hidden onclick="pkOccupiedNext()">🚫 Place occupée → Suivante</button>
+    <button id="pkParkedBtn" type="button" class="pk-parked" hidden onclick="pkParked()">🅿️ Je suis garé → Continuer en Fauteuil</button>
+  </div>
+  <div id="pkReturnBar" class="pk-return" style="display:none;">
+    <button type="button" onclick="pkReturnToCar()">↩️ Retour à ma voiture</button>
+    <button type="button" class="pk-free" onclick="pkFreeParked()" aria-label="Libérer l'emplacement mémorisé de la voiture" title="Libérer l'emplacement">✕</button>
+  </div>
+  <div id="pkReturnDone" class="pk-return-done" role="alertdialog" aria-live="assertive" hidden>
+    <b>🚗 Vous êtes revenu à votre voiture</b>
+    <div class="pk-row">
+      <button type="button" onclick="pkFreeParked(true)">Supprimer le marqueur</button>
+      <button type="button" class="go" onclick="pkFreeParked(true, true)">🚗 Mode Voiture</button>
+    </div>
+  </div>
   <div id="voiceOverlay" class="voice-overlay" hidden onclick="if(event.target===this)voiceCancel()">
     <div class="voice-sheet" role="dialog" aria-modal="true" aria-labelledby="voiceTitle">
       <div id="voiceTitle" class="voice-title">Dites la destination</div>
@@ -1592,11 +1624,13 @@
       <!-- PROPOSITION AUTOMATIQUE PARKING PMR (VOITURE) -->
       <div id="carParkingProposal" class="parking-proposal">
         <div class="row between">
-          <span class="badge b-yes">🅿️ PLACE PMR LA PLUS PROCHE</span>
+          <span id="proposalBadge" class="badge b-yes">🅿️ PLACE PMR LA PLUS PROCHE</span>
           <span id="proposalSourceBadge" class="sub" style="font-weight:700;">Temps réel</span>
         </div>
         <div id="proposalTitle" style="font-weight:800; font-size:14px;"></div>
         <div id="proposalMeta" class="sub"></div>
+        <div id="proposalLeg" class="sub" aria-live="polite"></div>
+        <div id="proposalAlt" class="sub"></div>
         <div class="row" style="margin-top:2px;">
           <button id="proposalGoBtn" class="go" style="flex:1; font-size:13px;">🚗 M'y garer</button>
           <button id="proposalSeeBtn" style="padding:8px 12px; font-size:13px;">📍 Voir</button>
@@ -2611,6 +2645,18 @@
     function guidanceTiers() { return activeTransportTab === "car" ? [500, 200, 60] : [250, 120, 50]; }
     function nowDistance() { return activeTransportTab === "car" ? 25 : 15; }
 
+    const OFFROUTE = {
+      wheelchair: { dist: 20, ms: 3000, cool: 8000 },
+      car:        { dist: 35, ms: 2000, cool: 5000 },
+      other:      { dist: 30, ms: 3000, cool: 15000 }
+    };
+    // Message discret visible aussi en mode navigation (le panneau d'état est masqué pendant le guidage)
+    function navToast(msg, ms = 6000) {
+      const el = document.getElementById("navToast"); if (!el) return;
+      el.textContent = msg; el.style.display = "block"; clearTimeout(navToast._t);
+      navToast._t = setTimeout(() => { el.style.display = "none"; }, ms);
+    }
+
     function buildNavState(route) {
       const geo = makeRouteGeo(route.coords);
       return {
@@ -2634,16 +2680,17 @@
       const p = projectOnRoute(nav.geo, lat, lon, nav.progress);
       nav.offRoute = p.off;
 
-      // 1. Sortie d'itinéraire → recalcul après 3 positions consécutives hors tracé
-      if (p.off > (car ? 50 : 30)) {
-        if (!nav.rerouting) {
-          nav.offCount++;
-          if (nav.offCount >= 3) rerouteFrom(lat, lon);
-        }
+      // 1. Sortie d'itinéraire (écart au tracé Valhalla décodé) → recalcul si l'écart dure assez longtemps
+      //    Fauteuil : > 20 m pendant > 3 s, pause 8 s • Voiture : > 35 m pendant > 2 s, pause 5 s • Bus/Tram : > 30 m, 3 s, pause 15 s
+      const rule = OFFROUTE[activeTransportTab] || OFFROUTE.other;
+      if (p.off > rule.dist) {
+        if (!nav.offSince) nav.offSince = Date.now();
+        nav.offCount++;                                            // pilote l'affichage orange du HUD
+        if (!nav.rerouting && Date.now() - nav.offSince > rule.ms) rerouteFrom(lat, lon, rule.cool);
         updateHud();
         return;
       }
-      nav.offCount = 0;
+      nav.offCount = 0; nav.offSince = 0;
       // Saut en avant suspect (position qui « colle » à un tronçon voisin du tracé) : confirmé par une 2e mesure cohérente
       if (p.along - nav.progress > (car ? 300 : 120)) {
         const c = nav.jump;
@@ -2660,7 +2707,15 @@
 
       // 3. Arrivée
       const remaining = Math.max(0, nav.geo.total - nav.progress);
-      if (remaining <= (car ? 25 : 15)) { arriveGuidance(); return; }
+      const po = currentRoute.options || {};
+      if (car && po.isParkingRoute && po.finalDestLat != null) {
+        // Trajet voiture → parking → fauteuil : « garé » = < 15 m de la place et vitesse < 3 km/h pendant 4 s (ou bouton « Je suis garé »)
+        const dT = distanceMeters(lat, lon, currentRoute.destLat, currentRoute.destLon);
+        if (dT <= 15 && (simActive || lastSpeed < 0.83)) {
+          nav.slowSince = nav.slowSince || Date.now();
+          if (simActive || Date.now() - nav.slowSince >= 4000) { pkParked(); return; }
+        } else nav.slowSince = 0;
+      } else if (remaining <= (car ? 25 : 15)) { arriveGuidance(); return; }
 
       const queue = Date.now() - nav.startedAt < 5000;   // juste après le départ : on n'interrompt pas la 1re consigne
       announceAlerts(queue);                             // pentes / passages difficiles à venir
@@ -2741,6 +2796,7 @@
 
     // Affichage minimal pendant le guidage : consigne à venir, distance, durée restante
     function updateHud() {
+      try { pkUpdateActions(); } catch {}
       if (!nav || !currentRoute) return;
       try { if (watchMode) watchUpdateGuide(); } catch {}
       const hud = document.getElementById("navHud");
@@ -2789,26 +2845,27 @@
     function arriveGuidance() {
       if (!nav || nav.arrived) return;
       nav.arrived = true;
+      if (currentRoute && currentRoute.options && currentRoute.options.isParkingRoute && currentRoute.options.finalDestLat != null) { pkParked(); return; }
       if (!simActive && currentRoute) addHistory(currentRoute.destLat, currentRoute.destLon, currentRoute.destName, true);
       if (!simActive) onArrivedSafety();
       stopSimulation();
-      speakFR("Vous êtes arrivé à destination.");
-      if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+      const backToCar = currentRoute && currentRoute.options && currentRoute.options.isCarReturn;
+      speakFR(backToCar ? "Vous êtes revenu à votre voiture." : "Vous êtes arrivé à destination.");
+      if ("vibrate" in navigator) { try { navigator.vibrate([200, 100, 200]); } catch {} }
+      if (backToCar) pkReturnArrived();
       sendWatchGuidanceNotification("🏁 Arrivé", "Vous êtes arrivé à destination.", "gps-pmr-step");
       updateHud();
       clearTimeout(arriveTimer);
       arriveTimer = setTimeout(() => { if (nav && nav.arrived) stopGuidance(); }, 12000);
     }
 
-    // Recalcul depuis la position actuelle
-    async function rerouteFrom(lat, lon) {
-      if (!nav || nav.rerouting || Date.now() - nav.lastReroute < 15000) return;
-      if (!navigator.onLine) {
+    // Recalcul depuis la position actuelle (mêmes options : profil fauteuil complet ou costing auto)
+    async function rerouteFrom(lat, lon, cooldown = 15000) {
+      if (!nav || nav.rerouting || Date.now() - nav.lastReroute < cooldown) return;
+      const offlineMsg = "Hors ligne : impossible de recalculer, rejoignez le tracé";
+      if (!navigator.onLine) {                       // le tracé actuel reste affiché sur la carte
         nav.lastReroute = Date.now();
-        if (!nav.offlineWarned) {
-          nav.offlineWarned = true;
-          speakFR("Vous vous éloignez de l'itinéraire, mais il n'y a pas de réseau pour recalculer. Revenez sur le tracé affiché.");
-        }
+        if (!nav.offlineWarned) { nav.offlineWarned = true; navToast("📴 " + offlineMsg, 8000); speakFR("Pas de réseau. Rejoignez le tracé affiché."); }
         return;
       }
       nav.rerouting = true;
@@ -2826,7 +2883,8 @@
         speakFR("Nouvel itinéraire. " + (currentRoute.steps[0] ? currentRoute.steps[0].instruction : ""));
       } else {
         nav.rerouting = false;
-        speakFR("Recalcul impossible, vérifiez votre connexion. Revenez sur le tracé affiché.");
+        if (!nav.offlineWarned) { nav.offlineWarned = true; navToast("📴 " + offlineMsg, 8000); speakFR("Recalcul impossible. Rejoignez le tracé affiché."); }
+        updateHud();
       }
     }
 
@@ -3364,130 +3422,295 @@
 
     // MARK: - Parking PMR auto en mode Voiture (France entière)
 
+    // =====================================================================================
+    // MODE VOITURE : place PMR (GIG/GIC) la plus proche de l'arrivée + dernier tronçon en fauteuil
+    //  • P1 (badge vert)  : parking équipé de capteurs avec places libres (flux ouverts configurés dans CONFIG.parking.liveFeeds)
+    //  • P2 (badge bleu)  : repli sur la voirie — places GIG/GIC OpenStreetMap + BNLSC (via PmrDataUpdater) + carte locale
+    //  • Dernier tronçon  : itinéraire fauteuil Valhalla (type wheelchair) de la place à la destination, escalier / pente vérifiés (IGN)
+    //  • Suivi            : disponibilité du parking visé relue toutes les 30 s ; s'il devient complet → place suivante
+    // Limite assumée : la BNLSC est une base STATIQUE (aucune disponibilité) ; seul un flux de capteurs peut annoncer « libre ».
+    // =====================================================================================
+    const PK = { cands: [], target: null, dest: null, timer: null, token: 0, busy: false, occupied: [], occBusy: false };
+    const pkNum = (...a) => { for (const v of a) { if (v == null || v === "") continue; const n = typeof v === "number" ? v : parseFloat(String(v).replace(",", ".")); if (isFinite(n)) return n; } return null; };
+    function pkParseLive(rows, feed) {
+      const out = [];
+      for (const r of rows || []) {
+        const f = (r && (r.fields || r)) || {}; let c = f.geo_point_2d || f.coordonnees || f.position || f.geo_point, lat = NaN, lon = NaN;
+        if (Array.isArray(c)) { lat = +c[0]; lon = +c[1]; } else if (c && typeof c === "object") { lat = +(c.lat ?? c.latitude); lon = +(c.lon ?? c.lng ?? c.longitude); }
+        if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180 || (!lat && !lon)) continue;
+        const free = pkNum(f.disponible, f.places_libres, f.nb_places_libres, f.libres, f.disponibilite, f.nombre_places_disponibles, f.free);
+        if (free == null) continue;                                     // pas de compteur → pas un flux « temps réel »
+        const total = pkNum(f.capacite, f.places_totales, f.nb_places, f.total, f.capacity);
+        const pmr = pkNum(f.places_pmr, f.pmr, f.nb_pmr, f.nombre_places_pmr, f.nb_places_handicapes, f.handicap);
+        out.push({ id: feed + ":" + (r.id || r.recordid || f.id || lat.toFixed(5) + "," + lon.toFixed(5)), live: true, name: String(f.nom || f.name || f.libelle || f.parking || f.adresse || "Parking").slice(0, 70),
+          lat, lon, free: Math.max(0, free), total, pmr, source: feed });
+      }
+      return out;
+    }
+    async function pkFetchLive(signal, near) {
+      const ref = near || PK.dest;
+      const feeds = CONFIG.parking.liveFeeds.filter(f => !f.angersOnly || (ref && isNearAngers(ref.lat, ref.lon)));
+      const res = await Promise.allSettled(feeds.map(async f => {
+        const r = await fetchWithTimeout(`${f.url}?limit=100`, { signal }, CONFIG.parking.timeoutMs);
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const j = await r.json(); return pkParseLive(j.results || j.records || [], f.id);
+      }));
+      return res.flatMap(x => x.status === "fulfilled" ? x.value : []);
+    }
+    async function pkFetchStreet(lat, lon, signal) {
+      const R = CONFIG.parking.radius, out = [];
+      const q = `[out:json][timeout:8];(nwr["amenity"="parking_space"]["parking_space"="disabled"](around:${R},${lat},${lon});nwr["amenity"="parking_space"]["disabled"="yes"](around:${R},${lat},${lon});nwr["amenity"="parking"]["capacity:disabled"](around:${R},${lat},${lon}););out center 60;`;
+      for (const ep of PMR_CFG.overpass) {
+        try {
+          const r = await fetchWithTimeout(ep, { method: "POST", signal, headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: "data=" + encodeURIComponent(q) }, CONFIG.parking.timeoutMs);
+          if (!r.ok) continue;
+          for (const el of (await r.json()).elements || []) {
+            const la = el.lat ?? (el.center && el.center.lat), lo = el.lon ?? (el.center && el.center.lon); if (la == null || lo == null) continue;
+            const t = el.tags || {}, n = pkNum(t["capacity:disabled"]);
+            out.push({ id: "osm:" + el.type[0] + el.id, live: false, name: String(t.name || t["addr:street"] || "Place GIG/GIC").slice(0, 70), lat: la, lon: lo, n: n && n > 0 ? n : null, source: "OpenStreetMap" });
+          }
+          break;
+        } catch (e) { if (signal && signal.aborted) return out; }
+      }
+      return out;
+    }
+    function pkFromStore(lat, lon) {                 // BNLSC / OSM déjà chargés par PmrDataUpdater (cellules autour de l'arrivée)
+      const out = [];
+      try {
+        PmrDataUpdater.store.forEach(f => {
+          const p = f.properties || {}; if (p.kind !== "parking" || !f.geometry) return;
+          const [lo, la] = f.geometry.coordinates;
+          out.push({ id: p.id, live: false, name: p.name || "Place GIG/GIC", lat: la, lon: lo, n: pkNum(p.capacityDisabled), source: p.src === "bnls" ? "BNLSC" : "OpenStreetMap" });
+        });
+      } catch {}
+      return out;
+    }
+    function pkMerge(list, lat, lon) {              // distances, rayon, dédoublonnage (< 15 m)
+      const R = CONFIG.parking.radius, out = [];
+      list.forEach(c => { c.dist = Math.round(distanceMeters(lat, lon, c.lat, c.lon)); });
+      list.filter(c => c.dist <= R).sort((a, b) => a.dist - b.dist).forEach(c => {
+        if (!c.live && out.some(o => !o.live && distanceMeters(o.lat, o.lon, c.lat, c.lon) < 15)) return;
+        out.push(c);
+      });
+      return out;
+    }
+    const pkAvailable = c => c.live && c.free > 0 && (c.pmr == null || c.pmr > 0);
+    function pkRank(list) {                           // libres en direct d'abord, puis voirie, puis parkings complets (non recommandés)
+      const w = c => c.live ? (pkAvailable(c) ? 0 : 2) : 1;
+      return list.slice().sort((a, b) => w(a) - w(b) || a.dist - b.dist);
+    }
+    async function pkLeg(c, dest) {                   // dernier tronçon accessible : Valhalla fauteuil + escaliers + pente (IGN)
+      const leg = { coords: [[c.lon, c.lat], [dest.lon, dest.lat]], distM: c.dist, approx: true, stairs: false, steep: null, timeMin: null };
+      try {
+        const data = await callValhalla([c.lon, c.lat], dest.lat, dest.lon, getWc().maxSlope, null, "wheelchair");
+        const l = data.trip.legs[0]; leg.coords = decodePolyline6(l.shape); leg.distM = Math.round(data.trip.summary.length * 1000); leg.approx = false;
+        leg.stairs = (l.maneuvers || []).some(m => /escalier|stairs|steps/i.test(m.instruction || "") || m.type === 28 || m.type === 29);
+        try { const sl = await computeSlopeAlerts(makeRouteGeo(leg.coords), getWc()); leg.steep = sl ? sl.some(a => a.severity >= 3) : null; } catch {}
+      } catch {}
+      leg.timeMin = Math.max(1, Math.round(leg.distM / (profile === "manual" ? 1.1 : 1.5) / 60));
+      return leg;
+    }
+    function pkTitle(c) {
+      const where = c.live ? `${c.free} place${c.free > 1 ? "s" : ""} libre${c.free > 1 ? "s" : ""}${c.pmr ? ", dont " + c.pmr + " PMR" : ""}` : `Voirie GIG-GIC${c.n ? " • " + c.n + " place(s)" : ""}`;
+      return `🅿️ Place PMR recommandée : ${c.name} à ${c.dist} m de votre destination (${where})`;
+    }
+    function pkDrawLeg(coords) {
+      proposedWalkGeoJSON = coords ? { type: "Feature", geometry: { type: "LineString", coordinates: coords } } : null;
+      const src = map.getSource("proposed-walk");
+      if (src) src.setData(proposedWalkGeoJSON || { type: "FeatureCollection", features: [] });
+      else if (proposedWalkGeoJSON && map.getStyle()) {
+        map.addSource("proposed-walk", { type: "geojson", data: proposedWalkGeoJSON });
+        map.addLayer({ id: "proposed-walk-layer", type: "line", source: "proposed-walk", paint: { "line-color": "#0a84ff", "line-width": 4, "line-dasharray": [2, 2] } });
+      }
+    }
+    function pkRender(c, leg, dest) {
+      const box = gid("carParkingProposal"); box.style.display = "flex";
+      const badge = gid("proposalBadge"); badge.className = "badge " + (c.live ? "b-yes" : "b-gov"); badge.textContent = c.live ? "🟢 PLACE PMR • LIBRE" : "🔵 PLACE GIG/GIC SUR VOIRIE";
+      gid("proposalSourceBadge").textContent = c.live ? `Temps réel • ${c.source}` : `Voirie • ${c.source}`;
+      gid("proposalTitle").textContent = pkTitle(c);
+      gid("proposalMeta").textContent = c.live && c.pmr == null ? "Les places PMR de ce parking ne sont pas comptées à part : vérifiez sur place." : (c.live ? "" : "Disponibilité non mesurée sur voirie : une place peut être occupée.");
+      const warn = leg ? [leg.stairs ? "⛔ escalier sur le cheminement" : "", leg.steep ? `⚠️ pente > ${getWc().maxSlope} %` : "", leg.approx ? "tracé indicatif (calcul indisponible)" : ""].filter(Boolean) : [];
+      gid("proposalLeg").textContent = leg ? `♿ ${leg.distM} m • ≈ ${leg.timeMin} min en fauteuil jusqu'à « ${dest.name} »${warn.length ? " • " + warn.join(" • ") : " • sans escalier, pente dans vos limites"}` : "♿ Calcul du cheminement fauteuil…";
+      const nx = PK.cands.find(x => x !== c && (!x.live || pkAvailable(x)));
+      gid("proposalAlt").textContent = nx ? `Option suivante : ${nx.name} (${nx.dist} m)` : "";
+      gid("proposalGoBtn").textContent = "🚗 Rediriger la voiture vers cette place";
+      gid("proposalGoBtn").onclick = () => pkRedirect(c);
+      gid("proposalSeeBtn").onclick = () => { map.flyTo({ center: [c.lon, c.lat], zoom: 17 }); };
+      if (proposedParkingMarker) proposedParkingMarker.remove();
+      const el = document.createElement("div"); el.className = "pk-pin " + (c.live ? "live" : "street");
+      el.textContent = c.live ? "P PMR • Libre" : `P GIG/GIC • ${c.dist} m`;
+      proposedParkingMarker = new maplibregl.Marker({ element: el }).setLngLat([c.lon, c.lat]).addTo(map);
+      pkDrawLeg(leg ? leg.coords : [[c.lon, c.lat], [dest.lon, dest.lat]]);
+    }
+    async function pkRedirect(c) {
+      const d = PK.dest; if (!d) return;
+      PK.target = c; pkWatchStart();
+      await routeTo(c.lat, c.lon, `Parking PMR (${c.name})`, { isParkingRoute: true, finalDestName: d.name, finalDestLat: d.lat, finalDestLon: d.lon, parkingDist: c.dist });
+    }
     async function findAndProposeNearestParking(destLat, destLon, destName) {
       if (parkingSearchAbort) parkingSearchAbort.abort();
-      parkingSearchAbort = new AbortController();
-      const signal = parkingSearchAbort.signal;
-
-      const localCandidates = allPlaces
-        .filter(p => p.cat === "parking")
-        .map(p => ({ ...p, distToDest: distanceMeters(destLat, destLon, p.lat, p.lon), source: "Carte locale" }))
-        .sort((a, b) => a.distToDest - b.distToDest);
-
-      let best = localCandidates[0] || null;
-      if (best && best.distToDest < 900) {
-        displayParkingProposal(best, destLat, destLon, destName, "Vérification temps réel…");
-      } else {
-        document.getElementById("carParkingProposal").style.display = "flex";
-        document.getElementById("proposalTitle").textContent = "Recherche de la place PMR la plus proche…";
-        document.getElementById("proposalMeta").textContent = "";
+      parkingSearchAbort = new AbortController(); const signal = parkingSearchAbort.signal, my = ++PK.token;
+      if (!PK.dest || distanceMeters(PK.dest.lat, PK.dest.lon, destLat, destLon) > 30) PK.occupied = [];   // nouvelle destination : les places « occupées » de la session précédente sont oubliées
+      const dest = PK.dest = { lat: destLat, lon: destLon, name: destName };
+      gid("carParkingProposal").style.display = "flex"; gid("proposalBadge").className = "badge b-yes"; gid("proposalBadge").textContent = "🅿️ PLACE PMR LA PLUS PROCHE";
+      gid("proposalTitle").textContent = "Recherche de la place PMR la plus proche…"; ["proposalMeta", "proposalLeg", "proposalAlt", "proposalSourceBadge"].forEach(i => { gid(i).textContent = ""; });
+      const R = CONFIG.parking.radius, dLa = R / 111320, dLo = R / (111320 * Math.cos(destLat * Math.PI / 180));
+      const local = allPlaces.filter(p => p.cat === "parking").map(p => ({ id: "loc:" + p.id, live: false, name: p.name || "Place PMR", lat: p.lat, lon: p.lon, n: null, source: "Carte locale" }));
+      const [live, street] = await Promise.all([
+        pkFetchLive(signal).catch(() => []),
+        pkFetchStreet(destLat, destLon, signal).catch(() => []),
+        Promise.race([PmrDataUpdater.loadCells(PmrDataUpdater.cellsFor({ s: destLat - dLa, n: destLat + dLa, w: destLon - dLo, e: destLon + dLo }, 6), {}), new Promise(r => setTimeout(r, 7000))]).catch(() => null)
+      ].map(p => p)).then(([a, b]) => [a, b]);
+      if (signal.aborted || my !== PK.token) return;
+      PK.cands = pkRank(pkMerge([...live, ...street, ...pkFromStore(destLat, destLon), ...local], destLat, destLon));
+      const best = PK.cands.find(c => !c.live || pkAvailable(c));
+      if (!best) {
+        gid("proposalBadge").className = "badge b-lim"; gid("proposalBadge").textContent = "🅿️ AUCUNE PLACE RECENSÉE";
+        gid("proposalTitle").textContent = `Aucune place PMR recensée à moins de ${R} m`;
+        gid("proposalMeta").textContent = PK.cands.some(c => c.live) ? "Les parkings équipés proches sont complets. Garez-vous au plus près de la destination." : "Vous pouvez néanmoins vous garer au plus près de la destination.";
+        pkDrawLeg(null); if (proposedParkingMarker) { proposedParkingMarker.remove(); proposedParkingMarker = null; }
+        return;
       }
-
-      const tasks = [
-        fetch("https://overpass-api.de/api/interpreter", {
-          method: "POST", signal,
-          headers: { "Content-Type": "application/x-www-form-urlencoded; charset=utf-8" },
-          body: "data=" + encodeURIComponent(`[out:json][timeout:6];(nwr["amenity"="parking_space"]["disabled"="yes"](around:800,${destLat},${destLon});nwr["amenity"="parking"]["capacity:disabled"](around:800,${destLat},${destLon}););out center qt;`)
-        }).then(r => r.json())
-      ];
-
-      if (isNearAngers(destLat, destLon)) {
-        tasks.push(
-          fetch(`https://data.angers.fr/api/explore/v2.1/catalog/datasets/stationnement_pmr_angers/records?where=within_distance(geo_point_2d%2Cgeom'POINT(${destLon}%20${destLat})'%2C800m)&limit=10`, { signal })
-            .then(r => r.json())
-        );
-      }
-
-      const [osmLive, angersLive] = await Promise.allSettled(tasks);
-      if (signal.aborted) return;
-
-      const liveCandidates = [...localCandidates.slice(0, 5)];
-
-      if (angersLive?.status === "fulfilled" && angersLive.value?.results) {
-        for (const r of angersLive.value.results) {
-          const pt = r.geo_point_2d;
-          if (!pt) continue;
-          const nb = r.nombre ? `${r.nombre} place(s) CMI` : "Place réservée PMR";
-          liveCandidates.push({
-            name: r.adresse_1 || "Stationnement PMR", lat: pt.lat, lon: pt.lon,
-            details: [nb, r.commentaire].filter(Boolean).join(" • "),
-            distToDest: distanceMeters(destLat, destLon, pt.lat, pt.lon), source: "Live data.angers.fr"
-          });
-        }
-      }
-
-      if (osmLive?.status === "fulfilled" && osmLive.value?.elements) {
-        for (const el of osmLive.value.elements) {
-          const lat = el.lat ?? el.center?.lat, lon = el.lon ?? el.center?.lon;
-          if (lat == null || lon == null) continue;
-          const t = el.tags || {};
-          const cap = t["capacity:disabled"] ? `${t["capacity:disabled"]} place(s) PMR` : "Place PMR";
-          liveCandidates.push({
-            name: t.name || t["addr:street"] || "Parking PMR (OSM)", lat, lon,
-            details: `${cap} • OpenStreetMap`,
-            distToDest: distanceMeters(destLat, destLon, lat, lon), source: "Live OpenStreetMap"
-          });
-        }
-      }
-
-      liveCandidates.sort((a, b) => a.distToDest - b.distToDest);
-      const winner = liveCandidates[0];
-      if (winner && winner.distToDest < 1500) {
-        displayParkingProposal(winner, destLat, destLon, destName, `Temps réel • ${winner.source}`);
-      } else {
-        document.getElementById("proposalTitle").textContent = "Aucune place PMR recensée à < 800 m";
-        document.getElementById("proposalMeta").textContent = "Vous pouvez néanmoins vous garer au plus près de la destination.";
-      }
+      pkRender(best, null, dest);
+      const leg = await pkLeg(best, dest);
+      if (signal.aborted || my !== PK.token) return;
+      pkRender(best, leg, dest);
+    }
+    // ---- suivi pendant l'approche : disponibilité relue toutes les 30 s (page visible), bascule sur la place suivante si complet ----
+    function pkWatchStart() { pkWatchStop(); PK.timer = setInterval(pkWatchTick, CONFIG.parking.refreshMs); }
+    function pkWatchStop() { if (PK.timer) clearInterval(PK.timer); PK.timer = null; }
+    async function pkWatchTick() {
+      if (document.visibilityState !== "visible" || PK.busy || !PK.target || !PK.target.live) return;
+      if (!currentRoute || !currentRoute.options || !currentRoute.options.isParkingRoute) { pkWatchStop(); return; }
+      PK.busy = true;
+      try {
+        const fresh = await pkFetchLive(null), t = PK.target, now = fresh.find(x => x.id === t.id);
+        if (!now) return;
+        t.free = now.free;
+        if (pkAvailable(now)) return;
+        const nx = PK.cands.find(x => x !== t && !pkIsOccupied(x) && (!x.live || pkAvailable(fresh.find(y => y.id === x.id) || x)));
+        if (!nx) { setStatus("⚠️ Le parking visé est complet et aucune autre place PMR n'est recensée à proximité.", "error"); return; }
+        PK.target = nx; speakFR(`Le parking est complet. Nouvelle place : ${nx.name}, à ${nx.dist} mètres de votre destination.`);
+        setStatus(`🔁 Parking complet : redirection vers ${nx.name}.`, "info");
+        const d = PK.dest, opts = { isParkingRoute: true, finalDestName: d.name, finalDestLat: d.lat, finalDestLon: d.lon, parkingDist: nx.dist };
+        const pos = currentPosition();
+        if (isNavigating && pos) { const ok = await routeTo(nx.lat, nx.lon, `Parking PMR (${nx.name})`, { ...opts, isReroute: true, originOverride: [pos.lon, pos.lat] }); if (ok && nav) { beginGuidanceState(); } }
+        else await routeTo(nx.lat, nx.lon, `Parking PMR (${nx.name})`, opts);
+        if (!nx.live) pkWatchStop();
+        pkLeg(nx, d).then(leg => pkRender(nx, leg, d));
+      } catch {} finally { PK.busy = false; }
+    }
+    // ---- « Place occupée → Suivante » : mémorise la place comme occupée (session) et redirige vers la suivante ----
+    function pkIsOccupied(c) { return PK.occupied.some(o => (o.id && o.id === c.id) || distanceMeters(o.lat, o.lon, c.lat, c.lon) < 12); }
+    async function pkCollect(lat, lon) {
+      const R = CONFIG.parking.radius, dLa = R / 111320, dLo = R / (111320 * Math.cos(lat * Math.PI / 180));
+      const local = allPlaces.filter(p => p.cat === "parking").map(p => ({ id: "loc:" + p.id, live: false, name: p.name || "Place PMR", lat: p.lat, lon: p.lon, n: null, source: "Carte locale" }));
+      const [live, street] = await Promise.all([
+        pkFetchLive(null, { lat, lon }).catch(() => []),
+        pkFetchStreet(lat, lon, null).catch(() => []),
+        Promise.race([PmrDataUpdater.loadCells(PmrDataUpdater.cellsFor({ s: lat - dLa, n: lat + dLa, w: lon - dLo, e: lon + dLo }, 6), {}), new Promise(r => setTimeout(r, 5000))]).catch(() => null)
+      ]);
+      return pkRank(pkMerge([...live, ...street, ...pkFromStore(lat, lon), ...local], lat, lon));
+    }
+    async function pkOccupiedNext() {
+      if (!isNavigating || !nav || !currentRoute || PK.occBusy) return;
+      PK.occBusy = true; const btn = gid("pkOccBtn"); if (btn) btn.disabled = true;
+      try {
+        const r = currentRoute, o = r.options || {}, pos = currentPosition();
+        if (o.isParkingRoute) PK.occupied.push({ id: PK.target && Math.abs(PK.target.lat - r.destLat) < 1e-5 ? PK.target.id : null, lat: r.destLat, lon: r.destLon });
+        // Référence : destination finale (trajet voiture + fauteuil), sinon position GPS actuelle
+        const fin = o.isParkingRoute ? (o.finalDestLat != null ? { lat: o.finalDestLat, lon: o.finalDestLon, name: o.finalDestName } : null) : { lat: r.destLat, lon: r.destLon, name: r.destName };
+        const ref = fin || (pos ? { lat: pos.lat, lon: pos.lon } : { lat: r.destLat, lon: r.destLon });
+        const cands = await pkCollect(ref.lat, ref.lon);
+        if (!isNavigating || !nav) return;
+        const nx = cands.find(c => !pkIsOccupied(c) && (!c.live || pkAvailable(c)));
+        if (!nx) { speakFR("Place occupée. Aucune autre place PMR recensée à proximité."); navToast("🅿️ Aucune autre place PMR recensée à proximité", 7000); return; }
+        PK.cands = cands; PK.target = nx; if (fin) PK.dest = fin;
+        const opts = fin ? { isParkingRoute: true, finalDestName: fin.name, finalDestLat: fin.lat, finalDestLon: fin.lon, parkingDist: nx.dist } : { isParkingRoute: true };
+        const ok = await routeTo(nx.lat, nx.lon, `Parking PMR (${nx.name})`, { ...opts, isReroute: true, originOverride: pos ? [pos.lon, pos.lat] : undefined });
+        if (!isNavigating || !nav) return;
+        if (!ok) { navToast("Recalcul impossible : réessayez dans un instant", 6000); return; }
+        beginGuidanceState(); nav.lastReroute = Date.now();
+        const msg = `Place occupée. Nouvel itinéraire vers la place PMR la plus proche à ${nx.dist} mètres${fin ? " de votre destination" : ""}`;
+        speakFR(msg); navToast("🅿️ " + msg, 7000);
+        sendWatchGuidanceNotification("🅿️ Place occupée", `Nouvelle place : ${nx.name} (${nx.dist} m)`, "gps-pmr-step");
+        if (nx.live) pkWatchStart(); else pkWatchStop();
+        if (fin) pkLeg(nx, fin).then(leg => { if (PK.target === nx) pkRender(nx, leg, fin); }); else { pkDrawLeg(null); }
+      } catch {} finally { PK.occBusy = false; if (btn) btn.disabled = false; pkUpdateActions(); }
+    }
+    // Boutons d'action rapides pendant le guidage voiture
+    function pkUpdateActions() {
+      const box = gid("pkActions"); if (!box) return;
+      const o = (currentRoute && currentRoute.options) || {};
+      const on = !!(isNavigating && nav && !nav.arrived && currentRoute && activeTransportTab === "car");
+      const rem = on ? Math.max(0, nav.geo.total - nav.progress) : Infinity;
+      const showOcc = on && (!!o.isParkingRoute || rem <= 150), showPark = on && !!o.isParkingRoute && o.finalDestLat != null;
+      gid("pkOccBtn").hidden = !showOcc; gid("pkParkedBtn").hidden = !showPark;
+      box.style.display = (showOcc || showPark) ? "flex" : "none";
     }
 
-    function displayParkingProposal(parking, destLat, destLon, destName, sourceLabel) {
-      const box = document.getElementById("carParkingProposal");
-      box.style.display = "flex";
-
-      const walkMins = Math.max(1, Math.round(parking.distToDest / 65));
-      document.getElementById("proposalSourceBadge").textContent = sourceLabel;
-      document.getElementById("proposalTitle").textContent = `🅿️ ${parking.name}`;
-      document.getElementById("proposalMeta").textContent =
-        `À ${parking.distToDest} m de « ${destName} » (~${walkMins} min en fauteuil)${parking.details ? " • " + parking.details : ""}`;
-
-      document.getElementById("proposalGoBtn").onclick = () => {
-        routeTo(parking.lat, parking.lon, `Parking PMR (${parking.name})`, {
-          isParkingRoute: true, finalDestName: destName, finalDestLat: destLat, finalDestLon: destLon, parkingDist: parking.distToDest
-        });
-      };
-      document.getElementById("proposalSeeBtn").onclick = () => { map.flyTo({ center: [parking.lon, parking.lat], zoom: 17 }); };
-
-      if (proposedParkingMarker) proposedParkingMarker.remove();
-      const el = document.createElement("div");
-      el.className = "parking-pin"; el.textContent = "P";
-      proposedParkingMarker = new maplibregl.Marker({ element: el })
-        .setLngLat([parking.lon, parking.lat])
-        .setPopup(new maplibregl.Popup().setHTML(`<b>🅿️ Place PMR conseillée</b><br>${escapeHTML(parking.name)}<br><span class="sub">À ${parking.distToDest} m de ${escapeHTML(destName)}</span>`))
-        .addTo(map);
-
-      proposedWalkGeoJSON = {
-        type: "Feature",
-        geometry: { type: "LineString", coordinates: [[parking.lon, parking.lat], [destLon, destLat]] }
-      };
-      if (map.getSource("proposed-walk")) {
-        map.getSource("proposed-walk").setData(proposedWalkGeoJSON);
-      } else if (map.isStyleLoaded()) {
-        map.addSource("proposed-walk", { type: "geojson", data: proposedWalkGeoJSON });
-        map.addLayer({
-          id: "proposed-walk-layer", type: "line", source: "proposed-walk",
-          paint: { "line-color": "#34c759", "line-width": 4, "line-dasharray": [2, 2] }
-        });
-      }
+    // ---- Stationnement mémorisé : « Ma voiture garée » + « Retour à ma voiture » ----
+    const PARK_KEY = "gps_pmr_parked_v1";
+    let parkedMarker = null, parkedBusy = false;
+    function pkLoadParked() { try { const j = JSON.parse(localStorage.getItem(PARK_KEY) || "null"); return j && isFinite(j.lat) && isFinite(j.lon) ? j : null; } catch { return null; } }
+    function pkSaveParked(v) { try { if (v) localStorage.setItem(PARK_KEY, JSON.stringify(v)); else localStorage.removeItem(PARK_KEY); } catch {} }
+    function pkShowParkedMarker() {
+      if (parkedMarker) { parkedMarker.remove(); parkedMarker = null; }
+      const v = pkLoadParked(); if (!v || typeof map === "undefined" || !map) return;
+      const el = document.createElement("div"); el.className = "pk-pin parked"; el.textContent = "🚗 Ma voiture garée";
+      const when = new Date(v.ts).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      parkedMarker = new maplibregl.Marker({ element: el }).setLngLat([v.lon, v.lat]).setPopup(new maplibregl.Popup().setHTML(`<b>Ma voiture garée</b><br>${escapeHTML(v.label || "")}<br><small>${when}</small>`)).addTo(map);
     }
+    function pkReturnRefresh() {
+      const bar = gid("pkReturnBar"); if (!bar) return;
+      bar.style.display = (pkLoadParked() && !isNavigating && activeTransportTab === "wheelchair") ? "flex" : "none";
+    }
+    // Garé (détection automatique ou bouton) → mémorise, bascule en Fauteuil et calcule le dernier tronçon
+    async function pkParked() {
+      const o = currentRoute && currentRoute.options;
+      if (parkedBusy || !o || o.finalDestLat == null) return;
+      parkedBusy = true; pkWatchStop();
+      try {
+        const wasSim = simActive, pos = currentPosition() || { lat: currentRoute.destLat, lon: currentRoute.destLon };
+        const label = String(currentRoute.destName || "").replace(/^Parking PMR \((.*)\)$/, "$1") || "Stationnement";
+        pkSaveParked({ lat: pos.lat, lon: pos.lon, ts: Date.now(), label });
+        pkShowParkedMarker();
+        clearTimeout(arriveTimer); if (nav || isNavigating) stopGuidance();
+        const sd = selectedDest; selectedDest = null;          // évite le double calcul de switchModeTab : on calcule nous-mêmes depuis le stationnement
+        switchModeTab("wheelchair"); selectedDest = sd;
+        const ok = await routeTo(o.finalDestLat, o.finalDestLon, o.finalDestName, { originOverride: [pos.lon, pos.lat] });
+        speakFR("Vous êtes arrivé au stationnement. Début du guidage en fauteuil vers votre destination.");
+        if (ok) startGuidance(wasSim); else setStatus("♿ Garé. Itinéraire fauteuil indisponible : réessayez.", "error");
+      } finally { parkedBusy = false; pkReturnRefresh(); }
+    }
+    async function pkReturnToCar() {
+      const v = pkLoadParked(); if (!v) return;
+      if (isNavigating) stopGuidance();
+      const sd = selectedDest; selectedDest = null;
+      if (activeTransportTab !== "wheelchair") switchModeTab("wheelchair");
+      selectedDest = sd;
+      const pos = currentPosition();
+      const ok = await routeTo(v.lat, v.lon, "Ma voiture garée", { isCarReturn: true, originOverride: pos ? [pos.lon, pos.lat] : undefined });
+      if (ok) startGuidance(false);
+    }
+    function pkReturnArrived() {
+      const d = gid("pkReturnDone"); if (d) d.hidden = false;
+    }
+    function pkFreeParked(fromDone, toCar) {
+      pkSaveParked(null); if (parkedMarker) { parkedMarker.remove(); parkedMarker = null; }
+      const d = gid("pkReturnDone"); if (d) d.hidden = true;
+      if (toCar) { if (isNavigating) stopGuidance(); selectedDest = null; gid("destInput").value = ""; switchModeTab("car"); }
+      pkReturnRefresh();
+      if (!toCar) navToast("Emplacement de la voiture libéré", 3500);
+    }
+    setTimeout(function boot() { try { pkShowParkedMarker(); pkReturnRefresh(); } catch { setTimeout(boot, 600); } }, 800);
 
     function clearParkingProposal() {
       if (parkingSearchAbort) parkingSearchAbort.abort();
-      document.getElementById("carParkingProposal").style.display = "none";
+      PK.token++; pkWatchStop();
+      gid("carParkingProposal").style.display = "none";
       if (proposedParkingMarker) { proposedParkingMarker.remove(); proposedParkingMarker = null; }
-      proposedWalkGeoJSON = null;
-      if (map.getSource("proposed-walk")) {
-        map.getSource("proposed-walk").setData({ type: "FeatureCollection", features: [] });
-      }
+      pkDrawLeg(null);
     }
 
     // MARK: - 4 Onglets (Fauteuil / Voiture / Bus / Tramway)
@@ -3526,6 +3749,7 @@
         renderTramStations();
       }
 
+      try { pkReturnRefresh(); pkUpdateActions(); } catch {}
       if (selectedDest && ((prevMode === "car" && mode !== "car") || (prevMode !== "car" && mode === "car"))) {
         if (isNavigating) setStatus("🔁 Avatar changé. Le guidage en cours est conservé : arrêtez-le pour recalculer l'itinéraire pour ce mode.", "info");
         else routeTo(selectedDest.lat, selectedDest.lon, selectedDest.name);
@@ -6086,8 +6310,8 @@
       return coordinates;
     }
 
-    async function callValhalla(origin, lat, lon, maxGrade, tweak) {
-      const isCar = activeTransportTab === "car";
+    async function callValhalla(origin, lat, lon, maxGrade, tweak, forceMode) {
+      const isCar = forceMode ? forceMode === "car" : activeTransportTab === "car";
       const curb = getWc().maxCurb;
       // Valhalla n'a pas de réglage de hauteur de bordure : on la traduit en pénalité de marche/bordure
       const stepPenalty = curb <= 2 ? 10000 : (curb <= 5 ? 3000 : 400);
@@ -6215,7 +6439,7 @@
 
         setStatus(usedFallback ? `⚠️ Côte importante sur ce trajet (pente > ${getWc().maxSlope}%).` : `✅ Itinéraire ${isCar ? "voiture" : "PMR"} calculé.`, usedFallback ? "info" : "ok");
         persistLastRoute();
-        if (!options.isReroute && !options.isParkingRoute) addHistory(lat, lon, name, false);
+        if (!options.isReroute && !options.isParkingRoute && !options.isCarReturn) addHistory(lat, lon, name, false);
         return true;
       } catch (err) {
         if (!navigator.onLine && !options.isReroute && !options.isParkingRoute) {      // hors ligne : on recharge le tracé enregistré s'il s'agit du même lieu
@@ -6387,6 +6611,7 @@
       isNavigating = true;
       autoFollowCamera = true;
       document.body.classList.add("nav-mode");       // masque les menus du haut et du bas
+      try { pkReturnRefresh(); } catch {}
       av3("setMode", activeTransportTab); av3("start", map);
       { const p0 = currentPosition(); if (p0) av3("update", { lat: p0.lat, lon: p0.lon, heading: meState.heading, speed: 0, dtMs: 1 }); }
       drawAltLines();
@@ -6417,7 +6642,7 @@
       } else if (userPos) {
         const p = projectOnRoute(nav.geo, userPos.lat, userPos.lon, 0);
         if (p.off > 100) {
-          nav.offCount = 2;                       // loin du départ prévu : recalcul dès la prochaine position
+          nav.offCount = 1; nav.offSince = Date.now() - 60000;   // loin du départ prévu : recalcul dès la prochaine position
         } else {
           speakFR(first);
         }
@@ -6450,6 +6675,7 @@
       gpsHealthStop(); navPaused = false; favSwitch.pending = false; clearTimeout(favSwitch.timer);
       releaseWakeLock();
       document.body.classList.remove("nav-mode");   // réaffiche les menus
+      try { pkUpdateActions(); pkReturnRefresh(); } catch {}
       av3("stop");                                    // retire l'avatar 3D et libère Three.js
       setTimeout(drawAltLines, 80);
       if (!wasNavigating) return;
@@ -8236,6 +8462,9 @@
     const CONFIG = {
       irigo: { url: "https://data.angers.fr/api/explore/v2.1/catalog/datasets/bus-tram-position-tr/records", pageSize: 100, maxPages: 4, timeoutMs: 6000 },
       rtRelay: "", rtRelayTimeoutMs: 4000, rtPollMs: 15000,
+      // Place PMR à l'arrivée : flux de capteurs ouverts (jeu de données à vérifier/adapter : champs lus de façon tolérante, cf. pkParseLive)
+      parking: { radius: 800, refreshMs: 30000, timeoutMs: 7000,
+        liveFeeds: [{ id: "Angers (capteurs)", url: "https://data.angers.fr/api/explore/v2.1/catalog/datasets/parking-angers/records", angersOnly: true }] },
       staticBadge: "ℹ️ Horaires théoriques • Arrêts PMR affichés"
     };
     const IRIGO_NET = { t: "Réseau urbain Irigo", irigo: true, v: "irigo:json" };
