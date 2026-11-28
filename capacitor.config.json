@@ -1,0 +1,7 @@
+{
+  "appId": "fr.gpspmr.app",
+  "appName": "GPS PMR",
+  "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "android": { "useLegacyBridge": true }
+}
