@@ -1,4 +1,4 @@
-// sw.js — GPS PMR (PWA) · v11 (cache applicatif gps-pmr-app-v11)
+// sw.js — GPS PMR (PWA) · v12 (cache applicatif gps-pmr-app-v12)
 // À placer À CÔTÉ de index.html (ex. https://<compte>.github.io/GPS_PMR/sw.js). Servi en HTTPS, portée = son dossier.
 //
 // Stratégies :
@@ -11,7 +11,7 @@
 // Les requêtes POST (Overpass, Valhalla, Supabase écriture) ne passent jamais par le cache ; l'application mémorise
 // elle-même lieux et dernier itinéraire (IndexedDB / localStorage).
 
-const APP_CACHE  = "gps-pmr-app-v11";
+const APP_CACHE  = "gps-pmr-app-v12";
 const TILE_CACHE = "gps-pmr-tiles-v1";
 const DATA_CACHE = "gps-pmr-data-v1";
 const MAX_TILES = 3000;   // = plafond du téléchargement de zone (sinon les premières tuiles d'un pack seraient effacées)

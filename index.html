@@ -1163,6 +1163,22 @@
     .watch-bubble[hidden] { display: none; }
     .watch-bubble button { margin-top: 10px; width: 100%; min-height: 44px; border-radius: 14px; }
     body.watch-mode .watch-bubble { display: none !important; }
+    /* ===== v62 · finitions multiplateformes ===== */
+    a, summary, [role="button"], [onclick], .chip, .alt-row, .place-row, .slot-btn, label[for], select, input[type="checkbox"], input[type="radio"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    button, .chip, .alt-row, [role="button"], select { min-height: 44px; }
+    .chip, .alt-row { min-width: 44px; }
+    @media (hover: hover) and (pointer: fine) {
+      button:not(:disabled):hover, .chip:hover, .place-row:hover, .alt-row:hover, .slot-btn:hover, [role="button"]:hover { filter: brightness(1.12); cursor: pointer; }
+      .alt-row, .place-row, .chip { cursor: pointer; }
+      button:focus-visible, .chip:focus-visible, .alt-row:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #22d3ee; outline-offset: 2px; }
+    }
+    /* Mobile : flou plafonné à 12 px (GPU milieu de gamme), will-change seulement pendant le glissé du tiroir */
+    @media (pointer: coarse), (max-width: 768px) {
+      :root, body { --lg-blur: blur(12px) saturate(150%); }
+      .sidebar, .pill-bar, .legend, .viewer-card { -webkit-backdrop-filter: blur(12px) saturate(150%) !important; backdrop-filter: blur(12px) saturate(150%) !important; }
+      body.sheet-drag .sidebar { will-change: transform; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
   </style>
 </head>
 <body>
@@ -7496,6 +7512,8 @@
     let _rz = null;
     window.addEventListener("resize", () => { clearTimeout(_rz); _rz = setTimeout(() => map.resize(), 120); });
     window.addEventListener("orientationchange", () => setTimeout(() => map.resize(), 300));
+    // Redimensionnement fluide du conteneur de carte (PC : fenêtre, panneau ; mobile : barre d'adresse, clavier)
+    try { if (window.ResizeObserver) { let _ro = 0; new ResizeObserver(() => { cancelAnimationFrame(_ro); _ro = requestAnimationFrame(() => { try { map.resize(); } catch {} }); }).observe(document.getElementById("map")); } } catch {}
 
 
     // =====================================================================================
